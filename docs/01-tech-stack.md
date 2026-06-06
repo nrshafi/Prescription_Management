@@ -2,18 +2,18 @@
 
 ## Confirmed Stack
 
-| Layer            | Choice                          | Notes                                         |
-| ---------------- | ------------------------------- | --------------------------------------------- |
-| Desktop runtime  | Electron                        | Printing, file access, Windows installer      |
-| Scaffolding      | electron-vite (react-ts)        | Fast HMR, main/preload/renderer separation    |
-| UI               | React + TypeScript              | Component model + type safety                 |
-| Styling          | Tailwind CSS                    | Utility-first styling                         |
-| Components       | shadcn/ui                       | Forms, dialogs, tables, inputs, cards, select |
-| Database         | SQLite via better-sqlite3       | Synchronous, runs in main process only        |
-| ORM / migrations | Drizzle ORM + drizzle-kit       | Type-safe schema + migration management       |
-| Forms            | React Hook Form                 | Form state and submission                     |
-| Validation       | Zod (+ @hookform/resolvers)     | Schema validation on IPC boundary + forms     |
-| Packaging        | electron-builder                | Windows NSIS installer, native rebuild        |
+| Layer            | Choice                      | Notes                                         |
+| ---------------- | --------------------------- | --------------------------------------------- |
+| Desktop runtime  | Electron                    | Printing, file access, Windows installer      |
+| Scaffolding      | electron-vite (react-ts)    | Fast HMR, main/preload/renderer separation    |
+| UI               | React + TypeScript          | Component model + type safety                 |
+| Styling          | Tailwind CSS                | Utility-first styling                         |
+| Components       | shadcn/ui                   | Forms, dialogs, tables, inputs, cards, select |
+| Database         | SQLite via better-sqlite3   | Synchronous, runs in main process only        |
+| ORM / migrations | Drizzle ORM + drizzle-kit   | Type-safe schema + migration management       |
+| Forms            | React Hook Form             | Form state and submission                     |
+| Validation       | Zod (+ @hookform/resolvers) | Schema validation on IPC boundary + forms     |
+| Packaging        | electron-builder            | Windows NSIS installer, native rebuild        |
 
 ## Core Dependency List (~10)
 
@@ -34,11 +34,11 @@
 
 ## Deliberately Removed (Add Later If Needed)
 
-| Removed         | Reason                                              | Add when                                  |
-| --------------- | -------------------------------------------------- | ----------------------------------------- |
-| Zustand         | App is small; React state + context is enough      | Global state becomes painful to thread    |
-| TanStack Table  | Plain shadcn table handles 100–5000+ rows fine     | Need server-side paging / complex tables  |
-| pdf-lib         | Electron renders HTML → print & printToPDF         | Need programmatic PDF manipulation        |
+| Removed        | Reason                                         | Add when                                 |
+| -------------- | ---------------------------------------------- | ---------------------------------------- |
+| Zustand        | App is small; React state + context is enough  | Global state becomes painful to thread   |
+| TanStack Table | Plain shadcn table handles 100–5000+ rows fine | Need server-side paging / complex tables |
+| pdf-lib        | Electron renders HTML → print & printToPDF     | Need programmatic PDF manipulation       |
 
 ## Decisions Locked In
 

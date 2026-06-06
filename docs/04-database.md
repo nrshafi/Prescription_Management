@@ -19,56 +19,58 @@ presets (standalone, by category)
 ## Tables
 
 ### doctor_profile
+
 Single record only.
 
-| Field          | Type    |
-| -------------- | ------- |
+| Field          | Type         |
+| -------------- | ------------ |
 | id             | integer (PK) |
-| name           | text    |
-| degrees        | text    |
-| speciality     | text    |
-| phone          | text    |
-| email          | text    |
-| address        | text    |
-| chamber        | text    |
-| logo_path      | text    |
-| signature_path | text    |
+| name           | text         |
+| degrees        | text         |
+| speciality     | text         |
+| phone          | text         |
+| email          | text         |
+| address        | text         |
+| chamber        | text         |
+| logo_path      | text         |
+| signature_path | text         |
 
 ### patients
 
-| Field        | Type     |
-| ------------ | -------- |
-| id           | integer (PK) |
+| Field        | Type                             |
+| ------------ | -------------------------------- |
+| id           | integer (PK)                     |
 | patient_code | text (unique, e.g. `PAT-000001`) |
-| name         | text     |
-| age          | text     |
-| gender       | text     |
-| phone        | text     |
-| address      | text     |
-| created_at   | datetime |
-| updated_at   | datetime |
+| name         | text                             |
+| age          | text                             |
+| gender       | text                             |
+| phone        | text                             |
+| address      | text                             |
+| created_at   | datetime                         |
+| updated_at   | datetime                         |
 
 ### prescriptions
 
-| Field       | Type     |
-| ----------- | -------- |
-| id          | integer (PK) |
-| patient_id  | integer (FK → patients.id) |
+| Field       | Type                        |
+| ----------- | --------------------------- |
+| id          | integer (PK)                |
+| patient_id  | integer (FK → patients.id)  |
 | template_id | integer (FK → templates.id) |
-| visit_no    | integer  |
-| created_at  | datetime |
-| updated_at  | datetime |
+| visit_no    | integer                     |
+| created_at  | datetime                    |
+| updated_at  | datetime                    |
 
 ### prescription_sections
+
 The most important table — keeps prescription content future-proof.
 
-| Field           | Type    |
-| --------------- | ------- |
-| id              | integer (PK) |
+| Field           | Type                            |
+| --------------- | ------------------------------- |
+| id              | integer (PK)                    |
 | prescription_id | integer (FK → prescriptions.id) |
-| section_type    | text    |
-| content         | text    |
-| position        | integer |
+| section_type    | text                            |
+| content         | text                            |
+| position        | integer                         |
 
 `section_type` values (from wireframe): `Chief Complaint` (C/C),
 `Examination` (O/E), `Investigation` (Inv), `Diagnosis` (Dia), `Advice`,
@@ -76,51 +78,52 @@ The most important table — keeps prescription content future-proof.
 
 ### prescription_medicines
 
-| Field           | Type    |
-| --------------- | ------- |
-| id              | integer (PK) |
+| Field           | Type                            |
+| --------------- | ------------------------------- |
+| id              | integer (PK)                    |
 | prescription_id | integer (FK → prescriptions.id) |
-| medicine_name   | text    |
-| dosage          | text    |
-| frequency       | text    |
-| duration        | text    |
-| notes           | text    |
-| position        | integer |
+| medicine_name   | text                            |
+| dosage          | text                            |
+| frequency       | text                            |
+| duration        | text                            |
+| notes           | text                            |
+| position        | integer                         |
 
 ### presets
 
-| Field    | Type    |
-| -------- | ------- |
+| Field    | Type         |
+| -------- | ------------ |
 | id       | integer (PK) |
-| category | text    |
-| title    | text    |
-| content  | text    |
+| category | text         |
+| title    | text         |
+| content  | text         |
 
 `category` values: `Medicine`, `Advice`, `Diagnosis`, `Investigation`.
 
 ### templates
 
-| Field       | Type    |
-| ----------- | ------- |
+| Field       | Type         |
+| ----------- | ------------ |
 | id          | integer (PK) |
-| name        | text    |
-| paper_size  | text    |
-| layout_json | text    |
+| name        | text         |
+| paper_size  | text         |
+| layout_json | text         |
 
 One record in v1; architecture supports unlimited templates later.
 
 ### paper_settings
+
 Single record (default A4).
 
-| Field         | Type   |
-| ------------- | ------ |
+| Field         | Type         |
+| ------------- | ------------ |
 | id            | integer (PK) |
-| width_mm      | number |
-| height_mm     | number |
-| margin_top    | number |
-| margin_bottom | number |
-| margin_left   | number |
-| margin_right  | number |
+| width_mm      | number       |
+| height_mm     | number       |
+| margin_top    | number       |
+| margin_bottom | number       |
+| margin_left   | number       |
+| margin_right  | number       |
 
 Default A4: 210 × 297 mm. Later: A5, Letter, Custom — no rewrite required.
 

@@ -45,16 +45,16 @@ No backend. No REST API. No Express / Hono / tRPC / GraphQL.
 
 ## IPC Channels (by domain)
 
-| Domain        | Channels                                                                 |
-| ------------- | ------------------------------------------------------------------------ |
-| patients      | `patients:list`, `patients:search`, `patients:get`, `patients:create`, `patients:update`, `patients:delete`, `patients:history` |
+| Domain        | Channels                                                                                                                                                                |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| patients      | `patients:list`, `patients:search`, `patients:get`, `patients:create`, `patients:update`, `patients:delete`, `patients:history`                                         |
 | prescriptions | `prescriptions:list`, `prescriptions:get`, `prescriptions:create`, `prescriptions:update`, `prescriptions:delete`, `prescriptions:duplicate`, `prescriptions:saveDraft` |
-| presets       | `presets:list`, `presets:create`, `presets:update`, `presets:delete`     |
-| profile       | `profile:get`, `profile:update`                                          |
-| settings      | `settings:getPaper`, `settings:updatePaper`, `settings:getTheme`, `settings:setTheme` |
-| backup        | `backup:export`, `backup:import`                                         |
-| print         | `print:print`, `print:exportPdf`                                         |
-| dashboard     | `dashboard:stats`                                                        |
+| presets       | `presets:list`, `presets:create`, `presets:update`, `presets:delete`                                                                                                    |
+| profile       | `profile:get`, `profile:update`                                                                                                                                         |
+| settings      | `settings:getPaper`, `settings:updatePaper`, `settings:getTheme`, `settings:setTheme`                                                                                   |
+| backup        | `backup:export`, `backup:import`                                                                                                                                        |
+| print         | `print:print`, `print:exportPdf`                                                                                                                                        |
+| dashboard     | `dashboard:stats`                                                                                                                                                       |
 
 ## Data Flow Example (create prescription)
 

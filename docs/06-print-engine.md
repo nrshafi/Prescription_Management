@@ -62,10 +62,10 @@ Driven by the `paper_settings` table (single row):
 
 ## IPC
 
-| Channel           | Purpose                          |
-| ----------------- | -------------------------------- |
-| `print:print`     | Render + send to system printer  |
-| `print:exportPdf` | Render + save as PDF             |
+| Channel           | Purpose                         |
+| ----------------- | ------------------------------- |
+| `print:print`     | Render + send to system printer |
+| `print:exportPdf` | Render + save as PDF            |
 
 Renderer passes the prescription id; main loads data, renders the print route,
 and runs print / printToPDF.

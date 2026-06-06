@@ -2,7 +2,7 @@
 
 Phased delivery. Each phase ends with a concrete deliverable.
 
-## Phase 0 — Scaffolding & Foundation
+## Phase 0 — Scaffolding & Foundation (Build Done)
 
 ```text
 electron-vite (react-ts) scaffold
@@ -15,7 +15,7 @@ DB bootstrap in userData + run migrations on startup
 
 **Deliverable:** running desktop app with empty DB and a working IPC round-trip.
 
-## Phase 1 — Database & Services
+## Phase 1 — Database & Services (Build Done)
 
 ```text
 Drizzle schema for all 8 tables
@@ -73,9 +73,9 @@ Dashboard: Total Patients, Today's Prescriptions, Recent Patients
 
 ## Key Risks & Mitigations
 
-| Risk                                  | Mitigation                                                |
-| ------------------------------------- | --------------------------------------------------------- |
+| Risk                                    | Mitigation                                                 |
+| --------------------------------------- | ---------------------------------------------------------- |
 | better-sqlite3 native build in Electron | Configure electron-builder rebuild + asarUnpack in Phase 0 |
-| Print fidelity                        | Isolate print layout in its own route from day one        |
-| Migrations on packaged app            | Bundle migrations; run on startup against userData DB     |
-| Data loss                             | DB in userData + backup/restore as safety net            |
+| Print fidelity                          | Isolate print layout in its own route from day one         |
+| Migrations on packaged app              | Bundle migrations; run on startup against userData DB      |
+| Data loss                               | DB in userData + backup/restore as safety net              |

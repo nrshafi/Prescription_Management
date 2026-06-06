@@ -56,9 +56,9 @@ Flow:
 
 ## IPC
 
-| Channel         | Purpose                         |
-| --------------- | ------------------------------- |
-| `backup:export` | Write DB/zip to a chosen path   |
+| Channel         | Purpose                           |
+| --------------- | --------------------------------- |
+| `backup:export` | Write DB/zip to a chosen path     |
 | `backup:import` | Restore DB/zip from a chosen path |
 
 ## Out of Scope (v1)
