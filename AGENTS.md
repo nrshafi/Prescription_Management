@@ -22,22 +22,22 @@ Offline desktop app for single-doctor prescription management. Electron + React 
 ## Development Commands
 
 ```bash
-npm run dev          # Start development (main + renderer hot reload)
-npm run build        # Typecheck + production build
-npm run typecheck    # Run both node + web typechecks
-npm run lint         # Biome linting
-npm run format       # Biome formatting
-npm run check        # Biome lint + format + import sorting
-npm run db:generate  # Generate Drizzle migrations
-npm run db:migrate   # Run pending migrations
+bun run dev          # Start development (main + renderer hot reload)
+bun run build        # Typecheck + production build
+bun run typecheck    # Run both node + web typechecks
+bun run lint         # Biome linting
+bun run format       # Biome formatting
+bun run check        # Biome lint + format + import sorting
+bun run db:generate  # Generate Drizzle migrations
+bun run db:migrate   # Run pending migrations
 ```
 
 ## Build & Package
 
 ```bash
-npm run build:win    # Windows installer
-npm run build:mac    # macOS build
-npm run build:linux  # Linux AppImage/snap/deb
+bun run build:win    # Windows installer
+bun run build:mac    # macOS build
+bun run build:linux  # Linux AppImage/snap/deb
 ```
 
 ## Database
@@ -69,7 +69,7 @@ All renderer↔main communication uses typed IPC channels:
 ## shadcn/ui Components
 
 - Config: `components.json` (new-york style, neutral base color)
-- Add components: `npx shadcn@latest add [component]`
+- Add components: `bunx shadcn@latest add [component]`
 - Components placed in `src/renderer/src/components/ui/`
 - Biome rule relaxed for ui component exports (variant helpers)
 
@@ -83,9 +83,9 @@ All renderer↔main communication uses typed IPC channels:
 ## Testing & Quality
 
 No test framework configured. Verify changes via:
-1. `npm run typecheck` - TypeScript compilation
-2. `npm run lint` - Biome checks
-3. `npm run dev` - Manual testing in development
+1. `bun run typecheck` - TypeScript compilation
+2. `bun run lint` - Biome checks
+3. `bun run dev` - Manual testing in development
 
 ## Common Pitfalls
 
@@ -97,7 +97,7 @@ No test framework configured. Verify changes via:
 ## Adding New Features
 
 1. Define database schema in `src/main/db/schema.ts`
-2. Generate migration: `npm run db:generate`
+2. Generate migration: `bun run db:generate`
 3. Add service logic in `src/main/services/`
 4. Register IPC handler in `src/main/ipc/index.ts`
 5. Expose via preload API in `src/preload/index.ts`
