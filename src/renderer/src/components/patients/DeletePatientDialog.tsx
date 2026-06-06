@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import type { PatientListItem } from '../../../../shared/patient'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -9,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
+import type { PatientListItem } from '../../../../shared/patient'
 
 interface DeletePatientDialogProps {
   patient: PatientListItem | null

@@ -1,5 +1,5 @@
-import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import { contextBridge, ipcRenderer } from 'electron'
 import type {
   PatientFormValues,
   PatientListItem,
@@ -41,8 +41,10 @@ if (process.contextIsolated) {
     console.error(error)
   }
 } else {
-  // @ts-ignore (define in dts)
+  // biome-ignore lint/suspicious/noTsIgnore: defined in index.d.ts
+  // @ts-ignore
   window.electron = electronAPI
-  // @ts-ignore (define in dts)
+  // biome-ignore lint/suspicious/noTsIgnore: defined in index.d.ts
+  // @ts-ignore
   window.api = api
 }

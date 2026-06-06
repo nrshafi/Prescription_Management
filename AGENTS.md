@@ -25,8 +25,9 @@ Offline desktop app for single-doctor prescription management. Electron + React 
 npm run dev          # Start development (main + renderer hot reload)
 npm run build        # Typecheck + production build
 npm run typecheck    # Run both node + web typechecks
-npm run lint         # ESLint with cache
-npm run format       # Prettier formatting
+npm run lint         # Biome linting
+npm run format       # Biome formatting
+npm run check        # Biome lint + format + import sorting
 npm run db:generate  # Generate Drizzle migrations
 npm run db:migrate   # Run pending migrations
 ```
@@ -54,8 +55,8 @@ npm run build:linux  # Linux AppImage/snap/deb
 
 ## Code Style
 
-- **Prettier**: single quotes, no semicolons, 100 char width, no trailing commas
-- **ESLint**: React hooks rules, React Refresh for Vite HMR
+- **Biome**: single quotes, no semicolons, 100 char width, no trailing commas
+- **Biome**: React/TypeScript linting, import sorting, Tailwind CSS support
 - **EditorConfig**: 2 spaces, LF line endings, UTF-8
 
 ## IPC Pattern
@@ -70,7 +71,7 @@ All renderer↔main communication uses typed IPC channels:
 - Config: `components.json` (new-york style, neutral base color)
 - Add components: `npx shadcn@latest add [component]`
 - Components placed in `src/renderer/src/components/ui/`
-- ESLint rule relaxed for ui component exports (variant helpers)
+- Biome rule relaxed for ui component exports (variant helpers)
 
 ## File Structure Conventions
 
@@ -83,7 +84,7 @@ All renderer↔main communication uses typed IPC channels:
 
 No test framework configured. Verify changes via:
 1. `npm run typecheck` - TypeScript compilation
-2. `npm run lint` - ESLint checks
+2. `npm run lint` - Biome checks
 3. `npm run dev` - Manual testing in development
 
 ## Common Pitfalls

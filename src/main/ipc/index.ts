@@ -1,4 +1,5 @@
 import { ipcMain } from 'electron'
+import type { PatientFormValues, PatientQuery } from '../../shared/patient'
 import { getDatabasePath } from '../db/client'
 import { getDashboardStats } from '../services/dashboard'
 import {
@@ -9,7 +10,6 @@ import {
   listPatients,
   updatePatient
 } from '../services/patients'
-import type { PatientFormValues, PatientQuery } from '../../shared/patient'
 
 export function registerIpcHandlers(): void {
   ipcMain.handle('app:health', () => {

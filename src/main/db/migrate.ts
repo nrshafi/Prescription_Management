@@ -1,8 +1,8 @@
-import { app } from 'electron'
-import { join } from 'path'
+import { join } from 'node:path'
 import { is } from '@electron-toolkit/utils'
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { eq } from 'drizzle-orm'
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
+import { app } from 'electron'
 import { getDb } from './client'
 import { paperSettings } from './schema'
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { PatientListItem, PatientVisit } from '../../../../shared/patient'
+import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
   DialogContent,
@@ -7,7 +7,6 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
 import {
   Table,
   TableBody,
@@ -16,6 +15,7 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table'
+import type { PatientListItem, PatientVisit } from '../../../../shared/patient'
 
 interface PatientDetailDialogProps {
   patient: PatientListItem | null
@@ -23,7 +23,7 @@ interface PatientDetailDialogProps {
 }
 
 function formatDate(value: string): string {
-  const d = new Date(value.includes('T') ? value : value.replace(' ', 'T') + 'Z')
+  const d = new Date(value.includes('T') ? value : `${value.replace(' ', 'T')}Z`)
   if (Number.isNaN(d.getTime())) return value
   return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 }

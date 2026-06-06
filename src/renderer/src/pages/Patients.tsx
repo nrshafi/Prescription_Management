@@ -1,13 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
 import { ArrowDown, ArrowUp, ChevronsUpDown, Pencil, Plus, Search, Trash2 } from 'lucide-react'
-import {
-  GENDERS,
-  type PatientFormValues,
-  type PatientListItem,
-  type PatientRecord,
-  type PatientSortField,
-  type SortDirection
-} from '../../../shared/patient'
+import { useCallback, useEffect, useState } from 'react'
+import { DeletePatientDialog } from '@/components/patients/DeletePatientDialog'
+import { PatientDetailDialog } from '@/components/patients/PatientDetailDialog'
+import { PatientFormDialog } from '@/components/patients/PatientFormDialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -25,9 +20,14 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table'
-import { PatientFormDialog } from '@/components/patients/PatientFormDialog'
-import { DeletePatientDialog } from '@/components/patients/DeletePatientDialog'
-import { PatientDetailDialog } from '@/components/patients/PatientDetailDialog'
+import {
+  GENDERS,
+  type PatientFormValues,
+  type PatientListItem,
+  type PatientRecord,
+  type PatientSortField,
+  type SortDirection
+} from '../../../shared/patient'
 
 const ALL_GENDERS = '__all__'
 
@@ -236,7 +236,12 @@ export function Patients(): React.JSX.Element {
                     {row.lastDiagnosis || '—'}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      className="flex justify-end gap-1 border-none bg-transparent p-0"
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    >
                       <Button
                         variant="ghost"
                         size="icon"
@@ -253,7 +258,7 @@ export function Patients(): React.JSX.Element {
                       >
                         <Trash2 className="size-4" />
                       </Button>
-                    </div>
+                    </button>
                   </TableCell>
                 </TableRow>
               ))

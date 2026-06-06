@@ -1,7 +1,7 @@
-import { app } from 'electron'
-import { join } from 'path'
+import { join } from 'node:path'
 import Database from 'better-sqlite3'
-import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
+import { type BetterSQLite3Database, drizzle } from 'drizzle-orm/better-sqlite3'
+import { app } from 'electron'
 import * as schema from './schema'
 
 let sqlite: Database.Database | null = null

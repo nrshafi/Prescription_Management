@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
 import { LayoutDashboard, Users } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { Patients } from '@/pages/Patients'
 
@@ -73,6 +73,7 @@ function App(): React.JSX.Element {
           {NAV.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
+              type="button"
               onClick={() => setView(id)}
               className={cn(
                 'flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',

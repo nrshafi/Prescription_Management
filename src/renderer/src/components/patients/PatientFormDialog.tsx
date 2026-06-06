@@ -1,12 +1,6 @@
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import {
-  GENDERS,
-  patientFormSchema,
-  type PatientFormValues,
-  type PatientRecord
-} from '../../../../shared/patient'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -18,7 +12,6 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -26,6 +19,13 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  GENDERS,
+  type PatientFormValues,
+  type PatientRecord,
+  patientFormSchema
+} from '../../../../shared/patient'
 
 interface PatientFormDialogProps {
   open: boolean

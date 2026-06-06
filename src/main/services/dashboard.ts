@@ -10,10 +10,7 @@ export interface DashboardStats {
 export function getDashboardStats(): DashboardStats {
   const db = getDb()
 
-  const patientCount = db
-    .select({ count: sql<number>`count(*)` })
-    .from(patients)
-    .get()
+  const patientCount = db.select({ count: sql<number>`count(*)` }).from(patients).get()
   const todaysCount = db
     .select({ count: sql<number>`count(*)` })
     .from(prescriptions)
