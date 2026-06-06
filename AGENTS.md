@@ -102,3 +102,16 @@ No test framework configured. Verify changes via:
 4. Register IPC handler in `src/main/ipc/index.ts`
 5. Expose via preload API in `src/preload/index.ts`
 6. Build UI in renderer using `window.api.*`
+
+## Verification Commands
+
+Do not run these commands without explicit user permission:
+
+| Task | Command |
+|------|---------|
+| Typecheck | `bun run typecheck` |
+| Lint | `bun run lint` |
+| Format check | `bun run check` |
+| Build verification | `bun run build` |
+
+After completing a build task, list which commands you would run and wait for authorization. Read-only tasks (file exploration, dependency research) do not require permission.
