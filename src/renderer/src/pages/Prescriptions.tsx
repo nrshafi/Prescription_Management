@@ -138,9 +138,9 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
                   </td>
                   <td
                     className="max-w-[12rem] truncate px-4 py-3"
-                    title={row.probationalDiagnosis ?? ''}
+                    title={row.provisionalDiagnosis ?? ''}
                   >
-                    {row.probationalDiagnosis || '—'}
+                    {row.provisionalDiagnosis || '—'}
                   </td>
                   <td className="px-4 py-3">{row.visitNo}</td>
                   <td className="px-4 py-3">

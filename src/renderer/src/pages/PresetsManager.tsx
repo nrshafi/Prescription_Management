@@ -12,14 +12,14 @@ import {
 
 const TAB_CATEGORIES: PresetCategory[] = [
   'Chief Complaint',
-  'Probational Diagnosis',
+  'Provisional Diagnosis',
   'Investigations',
   'Advice'
 ]
 
 const TAB_COLORS: Record<string, string> = {
   'Chief Complaint': 'border-orange-400',
-  'Probational Diagnosis': 'border-green-500',
+  'Provisional Diagnosis': 'border-green-500',
   Investigations: 'border-purple-400',
   Advice: 'border-blue-500'
 }

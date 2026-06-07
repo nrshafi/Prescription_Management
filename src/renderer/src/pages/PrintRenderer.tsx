@@ -6,7 +6,7 @@ const SECTION_LABELS: Record<PrescriptionSectionType, string> = {
   'Chief Complaint': 'C/C',
   Examination: 'O/E',
   Investigations: 'Inv',
-  'Probational Diagnosis': 'Diagnosis',
+  'Provisional Diagnosis': 'Diagnosis',
   Advice: 'Advice',
   'Follow Up': 'Follow Up'
 }

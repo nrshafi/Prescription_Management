@@ -276,7 +276,7 @@ export function NewPrescription({
     [presets]
   )
   const diagnosisItems = useMemo(
-    () => presetTitlesByCategory(presets, 'Probational Diagnosis'),
+    () => presetTitlesByCategory(presets, 'Provisional Diagnosis'),
     [presets]
   )
   const adviceItems = useMemo(() => presetTitlesByCategory(presets, 'Advice'), [presets])

@@ -53,7 +53,7 @@ export function getRecentPatients(limit = 6): PatientListItem[] {
         SELECT ps.content
         FROM prescriptions p
         JOIN prescription_sections ps ON ps.prescription_id = p.prescription_id
-        WHERE p.patient_id = ${patients.patientId} AND ps.section_type = 'Probational Diagnosis'
+        WHERE p.patient_id = ${patients.patientId} AND ps.section_type = 'Provisional Diagnosis'
         ORDER BY p.created_at DESC, p.prescription_id DESC
         LIMIT 1
       )`

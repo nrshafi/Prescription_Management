@@ -55,7 +55,7 @@ function normalize(values: PatientFormValues): {
   }
 }
 
-// Subquery helpers: latest Probational Diagnosis / Chief Complaint content per patient.
+// Subquery helpers: latest Provisional Diagnosis / Chief Complaint content per patient.
 function latestSectionExpr(sectionType: string): SQL<string> {
   return sql<string>`(
     SELECT ps.content
@@ -72,7 +72,7 @@ function latestSectionExpr(sectionType: string): SQL<string> {
 export function listPatients(query: PatientQuery = {}): PatientListItem[] {
   const db = getDb()
   const { search, gender, sortBy, sortDir } = patientQuerySchema.parse(query)
-  const lastDiagnosis = latestSectionExpr('Probational Diagnosis')
+  const lastDiagnosis = latestSectionExpr('Provisional Diagnosis')
   const lastComplaint = latestSectionExpr('Chief Complaint')
 
   const filters: SQL[] = []
@@ -146,7 +146,7 @@ export function getPatientVisits(patientId: number): PatientVisit[] {
       createdAt: prescriptions.createdAt,
       diagnosis: sql<string>`(
         SELECT ps.content FROM prescription_sections ps
-        WHERE ps.prescription_id = ${prescriptions.prescriptionId} AND ps.section_type = 'Probational Diagnosis'
+        WHERE ps.prescription_id = ${prescriptions.prescriptionId} AND ps.section_type = 'Provisional Diagnosis'
         ORDER BY ps.position LIMIT 1
       )`,
       complaint: sql<string>`(

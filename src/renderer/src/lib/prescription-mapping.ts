@@ -143,7 +143,7 @@ export function detailToUi(detail: PrescriptionDetail): PrescriptionUiState {
     chiefComplaints: chipsFromContent(map.get('Chief Complaint')),
     oe,
     investigations: chipsFromContent(map.get('Investigations')),
-    diagnoses: chipsFromContent(map.get('Probational Diagnosis')),
+    diagnoses: chipsFromContent(map.get('Provisional Diagnosis')),
     advice: chipsFromContent(map.get('Advice')),
     followUpValue: follow.value,
     followUpUnit: follow.unit,
@@ -172,7 +172,7 @@ export function uiToFormValues(ui: PrescriptionUiState): PrescriptionFormValues 
       case 'Investigations':
         content = contentFromChips(ui.investigations)
         break
-      case 'Probational Diagnosis':
+      case 'Provisional Diagnosis':
         content = contentFromChips(ui.diagnoses)
         break
       case 'Advice':

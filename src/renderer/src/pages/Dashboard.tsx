@@ -128,7 +128,7 @@ export function Dashboard({ onNavigate }: DashboardProps): React.JSX.Element {
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{rx.patientName}</p>
                   <p className="text-muted-foreground truncate text-xs">
-                    {rx.probationalDiagnosis || rx.chiefComplaint || '—'}
+                    {rx.provisionalDiagnosis || rx.chiefComplaint || '—'}
                   </p>
                 </div>
                 <div className="text-muted-foreground shrink-0 text-xs">

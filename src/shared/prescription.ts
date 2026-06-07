@@ -4,7 +4,7 @@ export const PRESCRIPTION_SECTION_TYPES = [
   'Chief Complaint',
   'Examination',
   'Investigations',
-  'Probational Diagnosis',
+  'Provisional Diagnosis',
   'Advice',
   'Follow Up'
 ] as const
@@ -16,7 +16,7 @@ export const PRESET_CATEGORIES = [
   'Medicine',
   'Advice',
   'Investigations',
-  'Probational Diagnosis'
+  'Provisional Diagnosis'
 ] as const
 
 export type PresetCategory = (typeof PRESET_CATEGORIES)[number]
@@ -78,7 +78,7 @@ export interface PrescriptionListItem {
   createdAt: string
   updatedAt: string
   chiefComplaint: string | null
-  probationalDiagnosis: string | null
+  provisionalDiagnosis: string | null
 }
 
 export interface PrescriptionDetail extends PrescriptionListItem {

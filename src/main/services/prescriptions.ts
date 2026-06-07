@@ -111,7 +111,7 @@ export function listPrescriptions(search = ''): PrescriptionListItem[] {
   const db = getDb()
   const term = search.trim()
   const chiefComplaint = sectionContentExpr('Chief Complaint')
-  const probationalDiagnosis = sectionContentExpr('Probational Diagnosis')
+  const provisionalDiagnosis = sectionContentExpr('Provisional Diagnosis')
   const filters: SQL[] = []
 
   if (term) {
@@ -138,7 +138,7 @@ export function listPrescriptions(search = ''): PrescriptionListItem[] {
       createdAt: prescriptions.createdAt,
       updatedAt: prescriptions.updatedAt,
       chiefComplaint,
-      probationalDiagnosis
+      provisionalDiagnosis
     })
     .from(prescriptions)
     .innerJoin(patients, eq(prescriptions.patientId, patients.patientId))
@@ -150,7 +150,7 @@ export function listPrescriptions(search = ''): PrescriptionListItem[] {
 export function getPrescription(id: number): PrescriptionDetail | undefined {
   const db = getDb()
   const chiefComplaint = sectionContentExpr('Chief Complaint')
-  const probationalDiagnosis = sectionContentExpr('Probational Diagnosis')
+  const provisionalDiagnosis = sectionContentExpr('Provisional Diagnosis')
   const row = db
     .select({
       id: prescriptions.prescriptionId,
@@ -166,7 +166,7 @@ export function getPrescription(id: number): PrescriptionDetail | undefined {
       createdAt: prescriptions.createdAt,
       updatedAt: prescriptions.updatedAt,
       chiefComplaint,
-      probationalDiagnosis
+      provisionalDiagnosis
     })
     .from(prescriptions)
     .innerJoin(patients, eq(prescriptions.patientId, patients.patientId))
