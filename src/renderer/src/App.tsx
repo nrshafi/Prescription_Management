@@ -1,16 +1,18 @@
-import { LayoutDashboard, Users } from 'lucide-react'
+import { FileText, LayoutDashboard, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { Patients } from '@/pages/Patients'
+import { PrintRenderer } from '@/pages/PrintRenderer'
+import { Prescriptions } from '@/pages/Prescriptions'
 
 interface Stats {
   totalPatients: number
   todaysPrescriptions: number
 }
 
-type View = 'dashboard' | 'patients'
+type View = 'dashboard' | 'patients' | 'prescriptions'
 
 function Dashboard(): React.JSX.Element {
   const [dbPath, setDbPath] = useState<string>('')
@@ -57,11 +59,25 @@ function Dashboard(): React.JSX.Element {
 
 const NAV: { id: View; label: string; icon: typeof Users }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'patients', label: 'Patients', icon: Users }
+  { id: 'patients', label: 'Patients', icon: Users },
+  { id: 'prescriptions', label: 'Prescriptions', icon: FileText }
 ]
+
+function renderView(view: View): React.JSX.Element {
+  if (view === 'patients') return <Patients />
+  if (view === 'prescriptions') return <Prescriptions />
+  return <Dashboard />
+}
 
 function App(): React.JSX.Element {
   const [view, setView] = useState<View>('dashboard')
+  const printPrescriptionId = new URLSearchParams(window.location.search).get('printPrescriptionId')
+
+  if (window.location.pathname === '/print' || printPrescriptionId) {
+    const id = new URLSearchParams(window.location.search).get('id') ?? printPrescriptionId
+    const prescriptionId = id ? Number(id) : Number.NaN
+    return <PrintRenderer prescriptionId={Number.isFinite(prescriptionId) ? prescriptionId : null} />
+  }
 
   return (
     <div className="bg-background flex min-h-screen">
@@ -89,9 +105,7 @@ function App(): React.JSX.Element {
         </nav>
       </aside>
 
-      <main className="flex-1 overflow-auto p-8">
-        {view === 'dashboard' ? <Dashboard /> : <Patients />}
-      </main>
+      <main className="flex-1 overflow-auto p-8">{renderView(view)}</main>
     </div>
   )
 }

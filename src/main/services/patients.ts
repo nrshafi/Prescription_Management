@@ -3,6 +3,7 @@ import {
   type PatientFormValues,
   type PatientListItem,
   type PatientQuery,
+  type PatientRecord,
   type PatientSortField,
   type PatientVisit,
   patientFormSchema,
@@ -11,6 +12,20 @@ import {
 } from '../../shared/patient'
 import { getDb } from '../db/client'
 import { type Patient, patients, prescriptions } from '../db/schema'
+
+function toPatientRecord(patient: Patient): PatientRecord {
+  return {
+    id: patient.patientId,
+    patientCode: patient.patientCode,
+    name: patient.name,
+    age: patient.age,
+    gender: patient.gender,
+    phone: patient.phone,
+    address: patient.address,
+    createdAt: patient.createdAt,
+    updatedAt: patient.updatedAt
+  }
+}
 
 function nextPatientCode(): string {
   const db = getDb()
@@ -40,7 +55,7 @@ function normalize(values: PatientFormValues): {
   }
 }
 
-// Subquery helpers: latest Diagnosis / Chief Complaint section content per patient.
+// Subquery helpers: latest Probational Diagnosis / Chief Complaint content per patient.
 function latestSectionExpr(sectionType: string): SQL<string> {
   return sql<string>`(
     SELECT ps.content
@@ -57,7 +72,7 @@ function latestSectionExpr(sectionType: string): SQL<string> {
 export function listPatients(query: PatientQuery = {}): PatientListItem[] {
   const db = getDb()
   const { search, gender, sortBy, sortDir } = patientQuerySchema.parse(query)
-  const lastDiagnosis = latestSectionExpr('Diagnosis')
+  const lastDiagnosis = latestSectionExpr('Probational Diagnosis')
   const lastComplaint = latestSectionExpr('Chief Complaint')
 
   const filters: SQL[] = []
@@ -116,9 +131,10 @@ export function listPatients(query: PatientQuery = {}): PatientListItem[] {
     .all()
 }
 
-export function getPatient(id: number): Patient | undefined {
+export function getPatient(id: number): PatientRecord | undefined {
   const db = getDb()
-  return db.select().from(patients).where(eq(patients.patientId, id)).get()
+  const patient = db.select().from(patients).where(eq(patients.patientId, id)).get()
+  return patient ? toPatientRecord(patient) : undefined
 }
 
 export function getPatientVisits(patientId: number): PatientVisit[] {
@@ -130,7 +146,7 @@ export function getPatientVisits(patientId: number): PatientVisit[] {
       createdAt: prescriptions.createdAt,
       diagnosis: sql<string>`(
         SELECT ps.content FROM prescription_sections ps
-        WHERE ps.prescription_id = ${prescriptions.prescriptionId} AND ps.section_type = 'Diagnosis'
+        WHERE ps.prescription_id = ${prescriptions.prescriptionId} AND ps.section_type = 'Probational Diagnosis'
         ORDER BY ps.position LIMIT 1
       )`,
       complaint: sql<string>`(
@@ -145,22 +161,22 @@ export function getPatientVisits(patientId: number): PatientVisit[] {
     .all()
 }
 
-export function createPatient(input: PatientFormValues): Patient {
+export function createPatient(input: PatientFormValues): PatientRecord {
   const db = getDb()
   const values = normalize(patientFormSchema.parse(input))
 
-  return db.transaction((tx) => {
+  const created = db.transaction((tx) => {
     const patientCode = nextPatientCode()
-    const created = tx
+    return tx
       .insert(patients)
       .values({ patientCode, ...values })
       .returning()
       .get()
-    return created
   })
+  return toPatientRecord(created)
 }
 
-export function updatePatient(id: number, input: PatientFormValues): Patient {
+export function updatePatient(id: number, input: PatientFormValues): PatientRecord {
   const db = getDb()
   const values = normalize(patientFormSchema.parse(input))
 
@@ -174,7 +190,7 @@ export function updatePatient(id: number, input: PatientFormValues): Patient {
   if (!updated) {
     throw new Error(`Patient ${id} not found`)
   }
-  return updated
+  return toPatientRecord(updated)
 }
 
 export function deletePatient(id: number): { id: number } {

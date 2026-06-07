@@ -7,6 +7,13 @@ import type {
   PatientRecord,
   PatientVisit
 } from '../shared/patient'
+import type { PrescriptionPrintData, PrintActionResult } from '../shared/print'
+import type {
+  PresetRecord,
+  PrescriptionDetail,
+  PrescriptionFormValues,
+  PrescriptionListItem
+} from '../shared/prescription'
 
 // Custom typed API exposed to the renderer.
 const api = {
@@ -25,6 +32,34 @@ const api = {
     update: (id: number, input: PatientFormValues): Promise<PatientRecord> =>
       ipcRenderer.invoke('patients:update', id, input),
     delete: (id: number): Promise<{ id: number }> => ipcRenderer.invoke('patients:delete', id)
+  },
+  prescriptions: {
+    list: (search?: string): Promise<PrescriptionListItem[]> =>
+      ipcRenderer.invoke('prescriptions:list', search ?? ''),
+    get: (id: number): Promise<PrescriptionDetail | undefined> =>
+      ipcRenderer.invoke('prescriptions:get', id),
+    create: (input: PrescriptionFormValues): Promise<PrescriptionDetail> =>
+      ipcRenderer.invoke('prescriptions:create', input),
+    update: (id: number, input: PrescriptionFormValues): Promise<PrescriptionDetail> =>
+      ipcRenderer.invoke('prescriptions:update', id, input),
+    saveDraft: (input: PrescriptionFormValues): Promise<PrescriptionDetail> =>
+      ipcRenderer.invoke('prescriptions:saveDraft', input),
+    duplicate: (id: number): Promise<PrescriptionDetail> =>
+      ipcRenderer.invoke('prescriptions:duplicate', id)
+  },
+  presets: {
+    list: (category?: string): Promise<PresetRecord[]> => ipcRenderer.invoke('presets:list', category)
+  },
+  printing: {
+    data: (prescriptionId: number): Promise<PrescriptionPrintData> =>
+      ipcRenderer.invoke('printing:data', prescriptionId),
+    ready: (): void => ipcRenderer.send('printing:ready'),
+    preview: (prescriptionId: number): Promise<PrintActionResult> =>
+      ipcRenderer.invoke('printing:preview', prescriptionId),
+    print: (prescriptionId: number): Promise<PrintActionResult> =>
+      ipcRenderer.invoke('printing:print', prescriptionId),
+    pdf: (prescriptionId: number): Promise<PrintActionResult> =>
+      ipcRenderer.invoke('printing:pdf', prescriptionId)
   }
 }
 

@@ -1,14 +1,14 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "26ae4aa3-5061-482f-a7c2-8b559a8d77d7",
+  "id": "e8967bf2-f6a0-4830-b908-13f115d8e51b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "doctor_profile": {
       "name": "doctor_profile",
       "columns": {
-        "id": {
-          "name": "id",
+        "doctor_id": {
+          "name": "doctor_id",
           "type": "integer",
           "primaryKey": true,
           "notNull": true,
@@ -87,8 +87,8 @@
     "paper_settings": {
       "name": "paper_settings",
       "columns": {
-        "id": {
-          "name": "id",
+        "paper_setting_id": {
+          "name": "paper_setting_id",
           "type": "integer",
           "primaryKey": true,
           "notNull": true,
@@ -152,8 +152,8 @@
     "patients": {
       "name": "patients",
       "columns": {
-        "id": {
-          "name": "id",
+        "patient_id": {
+          "name": "patient_id",
           "type": "integer",
           "primaryKey": true,
           "notNull": true,
@@ -221,7 +221,9 @@
       "indexes": {
         "patients_patient_code_unique": {
           "name": "patients_patient_code_unique",
-          "columns": ["patient_code"],
+          "columns": [
+            "patient_code"
+          ],
           "isUnique": true
         }
       },
@@ -233,8 +235,8 @@
     "prescription_medicines": {
       "name": "prescription_medicines",
       "columns": {
-        "id": {
-          "name": "id",
+        "medicine_id": {
+          "name": "medicine_id",
           "type": "integer",
           "primaryKey": true,
           "notNull": true,
@@ -293,12 +295,16 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "prescription_medicines_prescription_id_prescriptions_id_fk": {
-          "name": "prescription_medicines_prescription_id_prescriptions_id_fk",
+        "prescription_medicines_prescription_id_prescriptions_prescription_id_fk": {
+          "name": "prescription_medicines_prescription_id_prescriptions_prescription_id_fk",
           "tableFrom": "prescription_medicines",
           "tableTo": "prescriptions",
-          "columnsFrom": ["prescription_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "prescription_id"
+          ],
+          "columnsTo": [
+            "prescription_id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -310,8 +316,8 @@
     "prescription_sections": {
       "name": "prescription_sections",
       "columns": {
-        "id": {
-          "name": "id",
+        "section_id": {
+          "name": "section_id",
           "type": "integer",
           "primaryKey": true,
           "notNull": true,
@@ -349,12 +355,16 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "prescription_sections_prescription_id_prescriptions_id_fk": {
-          "name": "prescription_sections_prescription_id_prescriptions_id_fk",
+        "prescription_sections_prescription_id_prescriptions_prescription_id_fk": {
+          "name": "prescription_sections_prescription_id_prescriptions_prescription_id_fk",
           "tableFrom": "prescription_sections",
           "tableTo": "prescriptions",
-          "columnsFrom": ["prescription_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "prescription_id"
+          ],
+          "columnsTo": [
+            "prescription_id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -366,8 +376,8 @@
     "prescriptions": {
       "name": "prescriptions",
       "columns": {
-        "id": {
-          "name": "id",
+        "prescription_id": {
+          "name": "prescription_id",
           "type": "integer",
           "primaryKey": true,
           "notNull": true,
@@ -414,21 +424,29 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "prescriptions_patient_id_patients_id_fk": {
-          "name": "prescriptions_patient_id_patients_id_fk",
+        "prescriptions_patient_id_patients_patient_id_fk": {
+          "name": "prescriptions_patient_id_patients_patient_id_fk",
           "tableFrom": "prescriptions",
           "tableTo": "patients",
-          "columnsFrom": ["patient_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "patient_id"
+          ],
+          "columnsTo": [
+            "patient_id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "prescriptions_template_id_templates_id_fk": {
-          "name": "prescriptions_template_id_templates_id_fk",
+        "prescriptions_template_id_templates_template_id_fk": {
+          "name": "prescriptions_template_id_templates_template_id_fk",
           "tableFrom": "prescriptions",
           "tableTo": "templates",
-          "columnsFrom": ["template_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "template_id"
+          ],
+          "columnsTo": [
+            "template_id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -440,8 +458,8 @@
     "presets": {
       "name": "presets",
       "columns": {
-        "id": {
-          "name": "id",
+        "preset_id": {
+          "name": "preset_id",
           "type": "integer",
           "primaryKey": true,
           "notNull": true,
@@ -478,8 +496,8 @@
     "templates": {
       "name": "templates",
       "columns": {
-        "id": {
-          "name": "id",
+        "template_id": {
+          "name": "template_id",
           "type": "integer",
           "primaryKey": true,
           "notNull": true,

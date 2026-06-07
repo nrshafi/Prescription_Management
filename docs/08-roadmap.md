@@ -27,7 +27,7 @@ Seed singleton rows (doctor_profile, paper_settings defaults)
 
 **Deliverable:** all data operations callable from the renderer, Zod-validated.
 
-## Phase 2 — Patients
+## Phase 2 — Patients (Build Done)
 
 ```text
 Patients list: table + search + filter + sort (ID, Name, Age, Gender, C/C, Dia)
@@ -37,7 +37,7 @@ Patient detail with visit history
 
 **Deliverable:** full patient management.
 
-## Phase 3 — Prescriptions
+## Phase 3 — Prescriptions (Build Done)
 
 ```text
 Prescription form: sections (C/C, O/E, Inv, Dia), Rx table, Advice, Follow Up
@@ -48,7 +48,7 @@ Save draft, edit, duplicate (clone → new visit_no)
 
 **Deliverable:** complete create → edit → duplicate workflow.
 
-## Phase 4 — Printing (most critical)
+## Phase 4 — Printing (most critical) (Build Done)
 
 ```text
 PrintRenderer at hidden /print route (full layout from doctor_profile)
