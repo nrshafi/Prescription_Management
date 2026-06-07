@@ -52,7 +52,7 @@ export function Sidebar({
         <div className="bg-primary flex size-8 shrink-0 items-center justify-center rounded-lg">
           <Stethoscope className="text-primary-foreground size-5" />
         </div>
-        {!collapsed && <span className="font-semibold whitespace-nowrap">RxManager</span>}
+        {!collapsed && <span className="font-semibold whitespace-nowrap">PrescriptX</span>}
       </div>
 
       <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">

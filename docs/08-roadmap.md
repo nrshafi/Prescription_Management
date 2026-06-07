@@ -59,7 +59,7 @@ Print preview
 
 **Deliverable:** clinic-ready printing + PDF export.
 
-## Phase 5 — Productivity & Settings
+## Phase 5 — Productivity & Settings (Build Done)
 
 ```text
 Presets manager (4 categories)

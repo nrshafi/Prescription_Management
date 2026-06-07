@@ -1,9 +1,9 @@
 {
-  "name": "prescription-management",
+  "name": "prescriptx",
   "version": "0.1.0",
   "description": "Offline prescription management desktop app for a single doctor",
   "main": "./out/main/index.js",
-  "author": "Prescription Management",
+  "author": "PrescriptX",
   "homepage": "https://electron-vite.org",
   "scripts": {
     "format": "biome format --write .",
