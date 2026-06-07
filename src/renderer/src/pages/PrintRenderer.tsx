@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
-import type { PrescriptionPrintData } from '../../../shared/print'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import type { PrescriptionSectionType } from '../../../shared/prescription'
+import type { PrescriptionPrintData } from '../../../shared/print'
 
 const SECTION_LABELS: Record<PrescriptionSectionType, string> = {
   'Chief Complaint': 'C/C',
@@ -40,22 +40,55 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
   useEffect(() => {
     if (!prescriptionId) {
       setError('Missing prescription id.')
+      return
+    }
+
+    let cancelled = false
+    window.api.printing
+      .data(prescriptionId)
+      .then((loaded) => {
+        if (!cancelled) {
+          setData(loaded)
+          setError(null)
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Could not load print data.')
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [prescriptionId])
+
+  useLayoutEffect(() => {
+    if (!prescriptionId) {
       window.api.printing.ready()
       return
     }
 
-    window.api.printing
-      .data(prescriptionId)
-      .then((loaded) => {
-        setData(loaded)
-        setError(null)
-        requestAnimationFrame(() => window.api.printing.ready())
+    if (error) {
+      window.api.printing.ready()
+      return
+    }
+
+    if (!data) return
+
+    let cancelled = false
+    void (async () => {
+      await document.fonts.ready
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
       })
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : 'Could not load print data.')
-        window.api.printing.ready()
-      })
-  }, [prescriptionId])
+      if (!cancelled) window.api.printing.ready()
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [prescriptionId, data, error])
 
   const paper = data?.paperSettings
   const pageStyle = paper
@@ -73,8 +106,13 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
 
       @media print {
         body { background: white; }
-        .print-shell { padding: 0; }
-        .print-sheet { width: auto; min-height: auto; padding: 0; box-shadow: none; }
+        .print-shell { padding: 0; background: white; }
+        .print-sheet {
+          width: ${paper.widthMm}mm;
+          min-height: auto;
+          padding: ${paper.marginTop}mm ${paper.marginRight}mm ${paper.marginBottom}mm ${paper.marginLeft}mm;
+          box-shadow: none;
+        }
       }
     `
     : ''
@@ -82,7 +120,9 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
   if (error) {
     return (
       <div className="print-shell min-h-screen bg-neutral-100 p-8 text-neutral-950">
-        <div className="mx-auto max-w-xl rounded-md bg-white p-8 shadow">{error}</div>
+        <div data-print-content className="mx-auto max-w-xl rounded-md bg-white p-8 text-neutral-950 shadow">
+          {error}
+        </div>
       </div>
     )
   }
@@ -90,7 +130,9 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
   if (!data) {
     return (
       <div className="print-shell min-h-screen bg-neutral-100 p-8 text-neutral-950">
-        <div className="mx-auto max-w-xl rounded-md bg-white p-8 shadow">Preparing print preview...</div>
+        <div className="mx-auto max-w-xl rounded-md bg-white p-8 shadow">
+          Preparing print preview...
+        </div>
       </div>
     )
   }
@@ -102,7 +144,10 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
   return (
     <div className="print-shell min-h-screen bg-neutral-100 p-6 font-serif text-neutral-950 print:bg-white">
       <style>{pageStyle}</style>
-      <article className="print-sheet mx-auto bg-white shadow-xl print:shadow-none">
+      <article
+        data-print-content
+        className="print-sheet mx-auto bg-white text-neutral-950 shadow-xl print:shadow-none"
+      >
         <header className="border-b-2 border-neutral-900 pb-4">
           <div className="flex items-start justify-between gap-6">
             <div>
@@ -110,7 +155,9 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
               <h1 className="mt-2 font-sans text-3xl font-bold tracking-tight">
                 {doctorProfile.name || 'Doctor Profile'}
               </h1>
-              {doctorProfile.degrees && <p className="mt-1 text-sm font-semibold">{doctorProfile.degrees}</p>}
+              {doctorProfile.degrees && (
+                <p className="mt-1 text-sm font-semibold">{doctorProfile.degrees}</p>
+              )}
               {doctorProfile.speciality && <p className="text-sm">{doctorProfile.speciality}</p>}
             </div>
             <div className="max-w-[45%] text-right text-xs leading-5">
@@ -132,7 +179,8 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
             <span className="font-semibold">Patient ID:</span> {prescription.patientCode}
           </p>
           <p>
-            <span className="font-semibold">Pres ID:</span> {prescription.id} / Visit {prescription.visitNo}
+            <span className="font-semibold">Pres ID:</span> {prescription.id} / Visit{' '}
+            {prescription.visitNo}
           </p>
           <p>
             <span className="font-semibold">Age:</span> {valueOrDash(prescription.age)}
@@ -151,7 +199,9 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
         <main className="mt-5 grid grid-cols-[34%_1fr] gap-6">
           <aside className="space-y-4 border-r border-neutral-300 pr-4 text-sm">
             {sections
-              .filter((section) => section.sectionType !== 'Advice' && section.sectionType !== 'Follow Up')
+              .filter(
+                (section) => section.sectionType !== 'Advice' && section.sectionType !== 'Follow Up'
+              )
               .map((section) => (
                 <section key={section.id}>
                   <h2 className="font-sans text-xs font-bold tracking-[0.18em] uppercase">
@@ -183,7 +233,9 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
                     <td className="py-2 pr-3">
                       <span className="mr-2 font-semibold">{index + 1}.</span>
                       {medicine.medicineName}
-                      {medicine.notes && <p className="ml-6 text-xs italic text-neutral-600">{medicine.notes}</p>}
+                      {medicine.notes && (
+                        <p className="ml-6 text-xs italic text-neutral-600">{medicine.notes}</p>
+                      )}
                     </td>
                     <td className="py-2 pr-3">{valueOrDash(medicine.dosage)}</td>
                     <td className="py-2 pr-3">{valueOrDash(medicine.frequency)}</td>
@@ -194,7 +246,9 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
             </table>
 
             {sections
-              .filter((section) => section.sectionType === 'Advice' || section.sectionType === 'Follow Up')
+              .filter(
+                (section) => section.sectionType === 'Advice' || section.sectionType === 'Follow Up'
+              )
               .map((section) => (
                 <section key={section.id} className="mt-6 text-sm">
                   <h2 className="font-sans text-xs font-bold tracking-[0.18em] uppercase">
@@ -211,7 +265,9 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
         </main>
 
         <footer className="mt-16 flex justify-end">
-          <div className="min-w-44 border-t border-neutral-900 pt-2 text-center text-xs">Doctor Signature</div>
+          <div className="min-w-44 border-t border-neutral-900 pt-2 text-center text-xs">
+            Doctor Signature
+          </div>
         </footer>
       </article>
     </div>

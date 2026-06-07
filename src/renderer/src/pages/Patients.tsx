@@ -140,7 +140,7 @@ export function Patients(): React.JSX.Element {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Patients</h1>
@@ -176,7 +176,7 @@ export function Patients(): React.JSX.Element {
         </Select>
       </div>
 
-      <div className="rounded-md border">
+      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
         <Table>
           <TableHeader>
             <TableRow>

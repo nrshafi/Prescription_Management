@@ -1,5 +1,9 @@
 import { eq } from 'drizzle-orm'
-import type { DoctorProfileRecord, PaperSettingsRecord, PrescriptionPrintData } from '../../shared/print'
+import type {
+  DoctorProfileRecord,
+  PaperSettingsRecord,
+  PrescriptionPrintData
+} from '../../shared/print'
 import { getDb } from '../db/client'
 import { doctorProfile, paperSettings } from '../db/schema'
 import { getPrescription } from './prescriptions'
@@ -46,11 +50,7 @@ export function getDoctorProfileForPrint(): DoctorProfileRecord {
 }
 
 export function getPaperSettingsForPrint(): PaperSettingsRecord {
-  const row = getDb()
-    .select()
-    .from(paperSettings)
-    .where(eq(paperSettings.paperSettingId, 1))
-    .get()
+  const row = getDb().select().from(paperSettings).where(eq(paperSettings.paperSettingId, 1)).get()
   if (!row) return DEFAULT_PAPER_SETTINGS
 
   return {

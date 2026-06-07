@@ -7,19 +7,19 @@ import type {
   PatientVisit
 } from '../shared/patient'
 import type {
+  MedicineSuggestion,
+  PrescriptionDetail,
+  PrescriptionFormValues,
+  PrescriptionListItem,
+  PresetFormValues,
+  PresetRecord
+} from '../shared/prescription'
+import type {
   DoctorProfileRecord,
   PaperSettingsRecord,
   PrescriptionPrintData,
   PrintActionResult
 } from '../shared/print'
-import type {
-  MedicineSuggestion,
-  PresetFormValues,
-  PresetRecord,
-  PrescriptionDetail,
-  PrescriptionFormValues,
-  PrescriptionListItem
-} from '../shared/prescription'
 import type {
   BackupActionResult,
   DoctorProfileFormValues,

@@ -74,7 +74,10 @@ export function Settings(): React.JSX.Element {
   useEffect(() => {
     localStorage.setItem('theme', theme)
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    document.documentElement.classList.toggle('dark', theme === 'dark' || (theme === 'system' && prefersDark))
+    document.documentElement.classList.toggle(
+      'dark',
+      theme === 'dark' || (theme === 'system' && prefersDark)
+    )
   }, [theme])
 
   async function saveDoctor(): Promise<void> {
@@ -131,10 +134,12 @@ export function Settings(): React.JSX.Element {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-3xl space-y-4 p-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground text-sm">Doctor identity, print paper, theme, and offline safety tools.</p>
+        <p className="text-muted-foreground text-sm">
+          Doctor identity, print paper, theme, and offline safety tools.
+        </p>
       </div>
 
       {error && <p className="text-destructive text-sm">{error}</p>}
@@ -148,22 +153,62 @@ export function Settings(): React.JSX.Element {
           </CardHeader>
           <CardContent className="grid gap-3">
             <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Name" value={doctor.name ?? ''} onChange={(value) => setDoctor((current) => ({ ...current, name: value }))} />
-              <Field label="Degrees" value={doctor.degrees ?? ''} onChange={(value) => setDoctor((current) => ({ ...current, degrees: value }))} />
-              <Field label="Speciality" value={doctor.speciality ?? ''} onChange={(value) => setDoctor((current) => ({ ...current, speciality: value }))} />
-              <Field label="Phone" value={doctor.phone ?? ''} onChange={(value) => setDoctor((current) => ({ ...current, phone: value }))} />
-              <Field label="Email" value={doctor.email ?? ''} onChange={(value) => setDoctor((current) => ({ ...current, email: value }))} />
-              <Field label="Logo path" value={doctor.logoPath ?? ''} onChange={(value) => setDoctor((current) => ({ ...current, logoPath: value }))} />
+              <Field
+                label="Name"
+                value={doctor.name ?? ''}
+                onChange={(value) => setDoctor((current) => ({ ...current, name: value }))}
+              />
+              <Field
+                label="Degrees"
+                value={doctor.degrees ?? ''}
+                onChange={(value) => setDoctor((current) => ({ ...current, degrees: value }))}
+              />
+              <Field
+                label="Speciality"
+                value={doctor.speciality ?? ''}
+                onChange={(value) => setDoctor((current) => ({ ...current, speciality: value }))}
+              />
+              <Field
+                label="Phone"
+                value={doctor.phone ?? ''}
+                onChange={(value) => setDoctor((current) => ({ ...current, phone: value }))}
+              />
+              <Field
+                label="Email"
+                value={doctor.email ?? ''}
+                onChange={(value) => setDoctor((current) => ({ ...current, email: value }))}
+              />
+              <Field
+                label="Logo path"
+                value={doctor.logoPath ?? ''}
+                onChange={(value) => setDoctor((current) => ({ ...current, logoPath: value }))}
+              />
             </div>
             <div className="grid gap-2">
               <Label>Address</Label>
-              <Textarea value={doctor.address ?? ''} onChange={(event) => setDoctor((current) => ({ ...current, address: event.target.value }))} rows={3} />
+              <Textarea
+                value={doctor.address ?? ''}
+                onChange={(event) =>
+                  setDoctor((current) => ({ ...current, address: event.target.value }))
+                }
+                rows={3}
+              />
             </div>
             <div className="grid gap-2">
               <Label>Chamber</Label>
-              <Textarea value={doctor.chamber ?? ''} onChange={(event) => setDoctor((current) => ({ ...current, chamber: event.target.value }))} rows={3} />
+              <Textarea
+                value={doctor.chamber ?? ''}
+                onChange={(event) =>
+                  setDoctor((current) => ({ ...current, chamber: event.target.value }))
+                }
+                rows={3}
+              />
             </div>
-            <Field label="Signature path" value={doctor.signaturePath ?? ''} onChange={(value) => setDoctor((current) => ({ ...current, signaturePath: value }))} />
+            <Field
+              label="Signature path"
+              value={doctor.signaturePath ?? ''}
+              onChange={(value) => setDoctor((current) => ({ ...current, signaturePath: value }))}
+            />
             <Button onClick={saveDoctor}>
               <Save className="size-4" /> Save Doctor Profile
             </Button>
@@ -181,7 +226,11 @@ export function Settings(): React.JSX.Element {
                 {(Object.keys(paper) as (keyof PaperSettingsFormValues)[]).map((field) => (
                   <div key={field} className="grid gap-2">
                     <Label>{field}</Label>
-                    <Input type="number" value={paper[field]} onChange={(event) => updatePaper(field, event.target.value)} />
+                    <Input
+                      type="number"
+                      value={paper[field]}
+                      onChange={(event) => updatePaper(field, event.target.value)}
+                    />
                   </div>
                 ))}
               </div>
@@ -198,7 +247,11 @@ export function Settings(): React.JSX.Element {
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
               {['system', 'light', 'dark'].map((mode) => (
-                <Button key={mode} variant={theme === mode ? 'default' : 'outline'} onClick={() => setTheme(mode)}>
+                <Button
+                  key={mode}
+                  variant={theme === mode ? 'default' : 'outline'}
+                  onClick={() => setTheme(mode)}
+                >
                   {mode[0].toUpperCase() + mode.slice(1)}
                 </Button>
               ))}

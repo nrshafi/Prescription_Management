@@ -32,4 +32,6 @@ export interface PrescriptionPrintData {
 export interface PrintActionResult {
   ok: boolean
   path?: string
+  message?: string
+  fallbackPreview?: boolean
 }

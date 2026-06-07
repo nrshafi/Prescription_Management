@@ -2,8 +2,8 @@ import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app, dialog, ipcMain } from 'electron'
 import type { PatientFormValues, PatientQuery } from '../../shared/patient'
+import type { PrescriptionFormValues, PresetFormValues } from '../../shared/prescription'
 import type { PrintActionResult } from '../../shared/print'
-import type { PresetFormValues, PrescriptionFormValues } from '../../shared/prescription'
 import type { DoctorProfileFormValues, PaperSettingsFormValues } from '../../shared/settings'
 import { getDatabasePath } from '../db/client'
 import { createPrintWindow, printPageSize } from '../print-window'
@@ -25,9 +25,10 @@ import {
   listMedicineSuggestions,
   listPrescriptions,
   listPresets,
-  updatePreset,
-  updatePrescription
+  updatePrescription,
+  updatePreset
 } from '../services/prescriptions'
+import { assertPrintersAvailable, formatPrintSpoolerError } from '../services/print-spooler'
 import { getPaperSettingsForPrint, getPrescriptionPrintData } from '../services/printing'
 import {
   exportBackup,
@@ -87,33 +88,53 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('settings:exportBackup', () => exportBackup())
   ipcMain.handle('settings:importBackup', () => importBackup())
 
-  ipcMain.handle('printing:data', (_e, prescriptionId: number) => getPrescriptionPrintData(prescriptionId))
-  ipcMain.handle('printing:preview', async (_e, prescriptionId: number): Promise<PrintActionResult> => {
-    await createPrintWindow({ prescriptionId, show: true })
-    return { ok: true }
-  })
-  ipcMain.handle('printing:print', async (_e, prescriptionId: number): Promise<PrintActionResult> => {
-    const paper = getPaperSettingsForPrint()
-    const printWindow = await createPrintWindow({ prescriptionId, show: false })
+  ipcMain.handle('printing:data', (_e, prescriptionId: number) =>
+    getPrescriptionPrintData(prescriptionId)
+  )
+  ipcMain.handle(
+    'printing:preview',
+    async (_e, prescriptionId: number): Promise<PrintActionResult> => {
+      await createPrintWindow({ prescriptionId, show: true })
+      return { ok: true }
+    }
+  )
+  ipcMain.handle(
+    'printing:print',
+    async (_e, prescriptionId: number): Promise<PrintActionResult> => {
+      const paper = getPaperSettingsForPrint()
+      const printWindow = await createPrintWindow({ prescriptionId, show: false })
 
-    return new Promise((resolve, reject) => {
-      printWindow.webContents.print(
-        {
-          silent: false,
-          printBackground: true,
-          pageSize: printPageSize(paper)
-        },
-        (success, failureReason) => {
-          printWindow.close()
-          if (!success) {
-            reject(new Error(failureReason || 'Printing failed.'))
-            return
+      const spooler = await assertPrintersAvailable(printWindow.webContents)
+      if (!spooler.ok) {
+        printWindow.close()
+        await createPrintWindow({ prescriptionId, show: true })
+        return { ok: false, message: spooler.message, fallbackPreview: true }
+      }
+
+      return new Promise((resolve) => {
+        printWindow.webContents.print(
+          {
+            silent: false,
+            printBackground: true,
+            pageSize: printPageSize(paper)
+          },
+          (success, failureReason) => {
+            printWindow.close()
+            if (!success) {
+              const message = formatPrintSpoolerError(
+                failureReason ? new Error(failureReason) : new Error('Printing failed.')
+              )
+              void createPrintWindow({ prescriptionId, show: true }).then(() => {
+                resolve({ ok: false, message, fallbackPreview: true })
+              })
+              return
+            }
+            resolve({ ok: true })
           }
-          resolve({ ok: true })
-        }
-      )
-    })
-  })
+        )
+      })
+    }
+  )
   ipcMain.handle('printing:pdf', async (_e, prescriptionId: number): Promise<PrintActionResult> => {
     const paper = getPaperSettingsForPrint()
     const defaultPath = join(app.getPath('documents'), `prescription-${prescriptionId}.pdf`)
@@ -125,16 +146,18 @@ export function registerIpcHandlers(): void {
 
     if (target.canceled || !target.filePath) return { ok: false }
 
-    const printWindow = await createPrintWindow({ prescriptionId, show: false })
+    const printWindow = await createPrintWindow({
+      prescriptionId,
+      show: false,
+      paintForPdf: true
+    })
     try {
       const pdf = await printWindow.webContents.printToPDF({
         printBackground: true,
+        preferCSSPageSize: true,
         pageSize: printPageSize(paper),
         margins: {
-          top: 0,
-          bottom: 0,
-          left: 0,
-          right: 0
+          marginType: 'none'
         }
       })
 

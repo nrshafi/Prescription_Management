@@ -12,7 +12,14 @@ export const patientFormSchema = z.object({
 
 export type PatientFormValues = z.infer<typeof patientFormSchema>
 
-export const PATIENT_SORT_FIELDS = ['id', 'name', 'age', 'gender', 'complaint', 'diagnosis'] as const
+export const PATIENT_SORT_FIELDS = [
+  'id',
+  'name',
+  'age',
+  'gender',
+  'complaint',
+  'diagnosis'
+] as const
 export type PatientSortField = (typeof PATIENT_SORT_FIELDS)[number]
 
 export const SORT_DIRECTIONS = ['asc', 'desc'] as const

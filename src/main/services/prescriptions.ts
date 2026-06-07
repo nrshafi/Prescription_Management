@@ -1,22 +1,22 @@
-import { and, desc, eq, like, or, sql, type SQL } from 'drizzle-orm'
+import { and, desc, eq, like, or, type SQL, sql } from 'drizzle-orm'
 import {
   type MedicineSuggestion,
-  type PresetCategory,
-  type PresetFormValues,
-  type PresetRecord,
-  presetFormSchema,
+  type PRESCRIPTION_SECTION_TYPES,
   type PrescriptionDetail,
   type PrescriptionFormValues,
   type PrescriptionListItem,
+  type PresetCategory,
+  type PresetFormValues,
+  type PresetRecord,
   prescriptionFormSchema,
-  type PRESCRIPTION_SECTION_TYPES
+  presetFormSchema
 } from '../../shared/prescription'
 import { getDb } from '../db/client'
 import {
   patients,
   prescriptionMedicines,
-  prescriptions,
   prescriptionSections,
+  prescriptions,
   presets
 } from '../db/schema'
 
@@ -76,8 +76,12 @@ function replacePrescriptionContent(
   values: PrescriptionFormValues,
   db: Db | Tx = getDb()
 ): void {
-  db.delete(prescriptionSections).where(eq(prescriptionSections.prescriptionId, prescriptionId)).run()
-  db.delete(prescriptionMedicines).where(eq(prescriptionMedicines.prescriptionId, prescriptionId)).run()
+  db.delete(prescriptionSections)
+    .where(eq(prescriptionSections.prescriptionId, prescriptionId))
+    .run()
+  db.delete(prescriptionMedicines)
+    .where(eq(prescriptionMedicines.prescriptionId, prescriptionId))
+    .run()
 
   const sections = values.sections.map((section) => ({
     prescriptionId,
@@ -356,7 +360,10 @@ export function listMedicineSuggestions(search = '', limit = 8): MedicineSuggest
       lastUsedAt: sql<string | null>`MAX(${prescriptions.createdAt})`
     })
     .from(prescriptionMedicines)
-    .innerJoin(prescriptions, eq(prescriptionMedicines.prescriptionId, prescriptions.prescriptionId))
+    .innerJoin(
+      prescriptions,
+      eq(prescriptionMedicines.prescriptionId, prescriptions.prescriptionId)
+    )
     .where(and(...filters))
     .groupBy(prescriptionMedicines.medicineName)
     .orderBy(sql`MAX(${prescriptions.createdAt}) DESC`, sql`COUNT(*) DESC`)

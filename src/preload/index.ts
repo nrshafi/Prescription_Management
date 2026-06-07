@@ -8,19 +8,19 @@ import type {
   PatientVisit
 } from '../shared/patient'
 import type {
+  MedicineSuggestion,
+  PrescriptionDetail,
+  PrescriptionFormValues,
+  PrescriptionListItem,
+  PresetFormValues,
+  PresetRecord
+} from '../shared/prescription'
+import type {
   DoctorProfileRecord,
   PaperSettingsRecord,
   PrescriptionPrintData,
   PrintActionResult
 } from '../shared/print'
-import type {
-  MedicineSuggestion,
-  PresetFormValues,
-  PresetRecord,
-  PrescriptionDetail,
-  PrescriptionFormValues,
-  PrescriptionListItem
-} from '../shared/prescription'
 import type {
   BackupActionResult,
   DoctorProfileFormValues,
@@ -65,7 +65,8 @@ const api = {
       ipcRenderer.invoke('prescriptions:medicineSuggestions', search ?? '')
   },
   presets: {
-    list: (category?: string): Promise<PresetRecord[]> => ipcRenderer.invoke('presets:list', category),
+    list: (category?: string): Promise<PresetRecord[]> =>
+      ipcRenderer.invoke('presets:list', category),
     create: (input: PresetFormValues): Promise<PresetRecord> =>
       ipcRenderer.invoke('presets:create', input),
     update: (id: number, input: PresetFormValues): Promise<PresetRecord> =>

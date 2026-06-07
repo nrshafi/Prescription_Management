@@ -12,6 +12,7 @@ export const PRESCRIPTION_SECTION_TYPES = [
 export type PrescriptionSectionType = (typeof PRESCRIPTION_SECTION_TYPES)[number]
 
 export const PRESET_CATEGORIES = [
+  'Chief Complaint',
   'Medicine',
   'Advice',
   'Investigations',
@@ -33,7 +34,12 @@ export const prescriptionSectionInputSchema = z.object({
 })
 
 export const prescriptionMedicineInputSchema = z.object({
-  medicineName: z.string().trim().max(160, 'Medicine name is too long').optional().or(z.literal('')),
+  medicineName: z
+    .string()
+    .trim()
+    .max(160, 'Medicine name is too long')
+    .optional()
+    .or(z.literal('')),
   dosage: z.string().trim().max(120, 'Dosage is too long').optional().or(z.literal('')),
   frequency: z.string().trim().max(120, 'Frequency is too long').optional().or(z.literal('')),
   duration: z.string().trim().max(120, 'Duration is too long').optional().or(z.literal('')),
