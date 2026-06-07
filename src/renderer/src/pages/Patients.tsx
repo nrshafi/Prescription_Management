@@ -71,6 +71,7 @@ function SortableHeader({
 export function Patients(): React.JSX.Element {
   const [rows, setRows] = useState<PatientListItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [gender, setGender] = useState<string>(ALL_GENDERS)
   const [sortBy, setSortBy] = useState<PatientSortField>('id')
@@ -83,6 +84,7 @@ export function Patients(): React.JSX.Element {
 
   const load = useCallback(async () => {
     setLoading(true)
+    setError(null)
     try {
       const data = await window.api.patients.list({
         search,
@@ -91,6 +93,8 @@ export function Patients(): React.JSX.Element {
         sortDir
       })
       setRows(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not load patients.')
     } finally {
       setLoading(false)
     }
@@ -204,8 +208,20 @@ export function Patients(): React.JSX.Element {
                 dir={sortDir}
                 onSort={handleSort}
               />
-              <TableHead>C/C</TableHead>
-              <TableHead>Dia</TableHead>
+              <SortableHeader
+                label="C/C"
+                field="complaint"
+                active={sortBy === 'complaint'}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableHeader
+                label="Dia"
+                field="diagnosis"
+                active={sortBy === 'diagnosis'}
+                dir={sortDir}
+                onSort={handleSort}
+              />
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -214,6 +230,12 @@ export function Patients(): React.JSX.Element {
               <TableRow>
                 <TableCell colSpan={7} className="text-muted-foreground py-8 text-center">
                   Loading…
+                </TableCell>
+              </TableRow>
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-destructive py-8 text-center">
+                  {error}
                 </TableCell>
               </TableRow>
             ) : rows.length === 0 ? (
@@ -236,17 +258,15 @@ export function Patients(): React.JSX.Element {
                     {row.lastDiagnosis || '—'}
                   </TableCell>
                   <TableCell className="text-right">
-                    <button
-                      type="button"
-                      className="flex justify-end gap-1 border-none bg-transparent p-0"
-                      onClick={(e) => e.stopPropagation()}
-                      onKeyDown={(e) => e.stopPropagation()}
-                    >
+                    <span className="flex justify-end gap-1">
                       <Button
                         variant="ghost"
                         size="icon"
                         aria-label="Edit"
-                        onClick={() => openEdit(row)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          openEdit(row)
+                        }}
                       >
                         <Pencil className="size-4" />
                       </Button>
@@ -254,11 +274,14 @@ export function Patients(): React.JSX.Element {
                         variant="ghost"
                         size="icon"
                         aria-label="Delete"
-                        onClick={() => setDeleting(row)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setDeleting(row)
+                        }}
                       >
                         <Trash2 className="size-4" />
                       </Button>
-                    </button>
+                    </span>
                   </TableCell>
                 </TableRow>
               ))

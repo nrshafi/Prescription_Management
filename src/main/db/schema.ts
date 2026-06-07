@@ -7,7 +7,7 @@ const timestamps = {
 }
 
 export const doctorProfile = sqliteTable('doctor_profile', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+  doctorId: integer('doctor_id').primaryKey({ autoIncrement: true }),
   name: text('name'),
   degrees: text('degrees'),
   speciality: text('speciality'),
@@ -20,7 +20,7 @@ export const doctorProfile = sqliteTable('doctor_profile', {
 })
 
 export const patients = sqliteTable('patients', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+  patientId: integer('patient_id').primaryKey({ autoIncrement: true }),
   patientCode: text('patient_code').notNull().unique(),
   name: text('name').notNull(),
   age: text('age'),
@@ -31,37 +31,37 @@ export const patients = sqliteTable('patients', {
 })
 
 export const templates = sqliteTable('templates', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+  templateId: integer('template_id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull(),
   paperSize: text('paper_size').notNull().default('A4'),
   layoutJson: text('layout_json')
 })
 
 export const prescriptions = sqliteTable('prescriptions', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+  prescriptionId: integer('prescription_id').primaryKey({ autoIncrement: true }),
   patientId: integer('patient_id')
     .notNull()
-    .references(() => patients.id, { onDelete: 'cascade' }),
-  templateId: integer('template_id').references(() => templates.id),
+    .references(() => patients.patientId, { onDelete: 'cascade' }),
+  templateId: integer('template_id').references(() => templates.templateId),
   visitNo: integer('visit_no').notNull().default(1),
   ...timestamps
 })
 
 export const prescriptionSections = sqliteTable('prescription_sections', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+  sectionId: integer('section_id').primaryKey({ autoIncrement: true }),
   prescriptionId: integer('prescription_id')
     .notNull()
-    .references(() => prescriptions.id, { onDelete: 'cascade' }),
+    .references(() => prescriptions.prescriptionId, { onDelete: 'cascade' }),
   sectionType: text('section_type').notNull(),
   content: text('content'),
   position: integer('position').notNull().default(0)
 })
 
 export const prescriptionMedicines = sqliteTable('prescription_medicines', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+  medicineId: integer('medicine_id').primaryKey({ autoIncrement: true }),
   prescriptionId: integer('prescription_id')
     .notNull()
-    .references(() => prescriptions.id, { onDelete: 'cascade' }),
+    .references(() => prescriptions.prescriptionId, { onDelete: 'cascade' }),
   medicineName: text('medicine_name').notNull(),
   dosage: text('dosage'),
   frequency: text('frequency'),
@@ -71,14 +71,14 @@ export const prescriptionMedicines = sqliteTable('prescription_medicines', {
 })
 
 export const presets = sqliteTable('presets', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+  presetId: integer('preset_id').primaryKey({ autoIncrement: true }),
   category: text('category').notNull(),
   title: text('title').notNull(),
   content: text('content')
 })
 
 export const paperSettings = sqliteTable('paper_settings', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+  paperSettingId: integer('paper_setting_id').primaryKey({ autoIncrement: true }),
   widthMm: real('width_mm').notNull().default(210),
   heightMm: real('height_mm').notNull().default(297),
   marginTop: real('margin_top').notNull().default(10),

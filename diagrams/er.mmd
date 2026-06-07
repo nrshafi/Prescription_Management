@@ -1,0 +1,75 @@
+erDiagram
+    doctor_profile {
+        int doctor_id PK
+        text name
+        text degrees
+        text speciality
+        text phone
+        text email
+        text address
+        text chamber
+        text logo_path
+        text signature_path
+    }
+    patients {
+        int patient_id PK
+        text patient_code UK
+        text name
+        text age
+        text gender
+        text phone
+        text address
+        text created_at
+        text updated_at
+    }
+    templates {
+        int template_id PK
+        text name
+        text paper_size
+        text layout_json
+    }
+    prescriptions {
+        int prescription_id PK
+        int patient_id FK
+        int template_id FK
+        int visit_no
+        text created_at
+        text updated_at
+    }
+    prescription_sections {
+        int section_id PK
+        int prescription_id FK
+        text section_type
+        text content
+        int position
+    }
+    prescription_medicines {
+        int medicine_id PK
+        int prescription_id FK
+        text medicine_name
+        text dosage
+        text frequency
+        text duration
+        text notes
+        int position
+    }
+    presets {
+        int preset_id PK
+        text category
+        text title
+        text content
+    }
+    paper_settings {
+        int paper_setting_id PK
+        real width_mm
+        real height_mm
+        real margin_top
+        real margin_bottom
+        real margin_left
+        real margin_right
+    }
+
+    patients ||--o{ prescriptions : "has"
+    templates |o--o{ prescriptions : "styled by"
+    prescriptions ||--o{ prescription_sections : "contains"
+    prescriptions ||--o{ prescription_medicines : "prescribes"

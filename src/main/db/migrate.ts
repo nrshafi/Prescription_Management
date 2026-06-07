@@ -22,8 +22,8 @@ export function runMigrations(): void {
 
 export function ensureSingletonRows(): void {
   const db = getDb()
-  const existing = db.select().from(paperSettings).where(eq(paperSettings.id, 1)).all()
+  const existing = db.select().from(paperSettings).where(eq(paperSettings.paperSettingId, 1)).all()
   if (existing.length === 0) {
-    db.insert(paperSettings).values({ id: 1 }).run()
+    db.insert(paperSettings).values({ paperSettingId: 1 }).run()
   }
 }

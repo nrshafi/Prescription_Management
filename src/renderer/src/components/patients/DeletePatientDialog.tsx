@@ -22,12 +22,16 @@ export function DeletePatientDialog({
   onConfirm
 }: DeletePatientDialogProps): React.JSX.Element {
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   async function handleConfirm(): Promise<void> {
     setBusy(true)
+    setError(null)
     try {
       await onConfirm()
       onOpenChange(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not delete patient.')
     } finally {
       setBusy(false)
     }
@@ -46,8 +50,9 @@ export function DeletePatientDialog({
             . This cannot be undone.
           </DialogDescription>
         </DialogHeader>
+        {error && <p className="text-destructive text-sm">{error}</p>}
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
             Cancel
           </Button>
           <Button variant="destructive" onClick={handleConfirm} disabled={busy}>

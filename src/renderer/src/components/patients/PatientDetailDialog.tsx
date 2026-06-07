@@ -33,14 +33,21 @@ export function PatientDetailDialog({
   onOpenChange
 }: PatientDetailDialogProps): React.JSX.Element {
   const [loaded, setLoaded] = useState<{ patientId: number; visits: PatientVisit[] } | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const patientId = patient?.id
 
   useEffect(() => {
     if (patientId === undefined) return
     let active = true
-    window.api.patients.visits(patientId).then((visits) => {
-      if (active) setLoaded({ patientId, visits })
-    })
+    setError(null)
+    window.api.patients
+      .visits(patientId)
+      .then((visits) => {
+        if (active) setLoaded({ patientId, visits })
+      })
+      .catch((err) => {
+        if (active) setError(err instanceof Error ? err.message : 'Could not load visits.')
+      })
     return () => {
       active = false
     }
@@ -67,7 +74,9 @@ export function PatientDetailDialog({
 
         <div>
           <h3 className="mb-2 text-sm font-medium">Visit History</h3>
-          {visits === null ? (
+          {error ? (
+            <p className="text-destructive text-sm">{error}</p>
+          ) : visits === null ? (
             <p className="text-muted-foreground text-sm">Loading…</p>
           ) : visits.length === 0 ? (
             <p className="text-muted-foreground text-sm">No prescriptions yet.</p>
@@ -79,7 +88,8 @@ export function PatientDetailDialog({
                     <TableHead>Visit</TableHead>
                     <TableHead>Pres. ID</TableHead>
                     <TableHead>Date</TableHead>
-                    <TableHead>Diagnosis</TableHead>
+                    <TableHead>C/C</TableHead>
+                    <TableHead>Dia</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -88,7 +98,10 @@ export function PatientDetailDialog({
                       <TableCell>#{v.visitNo}</TableCell>
                       <TableCell className="text-muted-foreground">{v.id}</TableCell>
                       <TableCell>{formatDate(v.createdAt)}</TableCell>
-                      <TableCell className="max-w-xs truncate" title={v.diagnosis ?? ''}>
+                      <TableCell className="max-w-[12rem] truncate" title={v.complaint ?? ''}>
+                        {v.complaint || '—'}
+                      </TableCell>
+                      <TableCell className="max-w-[12rem] truncate" title={v.diagnosis ?? ''}>
                         {v.diagnosis || '—'}
                       </TableCell>
                     </TableRow>

@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import {
@@ -49,6 +49,7 @@ export function PatientFormDialog({
   onSubmit
 }: PatientFormDialogProps): React.JSX.Element {
   const isEdit = Boolean(patient)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const {
     register,
@@ -63,6 +64,7 @@ export function PatientFormDialog({
 
   useEffect(() => {
     if (open) {
+      setSubmitError(null)
       reset(
         patient
           ? {
@@ -78,8 +80,13 @@ export function PatientFormDialog({
   }, [open, patient, reset])
 
   async function submit(values: PatientFormValues): Promise<void> {
-    await onSubmit(values)
-    onOpenChange(false)
+    setSubmitError(null)
+    try {
+      await onSubmit(values)
+      onOpenChange(false)
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Could not save patient.')
+    }
   }
 
   return (
@@ -145,8 +152,15 @@ export function PatientFormDialog({
             {errors.address && <p className="text-destructive text-xs">{errors.address.message}</p>}
           </div>
 
+          {submitError && <p className="text-destructive text-sm">{submitError}</p>}
+
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>

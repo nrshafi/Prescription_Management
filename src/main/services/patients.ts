@@ -40,23 +40,16 @@ function normalize(values: PatientFormValues): {
   }
 }
 
-const sortColumns = {
-  id: patients.id,
-  name: patients.name,
-  age: patients.age,
-  gender: patients.gender
-} as const
-
 // Subquery helpers: latest Diagnosis / Chief Complaint section content per patient.
 function latestSectionExpr(sectionType: string): SQL<string> {
   return sql<string>`(
     SELECT ps.content
     FROM prescription_sections ps
-    JOIN prescriptions p ON p.id = ps.prescription_id
-    WHERE p.patient_id = ${patients.id}
+    JOIN prescriptions p ON p.prescription_id = ps.prescription_id
+    WHERE p.patient_id = ${patients.patientId}
       AND ps.section_type = ${sectionType}
       AND ps.content IS NOT NULL AND ps.content <> ''
-    ORDER BY p.visit_no DESC, p.id DESC
+    ORDER BY p.visit_no DESC, p.prescription_id DESC
     LIMIT 1
   )`
 }
@@ -64,6 +57,8 @@ function latestSectionExpr(sectionType: string): SQL<string> {
 export function listPatients(query: PatientQuery = {}): PatientListItem[] {
   const db = getDb()
   const { search, gender, sortBy, sortDir } = patientQuerySchema.parse(query)
+  const lastDiagnosis = latestSectionExpr('Diagnosis')
+  const lastComplaint = latestSectionExpr('Chief Complaint')
 
   const filters: SQL[] = []
   if (search) {
@@ -73,10 +68,10 @@ export function listPatients(query: PatientQuery = {}): PatientListItem[] {
         like(patients.patientCode, term),
         like(patients.name, term),
         like(patients.phone, term),
-        sql`CAST(${patients.id} AS TEXT) = ${search}`,
+        sql`CAST(${patients.patientId} AS TEXT) = ${search}`,
         sql`EXISTS (
           SELECT 1 FROM prescriptions p
-          WHERE p.patient_id = ${patients.id} AND CAST(p.id AS TEXT) = ${search}
+          WHERE p.patient_id = ${patients.patientId} AND CAST(p.prescription_id AS TEXT) = ${search}
         )`
       )!
     )
@@ -85,16 +80,24 @@ export function listPatients(query: PatientQuery = {}): PatientListItem[] {
     filters.push(eq(patients.gender, gender)!)
   }
 
+  const sortColumns = {
+    id: patients.patientId,
+    name: patients.name,
+    age: patients.age,
+    gender: patients.gender,
+    complaint: lastComplaint,
+    diagnosis: lastDiagnosis
+  }
   const column = sortColumns[sortBy as PatientSortField]
   const orderBy = (sortDir as SortDirection) === 'asc' ? asc(column) : desc(column)
 
   const visitCount = sql<number>`(
-    SELECT COUNT(*) FROM prescriptions p WHERE p.patient_id = ${patients.id}
+    SELECT COUNT(*) FROM prescriptions p WHERE p.patient_id = ${patients.patientId}
   )`
 
   return db
     .select({
-      id: patients.id,
+      id: patients.patientId,
       patientCode: patients.patientCode,
       name: patients.name,
       age: patients.age,
@@ -103,8 +106,8 @@ export function listPatients(query: PatientQuery = {}): PatientListItem[] {
       address: patients.address,
       createdAt: patients.createdAt,
       updatedAt: patients.updatedAt,
-      lastDiagnosis: latestSectionExpr('Diagnosis'),
-      lastComplaint: latestSectionExpr('Chief Complaint'),
+      lastDiagnosis,
+      lastComplaint,
       visitCount
     })
     .from(patients)
@@ -115,30 +118,30 @@ export function listPatients(query: PatientQuery = {}): PatientListItem[] {
 
 export function getPatient(id: number): Patient | undefined {
   const db = getDb()
-  return db.select().from(patients).where(eq(patients.id, id)).get()
+  return db.select().from(patients).where(eq(patients.patientId, id)).get()
 }
 
 export function getPatientVisits(patientId: number): PatientVisit[] {
   const db = getDb()
   return db
     .select({
-      id: prescriptions.id,
+      id: prescriptions.prescriptionId,
       visitNo: prescriptions.visitNo,
       createdAt: prescriptions.createdAt,
       diagnosis: sql<string>`(
         SELECT ps.content FROM prescription_sections ps
-        WHERE ps.prescription_id = ${prescriptions.id} AND ps.section_type = 'Diagnosis'
+        WHERE ps.prescription_id = ${prescriptions.prescriptionId} AND ps.section_type = 'Diagnosis'
         ORDER BY ps.position LIMIT 1
       )`,
       complaint: sql<string>`(
         SELECT ps.content FROM prescription_sections ps
-        WHERE ps.prescription_id = ${prescriptions.id} AND ps.section_type = 'Chief Complaint'
+        WHERE ps.prescription_id = ${prescriptions.prescriptionId} AND ps.section_type = 'Chief Complaint'
         ORDER BY ps.position LIMIT 1
       )`
     })
     .from(prescriptions)
     .where(eq(prescriptions.patientId, patientId))
-    .orderBy(desc(prescriptions.visitNo), desc(prescriptions.id))
+    .orderBy(desc(prescriptions.visitNo), desc(prescriptions.prescriptionId))
     .all()
 }
 
@@ -164,7 +167,7 @@ export function updatePatient(id: number, input: PatientFormValues): Patient {
   const updated = db
     .update(patients)
     .set({ ...values, updatedAt: sql`(CURRENT_TIMESTAMP)` })
-    .where(eq(patients.id, id))
+    .where(eq(patients.patientId, id))
     .returning()
     .get()
 
@@ -176,6 +179,6 @@ export function updatePatient(id: number, input: PatientFormValues): Patient {
 
 export function deletePatient(id: number): { id: number } {
   const db = getDb()
-  db.delete(patients).where(eq(patients.id, id)).run()
+  db.delete(patients).where(eq(patients.patientId, id)).run()
   return { id }
 }
