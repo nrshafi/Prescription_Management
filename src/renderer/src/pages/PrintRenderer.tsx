@@ -120,7 +120,10 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
   if (error) {
     return (
       <div className="print-shell min-h-screen bg-neutral-100 p-8 text-neutral-950">
-        <div data-print-content className="mx-auto max-w-xl rounded-md bg-white p-8 text-neutral-950 shadow">
+        <div
+          data-print-content
+          className="mx-auto max-w-xl rounded-md bg-white p-8 text-neutral-950 shadow"
+        >
           {error}
         </div>
       </div>

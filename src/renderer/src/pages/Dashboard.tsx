@@ -20,7 +20,7 @@ export function Dashboard({ onNavigate }: DashboardProps): React.JSX.Element {
   useEffect(() => {
     Promise.all([
       window.api.dashboard.stats(),
-      window.api.prescriptions.list(''),
+      window.api.prescriptions.list(),
       window.api.presets.list('Medicine'),
       window.api.settings.get()
     ]).then(([stats, allRx, medPresets, settings]) => {

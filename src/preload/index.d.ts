@@ -1,4 +1,4 @@
-import { ElectronAPI } from '@electron-toolkit/preload'
+import type { ElectronAPI } from '@electron-toolkit/preload'
 import type {
   PatientFormValues,
   PatientListItem,
@@ -11,6 +11,7 @@ import type {
   PrescriptionDetail,
   PrescriptionFormValues,
   PrescriptionListItem,
+  PrescriptionQuery,
   PresetFormValues,
   PresetRecord
 } from '../shared/prescription'
@@ -42,9 +43,10 @@ type Api = {
     create: (input: PatientFormValues) => Promise<PatientRecord>
     update: (id: number, input: PatientFormValues) => Promise<PatientRecord>
     delete: (id: number) => Promise<{ id: number }>
+    prescriptionCount: (id: number) => Promise<number>
   }
   prescriptions: {
-    list: (search?: string) => Promise<PrescriptionListItem[]>
+    list: (query?: PrescriptionQuery) => Promise<PrescriptionListItem[]>
     get: (id: number) => Promise<PrescriptionDetail | undefined>
     create: (input: PrescriptionFormValues) => Promise<PrescriptionDetail>
     update: (id: number, input: PrescriptionFormValues) => Promise<PrescriptionDetail>

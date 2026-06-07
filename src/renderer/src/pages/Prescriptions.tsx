@@ -1,8 +1,80 @@
-import { Copy, Eye, FileDown, FileText, Pencil, Printer, Search } from 'lucide-react'
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronsUpDown,
+  Copy,
+  Eye,
+  FileDown,
+  FileText,
+  Pencil,
+  Printer,
+  Search
+} from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import type { PrescriptionListItem } from '../../../shared/prescription'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import type {
+  PrescriptionListItem,
+  PrescriptionQuery,
+  PrescriptionSortField,
+  SortDirection
+} from '../../../shared/prescription'
+import { GENDERS } from '../../../shared/prescription'
+
+const ALL_GENDERS = '__all__'
+
+interface SortableHeaderProps {
+  label: string
+  field: PrescriptionSortField
+  active: boolean
+  dir: SortDirection
+  onSort: (field: PrescriptionSortField) => void
+}
+
+function SortableHeader({
+  label,
+  field,
+  active,
+  dir,
+  onSort
+}: SortableHeaderProps): React.JSX.Element {
+  return (
+    <TableHead>
+      <button
+        type="button"
+        onClick={() => onSort(field)}
+        className="hover:text-foreground -mx-1 flex items-center gap-1 rounded px-1"
+      >
+        {label}
+        {active ? (
+          dir === 'asc' ? (
+            <ArrowUp className="size-3.5" />
+          ) : (
+            <ArrowDown className="size-3.5" />
+          )
+        ) : (
+          <ChevronsUpDown className="size-3.5 opacity-40" />
+        )}
+      </button>
+    </TableHead>
+  )
+}
 
 interface PrescriptionsProps {
   onEdit: (id: number) => void
@@ -12,6 +84,11 @@ interface PrescriptionsProps {
 export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.Element {
   const [rows, setRows] = useState<PrescriptionListItem[]>([])
   const [search, setSearch] = useState('')
+  const [gender, setGender] = useState<string>(ALL_GENDERS)
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [sortBy, setSortBy] = useState<PrescriptionSortField>('createdAt')
+  const [sortDir, setSortDir] = useState<SortDirection>('desc')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
@@ -20,13 +97,21 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
     setLoading(true)
     setError(null)
     try {
-      setRows(await window.api.prescriptions.list(search))
+      const query: PrescriptionQuery = {
+        search,
+        gender: gender === ALL_GENDERS ? undefined : (gender as (typeof GENDERS)[number]),
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+        sortBy,
+        sortDir
+      }
+      setRows(await window.api.prescriptions.list(query))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load prescriptions.')
     } finally {
       setLoading(false)
     }
-  }, [search])
+  }, [search, gender, dateFrom, dateTo, sortBy, sortDir])
 
   useEffect(() => {
     const t = setTimeout(load, 200)
@@ -67,6 +152,15 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
     onEdit(duplicated.id)
   }
 
+  function handleSort(field: PrescriptionSortField): void {
+    if (field === sortBy) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortBy(field)
+      setSortDir('asc')
+    }
+  }
+
   return (
     <div className="space-y-4 p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -82,13 +176,40 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
         </Button>
       </div>
 
-      <div className="relative max-w-md">
-        <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 sm:max-w-xs">
+          <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search patient, ID, phone..."
+            className="pl-9"
+          />
+        </div>
+        <Select value={gender} onValueChange={setGender}>
+          <SelectTrigger className="w-36">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL_GENDERS}>All genders</SelectItem>
+            {GENDERS.map((g) => (
+              <SelectItem key={g} value={g}>
+                {g}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search patient, ID, phone..."
-          className="pl-9"
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          className="w-36"
+        />
+        <Input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          className="w-36"
         />
       </div>
 
@@ -96,33 +217,49 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
       {error && <p className="text-destructive text-sm">{error}</p>}
 
       <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-muted/50 border-b text-left">
-              <th className="px-4 py-3 font-medium">Patient</th>
-              <th className="px-4 py-3 font-medium">Date</th>
-              <th className="px-4 py-3 font-medium">Diagnosis</th>
-              <th className="px-4 py-3 font-medium">Visit</th>
-              <th className="px-4 py-3 text-right font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={5} className="text-muted-foreground px-4 py-10 text-center">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <SortableHeader
+                label="ID"
+                field="id"
+                active={sortBy === 'id'}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableHeader
+                label="Name"
+                field="patientName"
+                active={sortBy === 'patientName'}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <TableHead>Phone</TableHead>
+              <TableHead>Age</TableHead>
+              <TableHead>Gender</TableHead>
+              <TableHead>C/C</TableHead>
+              <TableHead>Diagnosis</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+              {loading ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-muted-foreground py-10 text-center">
                   Loading...
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : rows.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="text-muted-foreground px-4 py-10 text-center">
+              <TableRow>
+                <TableCell colSpan={8} className="text-muted-foreground py-10 text-center">
                   No prescriptions yet.
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : (
               rows.map((row) => (
-                <tr key={row.id} className="hover:bg-muted/30 border-b last:border-0">
-                  <td className="px-4 py-3">
+                <TableRow key={row.id}>
+                  <TableCell className="px-4 py-3 font-medium">{row.id}</TableCell>
+                  <TableCell className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="bg-muted flex size-8 items-center justify-center rounded-full text-xs font-medium">
                         {row.patientName.charAt(0).toUpperCase()}
@@ -132,71 +269,101 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
                         <p className="text-muted-foreground text-xs">{row.patientCode}</p>
                       </div>
                     </div>
-                  </td>
-                  <td className="text-muted-foreground px-4 py-3">
-                    {new Date(row.createdAt).toLocaleDateString()}
-                  </td>
-                  <td
+                  </TableCell>
+                  <TableCell className="text-muted-foreground px-4 py-3">{row.phone || '—'}</TableCell>
+                  <TableCell className="text-muted-foreground px-4 py-3">{row.age || '—'}</TableCell>
+                  <TableCell className="text-muted-foreground px-4 py-3">{row.gender || '—'}</TableCell>
+                  <TableCell
+                    className="max-w-[12rem] truncate px-4 py-3"
+                    title={row.chiefComplaint ?? ''}
+                  >
+                    {row.chiefComplaint || '—'}
+                  </TableCell>
+                  <TableCell
                     className="max-w-[12rem] truncate px-4 py-3"
                     title={row.provisionalDiagnosis ?? ''}
                   >
                     {row.provisionalDiagnosis || '—'}
-                  </td>
-                  <td className="px-4 py-3">{row.visitNo}</td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Edit"
-                        onClick={() => onEdit(row.id)}
-                      >
-                        <Pencil className="size-4" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Preview"
-                        onClick={() => runPrintAction(row.id, 'preview')}
-                      >
-                        <Eye className="size-4" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-label="PDF"
-                        onClick={() => runPrintAction(row.id, 'pdf')}
-                      >
-                        <FileDown className="size-4" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Print"
-                        onClick={() => runPrintAction(row.id, 'print')}
-                      >
-                        <Printer className="size-4" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Duplicate"
-                        onClick={() => duplicatePrescription(row.id)}
-                      >
-                        <Copy className="size-4" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Edit"
+                            onClick={() => onEdit(row.id)}
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Edit</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Preview"
+                            onClick={() => runPrintAction(row.id, 'preview')}
+                          >
+                            <Eye className="size-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Preview</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label="PDF"
+                            onClick={() => runPrintAction(row.id, 'pdf')}
+                          >
+                            <FileDown className="size-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Export PDF</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Print"
+                            onClick={() => runPrintAction(row.id, 'print')}
+                          >
+                            <Printer className="size-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Print</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Duplicate"
+                            onClick={() => duplicatePrescription(row.id)}
+                          >
+                            <Copy className="size-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Duplicate</TooltipContent>
+                      </Tooltip>
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   )

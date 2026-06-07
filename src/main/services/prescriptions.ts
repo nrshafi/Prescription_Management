@@ -1,15 +1,19 @@
-import { and, desc, eq, like, or, type SQL, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, like, or, type SQL, sql } from 'drizzle-orm'
 import {
   type MedicineSuggestion,
   type PRESCRIPTION_SECTION_TYPES,
   type PrescriptionDetail,
   type PrescriptionFormValues,
   type PrescriptionListItem,
+  type PrescriptionQuery,
+  type PrescriptionSortField,
   type PresetCategory,
   type PresetFormValues,
   type PresetRecord,
   prescriptionFormSchema,
-  presetFormSchema
+  prescriptionQuerySchema,
+  presetFormSchema,
+  type SortDirection
 } from '../../shared/prescription'
 import { getDb } from '../db/client'
 import {
@@ -107,24 +111,44 @@ function replacePrescriptionContent(
   }
 }
 
-export function listPrescriptions(search = ''): PrescriptionListItem[] {
+export function listPrescriptions(query: PrescriptionQuery = {}): PrescriptionListItem[] {
   const db = getDb()
-  const term = search.trim()
+  const { search, gender, dateFrom, dateTo, sortBy, sortDir } = prescriptionQuerySchema.parse(query)
   const chiefComplaint = sectionContentExpr('Chief Complaint')
   const provisionalDiagnosis = sectionContentExpr('Provisional Diagnosis')
   const filters: SQL[] = []
 
-  if (term) {
+  if (search) {
+    const term = `%${search}%`
     filters.push(
       or(
-        like(patients.patientCode, `%${term}%`),
-        like(patients.name, `%${term}%`),
-        like(patients.phone, `%${term}%`),
-        sql`CAST(${patients.patientId} AS TEXT) = ${term}`,
-        sql`CAST(${prescriptions.prescriptionId} AS TEXT) = ${term}`
+        like(patients.patientCode, term),
+        like(patients.name, term),
+        like(patients.phone, term),
+        sql`CAST(${patients.patientId} AS TEXT) = ${search}`,
+        sql`CAST(${prescriptions.prescriptionId} AS TEXT) = ${search}`
       )!
     )
   }
+  if (gender) {
+    filters.push(eq(patients.gender, gender)!)
+  }
+  if (dateFrom) {
+    filters.push(sql`${prescriptions.createdAt} >= ${dateFrom}`)
+  }
+  if (dateTo) {
+    filters.push(sql`${prescriptions.createdAt} <= ${dateTo} || ' 23:59:59'`)
+  }
+
+  const sortColumns = {
+    id: prescriptions.prescriptionId,
+    patientName: patients.name,
+    patientCode: patients.patientCode,
+    visitNo: prescriptions.visitNo,
+    createdAt: prescriptions.createdAt
+  }
+  const column = sortColumns[sortBy as PrescriptionSortField]
+  const orderBy = (sortDir as SortDirection) === 'asc' ? asc(column) : desc(column)
 
   return db
     .select({
@@ -132,6 +156,7 @@ export function listPrescriptions(search = ''): PrescriptionListItem[] {
       patientId: patients.patientId,
       patientCode: patients.patientCode,
       patientName: patients.name,
+      phone: patients.phone,
       age: patients.age,
       gender: patients.gender,
       visitNo: prescriptions.visitNo,
@@ -143,7 +168,7 @@ export function listPrescriptions(search = ''): PrescriptionListItem[] {
     .from(prescriptions)
     .innerJoin(patients, eq(prescriptions.patientId, patients.patientId))
     .where(filters.length ? and(...filters) : undefined)
-    .orderBy(desc(prescriptions.createdAt), desc(prescriptions.prescriptionId))
+    .orderBy(orderBy)
     .all()
 }
 

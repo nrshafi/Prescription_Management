@@ -1,5 +1,29 @@
 import { z } from 'zod'
 
+import { GENDERS, SORT_DIRECTIONS, type SortDirection } from './patient'
+
+export { GENDERS, SORT_DIRECTIONS, type SortDirection }
+
+export const PRESCRIPTION_SORT_FIELDS = [
+  'id',
+  'patientName',
+  'patientCode',
+  'visitNo',
+  'createdAt'
+] as const
+export type PrescriptionSortField = (typeof PRESCRIPTION_SORT_FIELDS)[number]
+
+export const prescriptionQuerySchema = z.object({
+  search: z.string().trim().optional().default(''),
+  gender: z.enum(GENDERS).optional(),
+  dateFrom: z.string().trim().optional(),
+  dateTo: z.string().trim().optional(),
+  sortBy: z.enum(PRESCRIPTION_SORT_FIELDS).optional().default('createdAt'),
+  sortDir: z.enum(SORT_DIRECTIONS).optional().default('desc')
+})
+
+export type PrescriptionQuery = z.input<typeof prescriptionQuerySchema>
+
 export const PRESCRIPTION_SECTION_TYPES = [
   'Chief Complaint',
   'Examination',
@@ -72,6 +96,7 @@ export interface PrescriptionListItem {
   patientId: number
   patientCode: string
   patientName: string
+  phone: string | null
   age: string | null
   gender: string | null
   visitNo: number
@@ -83,7 +108,6 @@ export interface PrescriptionListItem {
 
 export interface PrescriptionDetail extends PrescriptionListItem {
   templateId: number | null
-  phone: string | null
   address: string | null
   sections: PrescriptionSectionRecord[]
   medicines: PrescriptionMedicineRecord[]

@@ -74,6 +74,11 @@ export function Patients(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [gender, setGender] = useState<string>(ALL_GENDERS)
+  const [ageMin, setAgeMin] = useState('')
+  const [ageMax, setAgeMax] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [minVisits, setMinVisits] = useState('')
   const [sortBy, setSortBy] = useState<PatientSortField>('id')
   const [sortDir, setSortDir] = useState<SortDirection>('desc')
 
@@ -89,6 +94,11 @@ export function Patients(): React.JSX.Element {
       const data = await window.api.patients.list({
         search,
         gender: gender === ALL_GENDERS ? undefined : (gender as (typeof GENDERS)[number]),
+        ageMin: ageMin ? Number.parseInt(ageMin, 10) : undefined,
+        ageMax: ageMax ? Number.parseInt(ageMax, 10) : undefined,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+        minVisits: minVisits ? Number.parseInt(minVisits, 10) : undefined,
         sortBy,
         sortDir
       })
@@ -98,7 +108,7 @@ export function Patients(): React.JSX.Element {
     } finally {
       setLoading(false)
     }
-  }, [search, gender, sortBy, sortDir])
+  }, [search, gender, ageMin, ageMax, dateFrom, dateTo, minVisits, sortBy, sortDir])
 
   useEffect(() => {
     const t = setTimeout(load, 200)
@@ -174,6 +184,44 @@ export function Patients(): React.JSX.Element {
             ))}
           </SelectContent>
         </Select>
+        <Input
+          type="number"
+          value={ageMin}
+          onChange={(e) => setAgeMin(e.target.value)}
+          placeholder="Min age"
+          className="w-20"
+          min="0"
+          max="200"
+        />
+        <Input
+          type="number"
+          value={ageMax}
+          onChange={(e) => setAgeMax(e.target.value)}
+          placeholder="Max age"
+          className="w-20"
+          min="0"
+          max="200"
+        />
+        <Input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          className="w-36"
+        />
+        <Input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          className="w-36"
+        />
+        <Input
+          type="number"
+          value={minVisits}
+          onChange={(e) => setMinVisits(e.target.value)}
+          placeholder="Min visits"
+          className="w-24"
+          min="0"
+        />
       </div>
 
       <div className="overflow-hidden rounded-xl border bg-card shadow-sm">

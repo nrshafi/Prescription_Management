@@ -28,6 +28,11 @@ export type SortDirection = (typeof SORT_DIRECTIONS)[number]
 export const patientQuerySchema = z.object({
   search: z.string().trim().optional().default(''),
   gender: z.enum(GENDERS).optional(),
+  ageMin: z.coerce.number().int().min(0).max(200).optional(),
+  ageMax: z.coerce.number().int().min(0).max(200).optional(),
+  dateFrom: z.string().trim().optional(),
+  dateTo: z.string().trim().optional(),
+  minVisits: z.coerce.number().int().min(0).optional(),
   sortBy: z.enum(PATIENT_SORT_FIELDS).optional().default('id'),
   sortDir: z.enum(SORT_DIRECTIONS).optional().default('desc')
 })

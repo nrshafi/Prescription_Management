@@ -12,6 +12,7 @@ import type {
   PrescriptionDetail,
   PrescriptionFormValues,
   PrescriptionListItem,
+  PrescriptionQuery,
   PresetFormValues,
   PresetRecord
 } from '../shared/prescription'
@@ -46,11 +47,13 @@ const api = {
       ipcRenderer.invoke('patients:create', input),
     update: (id: number, input: PatientFormValues): Promise<PatientRecord> =>
       ipcRenderer.invoke('patients:update', id, input),
-    delete: (id: number): Promise<{ id: number }> => ipcRenderer.invoke('patients:delete', id)
+    delete: (id: number): Promise<{ id: number }> => ipcRenderer.invoke('patients:delete', id),
+    prescriptionCount: (id: number): Promise<number> =>
+      ipcRenderer.invoke('patients:prescriptionCount', id)
   },
   prescriptions: {
-    list: (search?: string): Promise<PrescriptionListItem[]> =>
-      ipcRenderer.invoke('prescriptions:list', search ?? ''),
+    list: (query?: PrescriptionQuery): Promise<PrescriptionListItem[]> =>
+      ipcRenderer.invoke('prescriptions:list', query ?? {}),
     get: (id: number): Promise<PrescriptionDetail | undefined> =>
       ipcRenderer.invoke('prescriptions:get', id),
     create: (input: PrescriptionFormValues): Promise<PrescriptionDetail> =>

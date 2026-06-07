@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -23,6 +23,21 @@ export function DeletePatientDialog({
 }: DeletePatientDialogProps): React.JSX.Element {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [prescriptionCount, setPrescriptionCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!patient) {
+      setPrescriptionCount(null)
+      return
+    }
+    let cancelled = false
+    window.api.patients.prescriptionCount(patient.id).then((count) => {
+      if (!cancelled) setPrescriptionCount(count)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [patient])
 
   async function handleConfirm(): Promise<void> {
     setBusy(true)
@@ -37,6 +52,8 @@ export function DeletePatientDialog({
     }
   }
 
+  const count = prescriptionCount ?? 0
+
   return (
     <Dialog open={Boolean(patient)} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -44,9 +61,7 @@ export function DeletePatientDialog({
           <DialogTitle>Delete patient?</DialogTitle>
           <DialogDescription>
             This permanently removes <strong>{patient?.name}</strong> ({patient?.patientCode})
-            {patient && patient.visitCount > 0
-              ? ` and ${patient.visitCount} prescription${patient.visitCount > 1 ? 's' : ''}`
-              : ''}
+            {count > 0 ? ` and ${count} prescription${count > 1 ? 's' : ''}` : ''}
             . This cannot be undone.
           </DialogDescription>
         </DialogHeader>

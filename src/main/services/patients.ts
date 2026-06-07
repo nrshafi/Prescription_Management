@@ -71,7 +71,8 @@ function latestSectionExpr(sectionType: string): SQL<string> {
 
 export function listPatients(query: PatientQuery = {}): PatientListItem[] {
   const db = getDb()
-  const { search, gender, sortBy, sortDir } = patientQuerySchema.parse(query)
+  const { search, gender, ageMin, ageMax, dateFrom, dateTo, minVisits, sortBy, sortDir } =
+    patientQuerySchema.parse(query)
   const lastDiagnosis = latestSectionExpr('Provisional Diagnosis')
   const lastComplaint = latestSectionExpr('Chief Complaint')
 
@@ -93,6 +94,23 @@ export function listPatients(query: PatientQuery = {}): PatientListItem[] {
   }
   if (gender) {
     filters.push(eq(patients.gender, gender)!)
+  }
+  if (ageMin !== undefined && ageMin !== null) {
+    filters.push(sql`CAST(${patients.age} AS INTEGER) >= ${ageMin}`)
+  }
+  if (ageMax !== undefined && ageMax !== null) {
+    filters.push(sql`CAST(${patients.age} AS INTEGER) <= ${ageMax}`)
+  }
+  if (dateFrom) {
+    filters.push(sql`${patients.createdAt} >= ${dateFrom}`)
+  }
+  if (dateTo) {
+    filters.push(sql`${patients.createdAt} <= ${dateTo} || ' 23:59:59'`)
+  }
+  if (minVisits !== undefined && minVisits !== null) {
+    filters.push(sql`(
+      SELECT COUNT(*) FROM prescriptions p WHERE p.patient_id = ${patients.patientId}
+    ) >= ${minVisits}`)
   }
 
   const sortColumns = {
@@ -193,8 +211,21 @@ export function updatePatient(id: number, input: PatientFormValues): PatientReco
   return toPatientRecord(updated)
 }
 
+export function prescriptionCount(patientId: number): number {
+  const db = getDb()
+  const row = db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(prescriptions)
+    .where(eq(prescriptions.patientId, patientId))
+    .get()
+  return row?.count ?? 0
+}
+
 export function deletePatient(id: number): { id: number } {
   const db = getDb()
-  db.delete(patients).where(eq(patients.patientId, id)).run()
+  db.transaction(() => {
+    db.delete(prescriptions).where(eq(prescriptions.patientId, id)).run()
+    db.delete(patients).where(eq(patients.patientId, id)).run()
+  })
   return { id }
 }
