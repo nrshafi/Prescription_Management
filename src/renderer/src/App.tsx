@@ -1,18 +1,23 @@
-import { FileText, LayoutDashboard, Users } from 'lucide-react'
+import { FileText, LayoutDashboard, SettingsIcon, Sparkles, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { Patients } from '@/pages/Patients'
 import { PrintRenderer } from '@/pages/PrintRenderer'
 import { Prescriptions } from '@/pages/Prescriptions'
+import { PresetsManager } from '@/pages/PresetsManager'
+import { Settings } from '@/pages/Settings'
+import type { PatientListItem } from '../../shared/patient'
 
 interface Stats {
   totalPatients: number
   todaysPrescriptions: number
+  recentPatients: PatientListItem[]
 }
 
-type View = 'dashboard' | 'patients' | 'prescriptions'
+type View = 'dashboard' | 'patients' | 'prescriptions' | 'presets' | 'settings'
 
 function Dashboard(): React.JSX.Element {
   const [dbPath, setDbPath] = useState<string>('')
@@ -53,6 +58,34 @@ function Dashboard(): React.JSX.Element {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Patients</CardTitle>
+          <CardDescription>Latest registrations available for quick follow-up.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {(stats?.recentPatients ?? []).map((patient) => (
+              <div key={patient.id} className="rounded-lg border p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-medium">{patient.name}</p>
+                    <p className="text-muted-foreground text-xs">{patient.patientCode}</p>
+                  </div>
+                  <Badge variant="outline">{patient.visitCount} visits</Badge>
+                </div>
+                <p className="text-muted-foreground mt-2 line-clamp-2 text-sm">
+                  {patient.lastComplaint || patient.lastDiagnosis || 'No visits recorded yet.'}
+                </p>
+              </div>
+            ))}
+            {stats && stats.recentPatients.length === 0 && (
+              <p className="text-muted-foreground text-sm">No patients yet.</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
@@ -60,18 +93,28 @@ function Dashboard(): React.JSX.Element {
 const NAV: { id: View; label: string; icon: typeof Users }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'patients', label: 'Patients', icon: Users },
-  { id: 'prescriptions', label: 'Prescriptions', icon: FileText }
+  { id: 'prescriptions', label: 'Prescriptions', icon: FileText },
+  { id: 'presets', label: 'Presets', icon: Sparkles },
+  { id: 'settings', label: 'Settings', icon: SettingsIcon }
 ]
 
 function renderView(view: View): React.JSX.Element {
   if (view === 'patients') return <Patients />
   if (view === 'prescriptions') return <Prescriptions />
+  if (view === 'presets') return <PresetsManager />
+  if (view === 'settings') return <Settings />
   return <Dashboard />
 }
 
 function App(): React.JSX.Element {
   const [view, setView] = useState<View>('dashboard')
   const printPrescriptionId = new URLSearchParams(window.location.search).get('printPrescriptionId')
+
+  useEffect(() => {
+    const theme = localStorage.getItem('theme') ?? 'system'
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    document.documentElement.classList.toggle('dark', theme === 'dark' || (theme === 'system' && prefersDark))
+  }, [])
 
   if (window.location.pathname === '/print' || printPrescriptionId) {
     const id = new URLSearchParams(window.location.search).get('id') ?? printPrescriptionId

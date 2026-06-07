@@ -20,6 +20,12 @@ export const PRESET_CATEGORIES = [
 
 export type PresetCategory = (typeof PRESET_CATEGORIES)[number]
 
+export const presetFormSchema = z.object({
+  category: z.enum(PRESET_CATEGORIES),
+  title: z.string().trim().min(1, 'Title is required').max(160, 'Title is too long'),
+  content: z.string().trim().max(4000, 'Content is too long').optional().or(z.literal(''))
+})
+
 export const prescriptionSectionInputSchema = z.object({
   sectionType: z.enum(PRESCRIPTION_SECTION_TYPES),
   content: z.string().trim().max(4000, 'Section content is too long').optional().or(z.literal('')),
@@ -45,6 +51,7 @@ export const prescriptionFormSchema = z.object({
 export type PrescriptionSectionInput = z.infer<typeof prescriptionSectionInputSchema>
 export type PrescriptionMedicineInput = z.infer<typeof prescriptionMedicineInputSchema>
 export type PrescriptionFormValues = z.infer<typeof prescriptionFormSchema>
+export type PresetFormValues = z.infer<typeof presetFormSchema>
 
 export interface PrescriptionSectionRecord extends PrescriptionSectionInput {
   id: number
@@ -78,7 +85,17 @@ export interface PrescriptionDetail extends PrescriptionListItem {
 
 export interface PresetRecord {
   id: number
-  category: string
+  category: PresetCategory
   title: string
   content: string | null
+}
+
+export interface MedicineSuggestion {
+  medicineName: string
+  dosage: string | null
+  frequency: string | null
+  duration: string | null
+  notes: string | null
+  useCount: number
+  lastUsedAt: string | null
 }

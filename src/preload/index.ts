@@ -7,20 +7,35 @@ import type {
   PatientRecord,
   PatientVisit
 } from '../shared/patient'
-import type { PrescriptionPrintData, PrintActionResult } from '../shared/print'
 import type {
+  DoctorProfileRecord,
+  PaperSettingsRecord,
+  PrescriptionPrintData,
+  PrintActionResult
+} from '../shared/print'
+import type {
+  MedicineSuggestion,
+  PresetFormValues,
   PresetRecord,
   PrescriptionDetail,
   PrescriptionFormValues,
   PrescriptionListItem
 } from '../shared/prescription'
+import type {
+  BackupActionResult,
+  DoctorProfileFormValues,
+  PaperSettingsFormValues
+} from '../shared/settings'
 
 // Custom typed API exposed to the renderer.
 const api = {
   health: (): Promise<{ ok: boolean; dbPath: string }> => ipcRenderer.invoke('app:health'),
   dashboard: {
-    stats: (): Promise<{ totalPatients: number; todaysPrescriptions: number }> =>
-      ipcRenderer.invoke('dashboard:stats')
+    stats: (): Promise<{
+      totalPatients: number
+      todaysPrescriptions: number
+      recentPatients: PatientListItem[]
+    }> => ipcRenderer.invoke('dashboard:stats')
   },
   patients: {
     list: (query?: PatientQuery): Promise<PatientListItem[]> =>
@@ -45,10 +60,27 @@ const api = {
     saveDraft: (input: PrescriptionFormValues): Promise<PrescriptionDetail> =>
       ipcRenderer.invoke('prescriptions:saveDraft', input),
     duplicate: (id: number): Promise<PrescriptionDetail> =>
-      ipcRenderer.invoke('prescriptions:duplicate', id)
+      ipcRenderer.invoke('prescriptions:duplicate', id),
+    medicineSuggestions: (search?: string): Promise<MedicineSuggestion[]> =>
+      ipcRenderer.invoke('prescriptions:medicineSuggestions', search ?? '')
   },
   presets: {
-    list: (category?: string): Promise<PresetRecord[]> => ipcRenderer.invoke('presets:list', category)
+    list: (category?: string): Promise<PresetRecord[]> => ipcRenderer.invoke('presets:list', category),
+    create: (input: PresetFormValues): Promise<PresetRecord> =>
+      ipcRenderer.invoke('presets:create', input),
+    update: (id: number, input: PresetFormValues): Promise<PresetRecord> =>
+      ipcRenderer.invoke('presets:update', id, input),
+    delete: (id: number): Promise<{ id: number }> => ipcRenderer.invoke('presets:delete', id)
+  },
+  settings: {
+    get: (): Promise<{ doctorProfile: DoctorProfileRecord; paperSettings: PaperSettingsRecord }> =>
+      ipcRenderer.invoke('settings:get'),
+    updateDoctorProfile: (input: DoctorProfileFormValues): Promise<DoctorProfileRecord> =>
+      ipcRenderer.invoke('settings:updateDoctorProfile', input),
+    updatePaperSettings: (input: PaperSettingsFormValues): Promise<PaperSettingsRecord> =>
+      ipcRenderer.invoke('settings:updatePaperSettings', input),
+    exportBackup: (): Promise<BackupActionResult> => ipcRenderer.invoke('settings:exportBackup'),
+    importBackup: (): Promise<BackupActionResult> => ipcRenderer.invoke('settings:importBackup')
   },
   printing: {
     data: (prescriptionId: number): Promise<PrescriptionPrintData> =>

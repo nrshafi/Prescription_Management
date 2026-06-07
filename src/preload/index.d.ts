@@ -6,18 +6,34 @@ import type {
   PatientRecord,
   PatientVisit
 } from '../shared/patient'
-import type { PrescriptionPrintData, PrintActionResult } from '../shared/print'
 import type {
+  DoctorProfileRecord,
+  PaperSettingsRecord,
+  PrescriptionPrintData,
+  PrintActionResult
+} from '../shared/print'
+import type {
+  MedicineSuggestion,
+  PresetFormValues,
   PresetRecord,
   PrescriptionDetail,
   PrescriptionFormValues,
   PrescriptionListItem
 } from '../shared/prescription'
+import type {
+  BackupActionResult,
+  DoctorProfileFormValues,
+  PaperSettingsFormValues
+} from '../shared/settings'
 
 type Api = {
   health: () => Promise<{ ok: boolean; dbPath: string }>
   dashboard: {
-    stats: () => Promise<{ totalPatients: number; todaysPrescriptions: number }>
+    stats: () => Promise<{
+      totalPatients: number
+      todaysPrescriptions: number
+      recentPatients: PatientListItem[]
+    }>
   }
   patients: {
     list: (query?: PatientQuery) => Promise<PatientListItem[]>
@@ -34,9 +50,20 @@ type Api = {
     update: (id: number, input: PrescriptionFormValues) => Promise<PrescriptionDetail>
     saveDraft: (input: PrescriptionFormValues) => Promise<PrescriptionDetail>
     duplicate: (id: number) => Promise<PrescriptionDetail>
+    medicineSuggestions: (search?: string) => Promise<MedicineSuggestion[]>
   }
   presets: {
     list: (category?: string) => Promise<PresetRecord[]>
+    create: (input: PresetFormValues) => Promise<PresetRecord>
+    update: (id: number, input: PresetFormValues) => Promise<PresetRecord>
+    delete: (id: number) => Promise<{ id: number }>
+  }
+  settings: {
+    get: () => Promise<{ doctorProfile: DoctorProfileRecord; paperSettings: PaperSettingsRecord }>
+    updateDoctorProfile: (input: DoctorProfileFormValues) => Promise<DoctorProfileRecord>
+    updatePaperSettings: (input: PaperSettingsFormValues) => Promise<PaperSettingsRecord>
+    exportBackup: () => Promise<BackupActionResult>
+    importBackup: () => Promise<BackupActionResult>
   }
   printing: {
     data: (prescriptionId: number) => Promise<PrescriptionPrintData>

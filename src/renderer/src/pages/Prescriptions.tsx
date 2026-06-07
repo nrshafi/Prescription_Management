@@ -27,6 +27,7 @@ import {
   type PresetRecord,
   type PrescriptionDetail,
   type PrescriptionListItem,
+  type MedicineSuggestion,
   type PrescriptionMedicineInput,
   PRESCRIPTION_SECTION_TYPES,
   type PrescriptionSectionInput,
@@ -121,6 +122,7 @@ export function Prescriptions(): React.JSX.Element {
   const [rows, setRows] = useState<PrescriptionListItem[]>([])
   const [patients, setPatients] = useState<PatientListItem[]>([])
   const [presets, setPresets] = useState<PresetRecord[]>([])
+  const [medicineSuggestions, setMedicineSuggestions] = useState<MedicineSuggestion[]>([])
   const [search, setSearch] = useState('')
   const [patientSearch, setPatientSearch] = useState('')
   const [loading, setLoading] = useState(true)
@@ -141,14 +143,16 @@ export function Prescriptions(): React.JSX.Element {
     setLoading(true)
     setError(null)
     try {
-      const [prescriptionRows, patientRows, presetRows] = await Promise.all([
+      const [prescriptionRows, patientRows, presetRows, suggestions] = await Promise.all([
         window.api.prescriptions.list(search),
         window.api.patients.list({ search: patientSearch, sortBy: 'id', sortDir: 'desc' }),
-        window.api.presets.list()
+        window.api.presets.list(),
+        window.api.prescriptions.medicineSuggestions('')
       ])
       setRows(prescriptionRows)
       setPatients(patientRows)
       setPresets(presetRows)
+      setMedicineSuggestions(suggestions)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load prescriptions.')
     } finally {
@@ -187,6 +191,26 @@ export function Prescriptions(): React.JSX.Element {
     setForm((current) => ({
       ...current,
       medicines: [...current.medicines, emptyMedicine()]
+    }))
+  }
+
+  function applyMedicineSuggestion(index: number, suggestionName: string): void {
+    const suggestion = medicineSuggestions.find((item) => item.medicineName === suggestionName)
+    if (!suggestion) return
+    setForm((current) => ({
+      ...current,
+      medicines: current.medicines.map((medicine, i) =>
+        i === index
+          ? {
+              ...medicine,
+              medicineName: suggestion.medicineName,
+              dosage: suggestion.dosage ?? medicine.dosage,
+              frequency: suggestion.frequency ?? medicine.frequency,
+              duration: suggestion.duration ?? medicine.duration,
+              notes: suggestion.notes ?? medicine.notes
+            }
+          : medicine
+      )
     }))
   }
 
@@ -578,10 +602,32 @@ export function Prescriptions(): React.JSX.Element {
                     {form.medicines.map((medicine, index) => (
                       <TableRow key={medicine._key}>
                         <TableCell>
-                          <Input
-                            value={medicine.medicineName ?? ''}
-                            onChange={(event) => updateMedicine(index, 'medicineName', event.target.value)}
-                          />
+                          <div className="space-y-1">
+                            <Input
+                              value={medicine.medicineName ?? ''}
+                              onChange={(event) => updateMedicine(index, 'medicineName', event.target.value)}
+                              list={`medicine-suggestions-${index}`}
+                            />
+                            <datalist id={`medicine-suggestions-${index}`}>
+                              {medicineSuggestions.map((suggestion) => (
+                                <option key={suggestion.medicineName} value={suggestion.medicineName} />
+                              ))}
+                            </datalist>
+                            {medicineSuggestions.length > 0 && (
+                              <Select onValueChange={(value) => applyMedicineSuggestion(index, value)}>
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue placeholder="Recent medicines" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {medicineSuggestions.map((suggestion) => (
+                                    <SelectItem key={suggestion.medicineName} value={suggestion.medicineName}>
+                                      {suggestion.medicineName} ({suggestion.useCount})
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Input

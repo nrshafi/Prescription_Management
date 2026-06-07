@@ -1,6 +1,10 @@
 import { and, desc, eq, like, or, sql, type SQL } from 'drizzle-orm'
 import {
+  type MedicineSuggestion,
+  type PresetCategory,
+  type PresetFormValues,
   type PresetRecord,
+  presetFormSchema,
   type PrescriptionDetail,
   type PrescriptionFormValues,
   type PrescriptionListItem,
@@ -294,5 +298,68 @@ export function listPresets(category?: string): PresetRecord[] {
     .from(presets)
     .where(category ? eq(presets.category, category) : undefined)
     .orderBy(presets.category, presets.title)
+    .all()
+    .map((preset) => ({ ...preset, category: preset.category as PresetCategory }))
+}
+
+function normalizePreset(input: PresetFormValues): PresetFormValues {
+  const parsed = presetFormSchema.parse(input)
+  return {
+    category: parsed.category,
+    title: parsed.title.trim(),
+    content: parsed.content?.trim() ? parsed.content.trim() : ''
+  }
+}
+
+export function createPreset(input: PresetFormValues): PresetRecord {
+  const values = normalizePreset(input)
+  const created = getDb()
+    .insert(presets)
+    .values({ category: values.category, title: values.title, content: values.content || null })
+    .returning({ id: presets.presetId })
+    .get()
+  const preset = listPresets().find((item) => item.id === created.id)
+  if (!preset) throw new Error('Could not load created preset.')
+  return preset
+}
+
+export function updatePreset(id: number, input: PresetFormValues): PresetRecord {
+  const values = normalizePreset(input)
+  getDb()
+    .update(presets)
+    .set({ category: values.category, title: values.title, content: values.content || null })
+    .where(eq(presets.presetId, id))
+    .run()
+  const preset = listPresets().find((item) => item.id === id)
+  if (!preset) throw new Error(`Preset ${id} not found`)
+  return preset
+}
+
+export function deletePreset(id: number): { id: number } {
+  getDb().delete(presets).where(eq(presets.presetId, id)).run()
+  return { id }
+}
+
+export function listMedicineSuggestions(search = '', limit = 8): MedicineSuggestion[] {
+  const term = search.trim()
+  const filters: SQL[] = [sql`${prescriptionMedicines.medicineName} <> ''`]
+  if (term) filters.push(like(prescriptionMedicines.medicineName, `%${term}%`))
+
+  return getDb()
+    .select({
+      medicineName: prescriptionMedicines.medicineName,
+      dosage: sql<string | null>`MAX(${prescriptionMedicines.dosage})`,
+      frequency: sql<string | null>`MAX(${prescriptionMedicines.frequency})`,
+      duration: sql<string | null>`MAX(${prescriptionMedicines.duration})`,
+      notes: sql<string | null>`MAX(${prescriptionMedicines.notes})`,
+      useCount: sql<number>`COUNT(*)`,
+      lastUsedAt: sql<string | null>`MAX(${prescriptions.createdAt})`
+    })
+    .from(prescriptionMedicines)
+    .innerJoin(prescriptions, eq(prescriptionMedicines.prescriptionId, prescriptions.prescriptionId))
+    .where(and(...filters))
+    .groupBy(prescriptionMedicines.medicineName)
+    .orderBy(sql`MAX(${prescriptions.createdAt}) DESC`, sql`COUNT(*) DESC`)
+    .limit(limit)
     .all()
 }

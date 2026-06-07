@@ -3,7 +3,8 @@ import { join } from 'node:path'
 import { app, dialog, ipcMain } from 'electron'
 import type { PatientFormValues, PatientQuery } from '../../shared/patient'
 import type { PrintActionResult } from '../../shared/print'
-import type { PrescriptionFormValues } from '../../shared/prescription'
+import type { PresetFormValues, PrescriptionFormValues } from '../../shared/prescription'
+import type { DoctorProfileFormValues, PaperSettingsFormValues } from '../../shared/settings'
 import { getDatabasePath } from '../db/client'
 import { createPrintWindow, printPageSize } from '../print-window'
 import { getDashboardStats } from '../services/dashboard'
@@ -17,13 +18,24 @@ import {
 } from '../services/patients'
 import {
   createPrescription,
+  createPreset,
+  deletePreset,
   duplicatePrescription,
   getPrescription,
+  listMedicineSuggestions,
   listPrescriptions,
   listPresets,
+  updatePreset,
   updatePrescription
 } from '../services/prescriptions'
 import { getPaperSettingsForPrint, getPrescriptionPrintData } from '../services/printing'
+import {
+  exportBackup,
+  getSettings,
+  importBackup,
+  updateDoctorProfile,
+  updatePaperSettings
+} from '../services/settings'
 
 export function registerIpcHandlers(): void {
   ipcMain.handle('app:health', () => {
@@ -55,7 +67,25 @@ export function registerIpcHandlers(): void {
     createPrescription(input)
   )
   ipcMain.handle('prescriptions:duplicate', (_e, id: number) => duplicatePrescription(id))
+  ipcMain.handle('prescriptions:medicineSuggestions', (_e, search?: string) =>
+    listMedicineSuggestions(search ?? '')
+  )
   ipcMain.handle('presets:list', (_e, category?: string) => listPresets(category))
+  ipcMain.handle('presets:create', (_e, input: PresetFormValues) => createPreset(input))
+  ipcMain.handle('presets:update', (_e, id: number, input: PresetFormValues) =>
+    updatePreset(id, input)
+  )
+  ipcMain.handle('presets:delete', (_e, id: number) => deletePreset(id))
+
+  ipcMain.handle('settings:get', () => getSettings())
+  ipcMain.handle('settings:updateDoctorProfile', (_e, input: DoctorProfileFormValues) =>
+    updateDoctorProfile(input)
+  )
+  ipcMain.handle('settings:updatePaperSettings', (_e, input: PaperSettingsFormValues) =>
+    updatePaperSettings(input)
+  )
+  ipcMain.handle('settings:exportBackup', () => exportBackup())
+  ipcMain.handle('settings:importBackup', () => importBackup())
 
   ipcMain.handle('printing:data', (_e, prescriptionId: number) => getPrescriptionPrintData(prescriptionId))
   ipcMain.handle('printing:preview', async (_e, prescriptionId: number): Promise<PrintActionResult> => {
