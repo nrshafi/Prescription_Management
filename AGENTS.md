@@ -14,7 +14,7 @@ Offline desktop app for single-doctor prescription management. Electron + React 
 ## Key Tech Stack
 
 - **Build**: electron-vite (Vite-based Electron bundler)
-- **Database**: SQLite via better-sqlite3 + Drizzle ORM
+- **Database**: SQLite via better-sqlite3 (raw SQL + PRAGMA user_version migrations)
 - **UI**: React 19 + Tailwind CSS 4 + shadcn/ui (new-york style)
 - **Forms**: react-hook-form + zod validation
 - **Icons**: lucide-react
@@ -28,8 +28,7 @@ bun run typecheck    # Run both node + web typechecks
 bun run lint         # Biome linting
 bun run format       # Biome formatting
 bun run check        # Biome lint + format + import sorting
-bun run db:generate  # Generate Drizzle migrations
-bun run db:migrate   # Run pending migrations
+
 ```
 
 ## Build & Package
@@ -44,7 +43,7 @@ bun run build:linux  # Linux AppImage/snap/deb
 
 - **Location**: `{userData}/prescription.db` (Electron userData directory)
 - **Schema**: `src/main/db/schema.ts` - patients, prescriptions, sections, medicines, presets, templates, doctor profile
-- **Migrations**: `drizzle/` folder, auto-run on app start
+- **Migrations**: `src/main/db/migrate.ts` (user_version), auto-run on app start
 - **Singleton rows**: paperSettings row ensured via `ensureSingletonRows()`
 
 ## Path Aliases (Renderer)
@@ -75,7 +74,7 @@ All renderer↔main communication uses typed IPC channels:
 
 ## File Structure Conventions
 
-- Services: `src/main/services/` - Business logic with Drizzle queries
+- Services: `src/main/services/` - Business logic with prepared SQL
 - IPC: `src/main/ipc/` - Electron IPC handler registration
 - Pages: `src/renderer/src/pages/` - Top-level view components
 - Shared types: `src/shared/` - Zod schemas + TypeScript interfaces
@@ -96,8 +95,7 @@ No test framework configured. Verify changes via:
 
 ## Adding New Features
 
-1. Define database schema in `src/main/db/schema.ts`
-2. Generate migration: `bun run db:generate`
+1. Define row types in `src/main/db/schema.ts` and add migration SQL in `src/main/db/migrate.ts`
 3. Add service logic in `src/main/services/`
 4. Register IPC handler in `src/main/ipc/index.ts`
 5. Expose via preload API in `src/preload/index.ts`
@@ -124,7 +122,7 @@ Agents MUST load and use the following specialized skills before performing rele
 - **shadcn**: Load when working with shadcn/ui components, adding new components, styling, or composing UI. Use `skill` tool with `name: "shadcn"` before tasks involving `src/renderer/src/components/ui/`, `components.json`, or shadcn-related work.
 
 ### Database Work
-- **SQLite Database Expert**: Load when working with SQLite schema, migrations, queries, or database optimization. Use `skill` tool with `name: "SQLite Database Expert"` before tasks involving `src/main/db/`, `drizzle/`, or database-related changes.
+- **SQLite Database Expert**: Load when working with SQLite schema, migrations, queries, or database optimization. Use `skill` tool with `name: "SQLite Database Expert"` before tasks involving `src/main/db/` or database-related changes.
 
 ### React Performance
 - **vercel-react-best-practices**: Load when writing, reviewing, or refactoring React components. Use `skill` tool with `name: "vercel-react-best-practices"` before tasks involving React component optimization, rendering patterns, or performance improvements.

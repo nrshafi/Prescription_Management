@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, like, or, type SQL, sql } from 'drizzle-orm'
+import type Database from 'better-sqlite3'
 import {
   type PatientFormValues,
   type PatientListItem,
@@ -10,30 +10,37 @@ import {
   type SortDirection
 } from '../../shared/patient'
 import { getDb } from '../db/client'
-import { type Patient, patients, prescriptions } from '../db/schema'
 
-function toPatientRecord(patient: Patient): PatientRecord {
+function toPatientRecord(row: {
+  patient_id: number
+  patient_code: string
+  name: string
+  age: string | null
+  gender: string | null
+  phone: string | null
+  address: string | null
+  created_at: string
+  updated_at: string
+}): PatientRecord {
   return {
-    id: patient.patientId,
-    patientCode: patient.patientCode,
-    name: patient.name,
-    age: patient.age,
-    gender: patient.gender,
-    phone: patient.phone,
-    address: patient.address,
-    createdAt: patient.createdAt,
-    updatedAt: patient.updatedAt
+    id: row.patient_id,
+    patientCode: row.patient_code,
+    name: row.name,
+    age: row.age,
+    gender: row.gender,
+    phone: row.phone,
+    address: row.address,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
   }
 }
 
-function nextPatientCode(): string {
-  const db = getDb()
+function nextPatientCode(db: Database.Database): string {
   const row = db
-    .select({
-      maxSeq: sql<number>`COALESCE(MAX(CAST(SUBSTR(${patients.patientCode}, 5) AS INTEGER)), 0)`
-    })
-    .from(patients)
-    .get()
+    .prepare(
+      `SELECT COALESCE(MAX(CAST(SUBSTR(patient_code, 5) AS INTEGER)), 0) AS maxSeq FROM patients`
+    )
+    .get() as { maxSeq: number }
   const next = (row?.maxSeq ?? 0) + 1
   return `PAT-${String(next).padStart(6, '0')}`
 }
@@ -54,158 +61,179 @@ function normalize(values: PatientFormValues): {
   }
 }
 
-function latestPatientSectionContent(sectionType: string): SQL<string | null> {
-  return sql<string | null>`(
-    SELECT ps.content
-    FROM prescription_sections ps
-    JOIN prescriptions p
-      ON p.prescription_id = ps.prescription_id
-    WHERE p.patient_id = ${patients.patientId}
-      AND ps.section_type = ${sectionType}
-      AND ps.content IS NOT NULL
-      AND ps.content <> ''
-    ORDER BY p.visit_no DESC, p.prescription_id DESC
-    LIMIT 1
-  )`
-}
+const LAST_COMPLAINT_SQL = `(
+  SELECT ps.content
+  FROM prescription_sections ps
+  JOIN prescriptions p ON p.prescription_id = ps.prescription_id
+  WHERE p.patient_id = patients.patient_id
+    AND ps.section_type = 'Chief Complaint'
+    AND ps.content IS NOT NULL
+    AND ps.content <> ''
+  ORDER BY p.visit_no DESC, p.prescription_id DESC
+  LIMIT 1
+)`
+
+const LAST_DIAGNOSIS_SQL = `(
+  SELECT ps.content
+  FROM prescription_sections ps
+  JOIN prescriptions p ON p.prescription_id = ps.prescription_id
+  WHERE p.patient_id = patients.patient_id
+    AND ps.section_type = 'Provisional Diagnosis'
+    AND ps.content IS NOT NULL
+    AND ps.content <> ''
+  ORDER BY p.visit_no DESC, p.prescription_id DESC
+  LIMIT 1
+)`
 
 export function listPatients(query: PatientQuery = {}): PatientListItem[] {
   const db = getDb()
   const { search, gender, ageMin, ageMax, dateFrom, dateTo, minVisits, sortBy, sortDir } =
     patientQuerySchema.parse(query)
-  const lastComplaint = latestPatientSectionContent('Chief Complaint')
-  const lastDiagnosis = latestPatientSectionContent('Provisional Diagnosis')
 
-  const filters: SQL[] = []
+  const filters: string[] = []
+  const params: unknown[] = []
+
   if (search) {
     const term = `%${search}%`
     filters.push(
-      or(
-        like(patients.patientCode, term),
-        like(patients.name, term),
-        like(patients.phone, term),
-        sql`CAST(${patients.patientId} AS TEXT) = ${search}`,
-        sql`EXISTS (
-          SELECT 1 FROM prescriptions p
-          WHERE p.patient_id = ${patients.patientId} AND CAST(p.prescription_id AS TEXT) = ${search}
-        )`
-      )!
+      `(patients.patient_code LIKE ? OR patients.name LIKE ? OR patients.phone LIKE ? OR CAST(patients.patient_id AS TEXT) = ? OR EXISTS (
+        SELECT 1 FROM prescriptions p
+        WHERE p.patient_id = patients.patient_id AND CAST(p.prescription_id AS TEXT) = ?
+      ))`
     )
+    params.push(term, term, term, search, search)
   }
   if (gender) {
-    filters.push(eq(patients.gender, gender)!)
+    filters.push('patients.gender = ?')
+    params.push(gender)
   }
   if (ageMin !== undefined && ageMin !== null) {
-    filters.push(sql`CAST(${patients.age} AS INTEGER) >= ${ageMin}`)
+    filters.push('CAST(patients.age AS INTEGER) >= ?')
+    params.push(ageMin)
   }
   if (ageMax !== undefined && ageMax !== null) {
-    filters.push(sql`CAST(${patients.age} AS INTEGER) <= ${ageMax}`)
+    filters.push('CAST(patients.age AS INTEGER) <= ?')
+    params.push(ageMax)
   }
   if (dateFrom && dateTo) {
-    filters.push(sql`EXISTS (
+    filters.push(`EXISTS (
       SELECT 1 FROM prescriptions p
-      WHERE p.patient_id = ${patients.patientId}
-        AND p.created_at >= ${dateFrom}
-        AND p.created_at <= ${dateTo} || ' 23:59:59'
+      WHERE p.patient_id = patients.patient_id
+        AND p.created_at >= ?
+        AND p.created_at <= ? || ' 23:59:59'
     )`)
+    params.push(dateFrom, dateTo)
   } else if (dateFrom) {
-    filters.push(sql`EXISTS (
+    filters.push(`EXISTS (
       SELECT 1 FROM prescriptions p
-      WHERE p.patient_id = ${patients.patientId} AND p.created_at >= ${dateFrom}
+      WHERE p.patient_id = patients.patient_id AND p.created_at >= ?
     )`)
+    params.push(dateFrom)
   } else if (dateTo) {
-    filters.push(sql`EXISTS (
+    filters.push(`EXISTS (
       SELECT 1 FROM prescriptions p
-      WHERE p.patient_id = ${patients.patientId} AND p.created_at <= ${dateTo} || ' 23:59:59'
+      WHERE p.patient_id = patients.patient_id AND p.created_at <= ? || ' 23:59:59'
     )`)
+    params.push(dateTo)
   }
   if (minVisits !== undefined && minVisits !== null) {
-    filters.push(sql`(
-      SELECT COUNT(*) FROM prescriptions p WHERE p.patient_id = ${patients.patientId}
-    ) >= ${minVisits}`)
+    filters.push(`(
+      SELECT COUNT(*) FROM prescriptions p WHERE p.patient_id = patients.patient_id
+    ) >= ?`)
+    params.push(minVisits)
   }
 
-  const visitCount = sql<number>`(
-    SELECT COUNT(*) FROM prescriptions p WHERE p.patient_id = ${patients.patientId}
-  )`
-
-  const baseSortColumns = {
-    id: patients.patientId,
-    name: patients.name,
-    age: patients.age,
-    gender: patients.gender
+  const sortColumns: Record<string, string> = {
+    id: 'patients.patient_id',
+    name: 'patients.name',
+    age: 'patients.age',
+    gender: 'patients.gender',
+    complaint: LAST_COMPLAINT_SQL,
+    diagnosis: LAST_DIAGNOSIS_SQL
   }
-  const baseSortColumn = baseSortColumns[sortBy as keyof typeof baseSortColumns]
+  const orderCol = sortColumns[sortBy] ?? 'patients.patient_id'
+  const orderDir = (sortDir as SortDirection) === 'asc' ? 'ASC' : 'DESC'
 
-  const sortExpr =
-    sortBy === 'complaint' ? lastComplaint : sortBy === 'diagnosis' ? lastDiagnosis : undefined
+  const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : ''
 
-  const column = sortExpr ?? baseSortColumn
-  const orderBy = (sortDir as SortDirection) === 'asc' ? asc(column) : desc(column)
+  const sql = `
+SELECT
+  patients.patient_id AS id,
+  patients.patient_code AS patientCode,
+  patients.name AS name,
+  patients.age AS age,
+  patients.gender AS gender,
+  patients.phone AS phone,
+  patients.address AS address,
+  patients.created_at AS createdAt,
+  patients.updated_at AS updatedAt,
+  ${LAST_DIAGNOSIS_SQL} AS lastDiagnosis,
+  ${LAST_COMPLAINT_SQL} AS lastComplaint,
+  (SELECT COUNT(*) FROM prescriptions p WHERE p.patient_id = patients.patient_id) AS visitCount
+FROM patients
+${whereClause}
+ORDER BY ${orderCol} ${orderDir}
+`
 
-  return db
-    .select({
-      id: patients.patientId,
-      patientCode: patients.patientCode,
-      name: patients.name,
-      age: patients.age,
-      gender: patients.gender,
-      phone: patients.phone,
-      address: patients.address,
-      createdAt: patients.createdAt,
-      updatedAt: patients.updatedAt,
-      lastDiagnosis,
-      lastComplaint,
-      visitCount
-    })
-    .from(patients)
-    .where(filters.length ? and(...filters) : undefined)
-    .orderBy(orderBy)
-    .all()
+  return db.prepare(sql).all(...params) as PatientListItem[]
 }
 
 export function getPatient(id: number): PatientRecord | undefined {
   const db = getDb()
-  const patient = db.select().from(patients).where(eq(patients.patientId, id)).get()
+  const patient = db
+    .prepare(
+      `SELECT patient_id, patient_code, name, age, gender, phone, address, created_at, updated_at FROM patients WHERE patient_id = ?`
+    )
+    .get(id) as Parameters<typeof toPatientRecord>[0] | undefined
   return patient ? toPatientRecord(patient) : undefined
 }
 
 export function getPatientVisits(patientId: number): PatientVisit[] {
   const db = getDb()
   return db
-    .select({
-      id: prescriptions.prescriptionId,
-      visitNo: prescriptions.visitNo,
-      createdAt: prescriptions.createdAt,
-      diagnosis: sql<string>`(
-        SELECT ps.content FROM prescription_sections ps
-        WHERE ps.prescription_id = ${prescriptions.prescriptionId} AND ps.section_type = 'Provisional Diagnosis'
-        ORDER BY ps.position LIMIT 1
-      )`,
-      complaint: sql<string>`(
-        SELECT ps.content FROM prescription_sections ps
-        WHERE ps.prescription_id = ${prescriptions.prescriptionId} AND ps.section_type = 'Chief Complaint'
-        ORDER BY ps.position LIMIT 1
-      )`
-    })
-    .from(prescriptions)
-    .where(eq(prescriptions.patientId, patientId))
-    .orderBy(desc(prescriptions.visitNo), desc(prescriptions.prescriptionId))
-    .all()
+    .prepare(
+      `
+SELECT
+  prescription_id AS id,
+  visit_no AS visitNo,
+  created_at AS createdAt,
+  (
+    SELECT ps.content FROM prescription_sections ps
+    WHERE ps.prescription_id = prescriptions.prescription_id AND ps.section_type = 'Provisional Diagnosis'
+    ORDER BY ps.position LIMIT 1
+  ) AS diagnosis,
+  (
+    SELECT ps.content FROM prescription_sections ps
+    WHERE ps.prescription_id = prescriptions.prescription_id AND ps.section_type = 'Chief Complaint'
+    ORDER BY ps.position LIMIT 1
+  ) AS complaint
+FROM prescriptions
+WHERE patient_id = ?
+ORDER BY visit_no DESC, prescription_id DESC
+`
+    )
+    .all(patientId) as PatientVisit[]
 }
 
 export function createPatient(input: PatientFormValues): PatientRecord {
   const db = getDb()
   const values = normalize(patientFormSchema.parse(input))
 
-  const created = db.transaction((tx) => {
-    const patientCode = nextPatientCode()
-    return tx
-      .insert(patients)
-      .values({ patientCode, ...values })
-      .returning()
-      .get()
-  })
+  const created = db.transaction(() => {
+    const patientCode = nextPatientCode(db)
+    const info = db
+      .prepare(
+        `INSERT INTO patients (patient_code, name, age, gender, phone, address) VALUES (?, ?, ?, ?, ?, ?)`
+      )
+      .run(patientCode, values.name, values.age, values.gender, values.phone, values.address)
+    const row = db
+      .prepare(
+        `SELECT patient_id, patient_code, name, age, gender, phone, address, created_at, updated_at FROM patients WHERE patient_id = ?`
+      )
+      .get(Number(info.lastInsertRowid)) as Parameters<typeof toPatientRecord>[0]
+    return row
+  })()
+
   return toPatientRecord(created)
 }
 
@@ -214,33 +242,34 @@ export function updatePatient(id: number, input: PatientFormValues): PatientReco
   const values = normalize(patientFormSchema.parse(input))
 
   const updated = db
-    .update(patients)
-    .set({ ...values, updatedAt: sql`(CURRENT_TIMESTAMP)` })
-    .where(eq(patients.patientId, id))
-    .returning()
-    .get()
+    .prepare(
+      `UPDATE patients SET name = ?, age = ?, gender = ?, phone = ?, address = ?, updated_at = (CURRENT_TIMESTAMP) WHERE patient_id = ?`
+    )
+    .run(values.name, values.age, values.gender, values.phone, values.address, id)
 
-  if (!updated) {
+  if (updated.changes === 0) {
     throw new Error(`Patient ${id} not found`)
   }
-  return toPatientRecord(updated)
+
+  const row = db
+    .prepare(
+      `SELECT patient_id, patient_code, name, age, gender, phone, address, created_at, updated_at FROM patients WHERE patient_id = ?`
+    )
+    .get(id) as Parameters<typeof toPatientRecord>[0]
+
+  return toPatientRecord(row)
 }
 
 export function prescriptionCount(patientId: number): number {
   const db = getDb()
   const row = db
-    .select({ count: sql<number>`COUNT(*)` })
-    .from(prescriptions)
-    .where(eq(prescriptions.patientId, patientId))
-    .get()
+    .prepare(`SELECT COUNT(*) AS count FROM prescriptions WHERE patient_id = ?`)
+    .get(patientId) as { count: number }
   return row?.count ?? 0
 }
 
 export function deletePatient(id: number): { id: number } {
   const db = getDb()
-  db.transaction(() => {
-    db.delete(prescriptions).where(eq(prescriptions.patientId, id)).run()
-    db.delete(patients).where(eq(patients.patientId, id)).run()
-  })
+  db.prepare('DELETE FROM patients WHERE patient_id = ?').run(id)
   return { id }
 }

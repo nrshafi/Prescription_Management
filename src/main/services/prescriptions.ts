@@ -1,8 +1,8 @@
-import { and, asc, desc, eq, inArray, like, or, type SQL, sql } from 'drizzle-orm'
+import type Database from 'better-sqlite3'
 import {
   type MedicineSuggestion,
-  PRESET_BUNDLE_CATEGORIES,
   type PRESCRIPTION_SECTION_TYPES,
+  PRESET_BUNDLE_CATEGORIES,
   type PrescriptionDetail,
   type PrescriptionFormValues,
   type PrescriptionListItem,
@@ -19,25 +19,14 @@ import {
   type SortDirection
 } from '../../shared/prescription'
 import { getDb } from '../db/client'
-import {
-  patients,
-  prescriptionMedicines,
-  prescriptionSections,
-  prescriptions,
-  presetLinks,
-  presets
-} from '../db/schema'
-
-type Db = ReturnType<typeof getDb>
-type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
 
 const BUNDLE_CATEGORIES = new Set<string>(PRESET_BUNDLE_CATEGORIES)
 
-function sectionContentExpr(sectionType: string): SQL<string> {
-  return sql<string>`(
+function sectionContentSubquery(sectionType: string): string {
+  return `(
     SELECT ps.content FROM prescription_sections ps
-    WHERE ps.prescription_id = ${prescriptions.prescriptionId}
-      AND ps.section_type = ${sectionType}
+    WHERE ps.prescription_id = prescriptions.prescription_id
+      AND ps.section_type = '${sectionType.replace(/'/g, "''")}'
     ORDER BY ps.position LIMIT 1
   )`
 }
@@ -72,166 +61,157 @@ function normalize(values: PrescriptionFormValues): PrescriptionFormValues {
   }
 }
 
-function nextVisitNo(patientId: number, db: Db | Tx = getDb()): number {
+function nextVisitNo(patientId: number, db: Database.Database): number {
   const row = db
-    .select({ maxVisitNo: sql<number>`COALESCE(MAX(${prescriptions.visitNo}), 0)` })
-    .from(prescriptions)
-    .where(eq(prescriptions.patientId, patientId))
-    .get()
+    .prepare(
+      `SELECT COALESCE(MAX(visit_no), 0) AS maxVisitNo FROM prescriptions WHERE patient_id = ?`
+    )
+    .get(patientId) as { maxVisitNo: number }
   return (row?.maxVisitNo ?? 0) + 1
 }
 
 function replacePrescriptionContent(
   prescriptionId: number,
   values: PrescriptionFormValues,
-  db: Db | Tx = getDb()
+  db: Database.Database
 ): void {
-  db.delete(prescriptionSections)
-    .where(eq(prescriptionSections.prescriptionId, prescriptionId))
-    .run()
-  db.delete(prescriptionMedicines)
-    .where(eq(prescriptionMedicines.prescriptionId, prescriptionId))
-    .run()
+  db.prepare('DELETE FROM prescription_sections WHERE prescription_id = ?').run(prescriptionId)
+  db.prepare('DELETE FROM prescription_medicines WHERE prescription_id = ?').run(prescriptionId)
 
-  const sections = values.sections.map((section) => ({
-    prescriptionId,
-    sectionType: section.sectionType,
-    content: section.content || null,
-    position: section.position
-  }))
-  if (sections.length) {
-    db.insert(prescriptionSections).values(sections).run()
+  const insertSection = db.prepare(
+    `INSERT INTO prescription_sections (prescription_id, section_type, content, position) VALUES (?, ?, ?, ?)`
+  )
+  for (const section of values.sections) {
+    insertSection.run(
+      prescriptionId,
+      section.sectionType,
+      section.content || null,
+      section.position
+    )
   }
 
-  const medicines = values.medicines.map((medicine) => ({
-    prescriptionId,
-    medicineName: medicine.medicineName || 'Medicine',
-    dosage: medicine.dosage || null,
-    frequency: medicine.frequency || null,
-    duration: medicine.duration || null,
-    notes: medicine.notes || null,
-    position: medicine.position
-  }))
-  if (medicines.length) {
-    db.insert(prescriptionMedicines).values(medicines).run()
+  const insertMedicine = db.prepare(
+    `INSERT INTO prescription_medicines (prescription_id, medicine_name, dosage, frequency, duration, notes, position) VALUES (?, ?, ?, ?, ?, ?, ?)`
+  )
+  for (const medicine of values.medicines) {
+    insertMedicine.run(
+      prescriptionId,
+      medicine.medicineName || 'Medicine',
+      medicine.dosage || null,
+      medicine.frequency || null,
+      medicine.duration || null,
+      medicine.notes || null,
+      medicine.position
+    )
   }
 }
 
 export function listPrescriptions(query: PrescriptionQuery = {}): PrescriptionListItem[] {
   const db = getDb()
   const { search, gender, dateFrom, dateTo, sortBy, sortDir } = prescriptionQuerySchema.parse(query)
-  const chiefComplaint = sectionContentExpr('Chief Complaint')
-  const provisionalDiagnosis = sectionContentExpr('Provisional Diagnosis')
-  const filters: SQL[] = []
+  const chiefComplaint = sectionContentSubquery('Chief Complaint')
+  const provisionalDiagnosis = sectionContentSubquery('Provisional Diagnosis')
+
+  const filters: string[] = []
+  const params: unknown[] = []
 
   if (search) {
     const term = `%${search}%`
     filters.push(
-      or(
-        like(patients.patientCode, term),
-        like(patients.name, term),
-        like(patients.phone, term),
-        sql`CAST(${patients.patientId} AS TEXT) = ${search}`,
-        sql`CAST(${prescriptions.prescriptionId} AS TEXT) = ${search}`
-      )!
+      `(patients.patient_code LIKE ? OR patients.name LIKE ? OR patients.phone LIKE ? OR CAST(patients.patient_id AS TEXT) = ? OR CAST(prescriptions.prescription_id AS TEXT) = ?)`
     )
+    params.push(term, term, term, search, search)
   }
   if (gender) {
-    filters.push(eq(patients.gender, gender)!)
+    filters.push('patients.gender = ?')
+    params.push(gender)
   }
   if (dateFrom) {
-    filters.push(sql`${prescriptions.createdAt} >= ${dateFrom}`)
+    filters.push('prescriptions.created_at >= ?')
+    params.push(dateFrom)
   }
   if (dateTo) {
-    filters.push(sql`${prescriptions.createdAt} <= ${dateTo} || ' 23:59:59'`)
+    filters.push(`prescriptions.created_at <= ? || ' 23:59:59'`)
+    params.push(dateTo)
   }
 
-  const sortColumns = {
-    id: prescriptions.prescriptionId,
-    patientName: patients.name,
-    patientCode: patients.patientCode,
-    visitNo: prescriptions.visitNo,
-    createdAt: prescriptions.createdAt
+  const sortColumns: Record<PrescriptionSortField, string> = {
+    id: 'prescriptions.prescription_id',
+    patientName: 'patients.name',
+    patientCode: 'patients.patient_code',
+    visitNo: 'prescriptions.visit_no',
+    createdAt: 'prescriptions.created_at'
   }
-  const column = sortColumns[sortBy as PrescriptionSortField]
-  const orderBy = (sortDir as SortDirection) === 'asc' ? asc(column) : desc(column)
+  const column = sortColumns[sortBy as PrescriptionSortField] ?? 'prescriptions.prescription_id'
+  const orderDir = (sortDir as SortDirection) === 'asc' ? 'ASC' : 'DESC'
+  const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : ''
 
-  return db
-    .select({
-      id: prescriptions.prescriptionId,
-      patientId: patients.patientId,
-      patientCode: patients.patientCode,
-      patientName: patients.name,
-      phone: patients.phone,
-      age: patients.age,
-      gender: patients.gender,
-      visitNo: prescriptions.visitNo,
-      createdAt: prescriptions.createdAt,
-      updatedAt: prescriptions.updatedAt,
-      chiefComplaint,
-      provisionalDiagnosis
-    })
-    .from(prescriptions)
-    .innerJoin(patients, eq(prescriptions.patientId, patients.patientId))
-    .where(filters.length ? and(...filters) : undefined)
-    .orderBy(orderBy)
-    .all()
+  const sql = `
+SELECT
+  prescriptions.prescription_id AS id,
+  patients.patient_id AS patientId,
+  patients.patient_code AS patientCode,
+  patients.name AS patientName,
+  patients.phone AS phone,
+  patients.age AS age,
+  patients.gender AS gender,
+  prescriptions.visit_no AS visitNo,
+  prescriptions.created_at AS createdAt,
+  prescriptions.updated_at AS updatedAt,
+  ${chiefComplaint} AS chiefComplaint,
+  ${provisionalDiagnosis} AS provisionalDiagnosis
+FROM prescriptions
+INNER JOIN patients ON prescriptions.patient_id = patients.patient_id
+${whereClause}
+ORDER BY ${column} ${orderDir}
+`
+
+  return db.prepare(sql).all(...params) as PrescriptionListItem[]
 }
 
 export function getPrescription(id: number): PrescriptionDetail | undefined {
   const db = getDb()
-  const chiefComplaint = sectionContentExpr('Chief Complaint')
-  const provisionalDiagnosis = sectionContentExpr('Provisional Diagnosis')
+  const chiefComplaint = sectionContentSubquery('Chief Complaint')
+  const provisionalDiagnosis = sectionContentSubquery('Provisional Diagnosis')
+
   const row = db
-    .select({
-      id: prescriptions.prescriptionId,
-      patientId: patients.patientId,
-      patientCode: patients.patientCode,
-      patientName: patients.name,
-      age: patients.age,
-      gender: patients.gender,
-      phone: patients.phone,
-      address: patients.address,
-      templateId: prescriptions.templateId,
-      visitNo: prescriptions.visitNo,
-      createdAt: prescriptions.createdAt,
-      updatedAt: prescriptions.updatedAt,
-      chiefComplaint,
-      provisionalDiagnosis
-    })
-    .from(prescriptions)
-    .innerJoin(patients, eq(prescriptions.patientId, patients.patientId))
-    .where(eq(prescriptions.prescriptionId, id))
-    .get()
+    .prepare(
+      `
+SELECT
+  prescriptions.prescription_id AS id,
+  patients.patient_id AS patientId,
+  patients.patient_code AS patientCode,
+  patients.name AS patientName,
+  patients.age AS age,
+  patients.gender AS gender,
+  patients.phone AS phone,
+  patients.address AS address,
+  prescriptions.template_id AS templateId,
+  prescriptions.visit_no AS visitNo,
+  prescriptions.created_at AS createdAt,
+  prescriptions.updated_at AS updatedAt,
+  ${chiefComplaint} AS chiefComplaint,
+  ${provisionalDiagnosis} AS provisionalDiagnosis
+FROM prescriptions
+INNER JOIN patients ON prescriptions.patient_id = patients.patient_id
+WHERE prescriptions.prescription_id = ?
+`
+    )
+    .get(id) as Omit<PrescriptionDetail, 'sections' | 'medicines'> | undefined
 
   if (!row) return undefined
 
   const sections = db
-    .select({
-      id: prescriptionSections.sectionId,
-      sectionType: prescriptionSections.sectionType,
-      content: prescriptionSections.content,
-      position: prescriptionSections.position
-    })
-    .from(prescriptionSections)
-    .where(eq(prescriptionSections.prescriptionId, id))
-    .orderBy(prescriptionSections.position)
-    .all()
+    .prepare(
+      `SELECT section_id AS id, section_type AS sectionType, content, position FROM prescription_sections WHERE prescription_id = ? ORDER BY position`
+    )
+    .all(id) as PrescriptionDetail['sections']
 
   const medicines = db
-    .select({
-      id: prescriptionMedicines.medicineId,
-      medicineName: prescriptionMedicines.medicineName,
-      dosage: prescriptionMedicines.dosage,
-      frequency: prescriptionMedicines.frequency,
-      duration: prescriptionMedicines.duration,
-      notes: prescriptionMedicines.notes,
-      position: prescriptionMedicines.position
-    })
-    .from(prescriptionMedicines)
-    .where(eq(prescriptionMedicines.prescriptionId, id))
-    .orderBy(prescriptionMedicines.position)
-    .all()
+    .prepare(
+      `SELECT medicine_id AS id, medicine_name AS medicineName, dosage, frequency, duration, notes, position FROM prescription_medicines WHERE prescription_id = ? ORDER BY position`
+    )
+    .all(id) as PrescriptionDetail['medicines']
 
   return {
     ...row,
@@ -254,19 +234,15 @@ export function createPrescription(input: PrescriptionFormValues): PrescriptionD
   const db = getDb()
   const values = normalize(input)
 
-  const id = db.transaction((tx) => {
-    const created = tx
-      .insert(prescriptions)
-      .values({
-        patientId: values.patientId,
-        templateId: values.templateId ?? null,
-        visitNo: nextVisitNo(values.patientId, tx)
-      })
-      .returning({ id: prescriptions.prescriptionId })
-      .get()
-    replacePrescriptionContent(created.id, values, tx)
-    return created.id
-  })
+  const id = db.transaction(() => {
+    const visitNo = nextVisitNo(values.patientId, db)
+    const info = db
+      .prepare(`INSERT INTO prescriptions (patient_id, template_id, visit_no) VALUES (?, ?, ?)`)
+      .run(values.patientId, values.templateId ?? null, visitNo)
+    const prescriptionId = Number(info.lastInsertRowid)
+    replacePrescriptionContent(prescriptionId, values, db)
+    return prescriptionId
+  })()
 
   const detail = getPrescription(id)
   if (!detail) throw new Error('Could not load created prescription.')
@@ -285,13 +261,12 @@ export function updatePrescription(id: number, input: PrescriptionFormValues): P
 
   const valuesForUpdate = { ...values, patientId: existing.patientId }
 
-  db.transaction((tx) => {
-    tx.update(prescriptions)
-      .set({ templateId: values.templateId ?? null, updatedAt: sql`(CURRENT_TIMESTAMP)` })
-      .where(eq(prescriptions.prescriptionId, id))
-      .run()
-    replacePrescriptionContent(id, valuesForUpdate, tx)
-  })
+  db.transaction(() => {
+    db.prepare(
+      `UPDATE prescriptions SET template_id = ?, updated_at = (CURRENT_TIMESTAMP) WHERE prescription_id = ?`
+    ).run(values.templateId ?? null, id)
+    replacePrescriptionContent(id, valuesForUpdate, db)
+  })()
 
   const detail = getPrescription(id)
   if (!detail) throw new Error('Could not load updated prescription.')
@@ -323,59 +298,44 @@ export function duplicatePrescription(id: number): PrescriptionDetail {
 
 export function listPresets(category?: string): PresetRecord[] {
   const db = getDb()
-  const rows = db
-    .select({
-      id: presets.presetId,
-      category: presets.category,
-      title: presets.title,
-      content: presets.content
-    })
-    .from(presets)
-    .where(category ? eq(presets.category, category) : undefined)
-    .orderBy(presets.category, presets.title)
-    .all()
-    .map((preset) => ({ ...preset, category: preset.category as PresetCategory }))
+  const rows = (
+    category
+      ? db
+          .prepare(
+            `SELECT preset_id AS id, category, title, content FROM presets WHERE category = ? ORDER BY category, title`
+          )
+          .all(category)
+      : db
+          .prepare(
+            `SELECT preset_id AS id, category, title, content FROM presets ORDER BY category, title`
+          )
+          .all()
+  ) as PresetRecord[]
 
-  return attachPresetLinks(rows, db)
+  const mapped = rows.map((preset) => ({ ...preset, category: preset.category as PresetCategory }))
+  return attachPresetLinks(mapped, db)
 }
 
 export function getPreset(id: number): PresetRecord | undefined {
   const db = getDb()
   const preset = db
-    .select({
-      id: presets.presetId,
-      category: presets.category,
-      title: presets.title,
-      content: presets.content
-    })
-    .from(presets)
-    .where(eq(presets.presetId, id))
-    .get()
+    .prepare(`SELECT preset_id AS id, category, title, content FROM presets WHERE preset_id = ?`)
+    .get(id) as PresetRecord | undefined
 
   if (!preset) return undefined
   return attachPresetLinks([{ ...preset, category: preset.category as PresetCategory }], db)[0]
 }
 
-function attachPresetLinks(rows: PresetRecord[], db: Db | Tx = getDb()): PresetRecord[] {
+function attachPresetLinks(rows: PresetRecord[], db: Database.Database): PresetRecord[] {
   const bundleIds = rows.filter((row) => BUNDLE_CATEGORIES.has(row.category)).map((row) => row.id)
   if (bundleIds.length === 0) return rows
 
+  const placeholders = bundleIds.map(() => '?').join(', ')
   const links = db
-    .select({
-      id: presetLinks.linkId,
-      ownerPresetId: presetLinks.ownerPresetId,
-      targetKind: presetLinks.targetKind,
-      targetPresetId: presetLinks.targetPresetId,
-      label: presetLinks.label,
-      dosage: presetLinks.dosage,
-      frequency: presetLinks.frequency,
-      duration: presetLinks.duration,
-      position: presetLinks.position
-    })
-    .from(presetLinks)
-    .where(inArray(presetLinks.ownerPresetId, bundleIds))
-    .orderBy(presetLinks.ownerPresetId, presetLinks.position)
-    .all()
+    .prepare(
+      `SELECT link_id AS id, owner_preset_id AS ownerPresetId, target_kind AS targetKind, target_preset_id AS targetPresetId, label, dosage, frequency, duration, position FROM preset_links WHERE owner_preset_id IN (${placeholders}) ORDER BY owner_preset_id, position`
+    )
+    .all(...bundleIds) as PresetLinkRecord[]
 
   const linksByOwner = new Map<number, PresetLinkRecord[]>()
   for (const link of links) {
@@ -414,34 +374,37 @@ function normalizePreset(input: PresetFormValues): PresetFormValues {
 function replacePresetLinks(
   ownerPresetId: number,
   links: PresetFormValues['links'],
-  db: Db | Tx
+  db: Database.Database
 ): void {
-  db.delete(presetLinks).where(eq(presetLinks.ownerPresetId, ownerPresetId)).run()
-  const rows = (links ?? []).map((link, index) => ({
-    ownerPresetId,
-    targetKind: link.targetKind,
-    targetPresetId: link.targetPresetId ?? null,
-    label: link.label,
-    dosage: link.targetKind === 'Medicine' && link.dosage ? link.dosage : null,
-    frequency: link.targetKind === 'Medicine' && link.frequency ? link.frequency : null,
-    duration: link.targetKind === 'Medicine' && link.duration ? link.duration : null,
-    position: link.position ?? index
-  }))
-  if (rows.length) db.insert(presetLinks).values(rows).run()
+  db.prepare('DELETE FROM preset_links WHERE owner_preset_id = ?').run(ownerPresetId)
+  const insert = db.prepare(
+    `INSERT INTO preset_links (owner_preset_id, target_kind, target_preset_id, label, dosage, frequency, duration, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  )
+  for (const [index, link] of (links ?? []).entries()) {
+    insert.run(
+      ownerPresetId,
+      link.targetKind,
+      link.targetPresetId ?? null,
+      link.label,
+      link.targetKind === 'Medicine' && link.dosage ? link.dosage : null,
+      link.targetKind === 'Medicine' && link.frequency ? link.frequency : null,
+      link.targetKind === 'Medicine' && link.duration ? link.duration : null,
+      link.position ?? index
+    )
+  }
 }
 
 export function createPreset(input: PresetFormValues): PresetRecord {
   const values = normalizePreset(input)
   const db = getDb()
-  const id = db.transaction((tx) => {
-    const created = tx
-      .insert(presets)
-      .values({ category: values.category, title: values.title, content: values.content || null })
-      .returning({ id: presets.presetId })
-      .get()
-    replacePresetLinks(created.id, values.links, tx)
-    return created.id
-  })
+  const id = db.transaction(() => {
+    const info = db
+      .prepare(`INSERT INTO presets (category, title, content) VALUES (?, ?, ?)`)
+      .run(values.category, values.title, values.content || null)
+    const presetId = Number(info.lastInsertRowid)
+    replacePresetLinks(presetId, values.links, db)
+    return presetId
+  })()
   const preset = getPreset(id)
   if (!preset) throw new Error('Could not load created preset.')
   return preset
@@ -450,46 +413,53 @@ export function createPreset(input: PresetFormValues): PresetRecord {
 export function updatePreset(id: number, input: PresetFormValues): PresetRecord {
   const values = normalizePreset(input)
   const db = getDb()
-  db.transaction((tx) => {
-    tx.update(presets)
-      .set({ category: values.category, title: values.title, content: values.content || null })
-      .where(eq(presets.presetId, id))
-      .run()
-    replacePresetLinks(id, values.links, tx)
-  })
+  db.transaction(() => {
+    db.prepare(`UPDATE presets SET category = ?, title = ?, content = ? WHERE preset_id = ?`).run(
+      values.category,
+      values.title,
+      values.content || null,
+      id
+    )
+    replacePresetLinks(id, values.links, db)
+  })()
   const preset = getPreset(id)
   if (!preset) throw new Error(`Preset ${id} not found`)
   return preset
 }
 
 export function deletePreset(id: number): { id: number } {
-  getDb().delete(presets).where(eq(presets.presetId, id)).run()
+  getDb().prepare('DELETE FROM presets WHERE preset_id = ?').run(id)
   return { id }
 }
 
 export function listMedicineSuggestions(search = '', limit = 8): MedicineSuggestion[] {
   const term = search.trim()
-  const filters: SQL[] = [sql`${prescriptionMedicines.medicineName} <> ''`]
-  if (term) filters.push(like(prescriptionMedicines.medicineName, `%${term}%`))
+  const filters = [`prescription_medicines.medicine_name <> ''`]
+  const params: unknown[] = []
+  if (term) {
+    filters.push('prescription_medicines.medicine_name LIKE ?')
+    params.push(`%${term}%`)
+  }
+  params.push(limit)
+
+  const sql = `
+SELECT
+  prescription_medicines.medicine_name AS medicineName,
+  MAX(prescription_medicines.dosage) AS dosage,
+  MAX(prescription_medicines.frequency) AS frequency,
+  MAX(prescription_medicines.duration) AS duration,
+  MAX(prescription_medicines.notes) AS notes,
+  COUNT(*) AS useCount,
+  MAX(prescriptions.created_at) AS lastUsedAt
+FROM prescription_medicines
+INNER JOIN prescriptions ON prescription_medicines.prescription_id = prescriptions.prescription_id
+WHERE ${filters.join(' AND ')}
+GROUP BY prescription_medicines.medicine_name
+ORDER BY MAX(prescriptions.created_at) DESC, COUNT(*) DESC
+LIMIT ?
+`
 
   return getDb()
-    .select({
-      medicineName: prescriptionMedicines.medicineName,
-      dosage: sql<string | null>`MAX(${prescriptionMedicines.dosage})`,
-      frequency: sql<string | null>`MAX(${prescriptionMedicines.frequency})`,
-      duration: sql<string | null>`MAX(${prescriptionMedicines.duration})`,
-      notes: sql<string | null>`MAX(${prescriptionMedicines.notes})`,
-      useCount: sql<number>`COUNT(*)`,
-      lastUsedAt: sql<string | null>`MAX(${prescriptions.createdAt})`
-    })
-    .from(prescriptionMedicines)
-    .innerJoin(
-      prescriptions,
-      eq(prescriptionMedicines.prescriptionId, prescriptions.prescriptionId)
-    )
-    .where(and(...filters))
-    .groupBy(prescriptionMedicines.medicineName)
-    .orderBy(sql`MAX(${prescriptions.createdAt}) DESC`, sql`COUNT(*) DESC`)
-    .limit(limit)
-    .all()
+    .prepare(sql)
+    .all(...params) as MedicineSuggestion[]
 }

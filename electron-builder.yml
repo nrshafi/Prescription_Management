@@ -12,11 +12,6 @@ files:
 asarUnpack:
   - resources/**
   - '**/node_modules/better-sqlite3/**'
-extraResources:
-  - from: drizzle
-    to: drizzle
-    filter:
-      - '**/*'
 win:
   executableName: prescriptx
 nsis:

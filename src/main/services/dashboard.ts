@@ -1,7 +1,5 @@
-import { desc, sql } from 'drizzle-orm'
 import type { PatientListItem } from '../../shared/patient'
 import { getDb } from '../db/client'
-import { patients, prescriptions } from '../db/schema'
 
 export interface DashboardStats {
   totalPatients: number
@@ -12,12 +10,14 @@ export interface DashboardStats {
 export function getDashboardStats(): DashboardStats {
   const db = getDb()
 
-  const patientCount = db.select({ count: sql<number>`count(*)` }).from(patients).get()
+  const patientCount = db.prepare('SELECT COUNT(*) AS count FROM patients').get() as {
+    count: number
+  }
   const todaysCount = db
-    .select({ count: sql<number>`count(*)` })
-    .from(prescriptions)
-    .where(sql`date(${prescriptions.createdAt}) = date('now', 'localtime')`)
-    .get()
+    .prepare(
+      `SELECT COUNT(*) AS count FROM prescriptions WHERE date(created_at) = date('now', 'localtime')`
+    )
+    .get() as { count: number }
 
   return {
     totalPatients: patientCount?.count ?? 0,
@@ -27,39 +27,41 @@ export function getDashboardStats(): DashboardStats {
 }
 
 export function getRecentPatients(limit = 6): PatientListItem[] {
-  return getDb()
-    .select({
-      id: patients.patientId,
-      patientCode: patients.patientCode,
-      name: patients.name,
-      age: patients.age,
-      gender: patients.gender,
-      phone: patients.phone,
-      address: patients.address,
-      createdAt: patients.createdAt,
-      updatedAt: patients.updatedAt,
-      visitCount: sql<number>`(
-        SELECT COUNT(*) FROM prescriptions p WHERE p.patient_id = ${patients.patientId}
-      )`,
-      lastComplaint: sql<string | null>`(
-        SELECT ps.content
-        FROM prescriptions p
-        JOIN prescription_sections ps ON ps.prescription_id = p.prescription_id
-        WHERE p.patient_id = ${patients.patientId} AND ps.section_type = 'Chief Complaint'
-        ORDER BY p.created_at DESC, p.prescription_id DESC
-        LIMIT 1
-      )`,
-      lastDiagnosis: sql<string | null>`(
-        SELECT ps.content
-        FROM prescriptions p
-        JOIN prescription_sections ps ON ps.prescription_id = p.prescription_id
-        WHERE p.patient_id = ${patients.patientId} AND ps.section_type = 'Provisional Diagnosis'
-        ORDER BY p.created_at DESC, p.prescription_id DESC
-        LIMIT 1
-      )`
-    })
-    .from(patients)
-    .orderBy(desc(patients.createdAt), desc(patients.patientId))
-    .limit(limit)
-    .all()
+  const db = getDb()
+  return db
+    .prepare(
+      `
+SELECT
+  p.patient_id AS id,
+  p.patient_code AS patientCode,
+  p.name AS name,
+  p.age AS age,
+  p.gender AS gender,
+  p.phone AS phone,
+  p.address AS address,
+  p.created_at AS createdAt,
+  p.updated_at AS updatedAt,
+  (SELECT COUNT(*) FROM prescriptions pr WHERE pr.patient_id = p.patient_id) AS visitCount,
+  (
+    SELECT ps.content
+    FROM prescriptions pr
+    JOIN prescription_sections ps ON ps.prescription_id = pr.prescription_id
+    WHERE pr.patient_id = p.patient_id AND ps.section_type = 'Chief Complaint'
+    ORDER BY pr.created_at DESC, pr.prescription_id DESC
+    LIMIT 1
+  ) AS lastComplaint,
+  (
+    SELECT ps.content
+    FROM prescriptions pr
+    JOIN prescription_sections ps ON ps.prescription_id = pr.prescription_id
+    WHERE pr.patient_id = p.patient_id AND ps.section_type = 'Provisional Diagnosis'
+    ORDER BY pr.created_at DESC, pr.prescription_id DESC
+    LIMIT 1
+  ) AS lastDiagnosis
+FROM patients p
+ORDER BY p.created_at DESC, p.patient_id DESC
+LIMIT ?
+`
+    )
+    .all(limit) as PatientListItem[]
 }

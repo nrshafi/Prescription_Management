@@ -189,7 +189,10 @@ function BundleEditor({
               links.map((link, index) => {
                 const options = presets.filter((preset) => preset.category === link.targetKind)
                 return (
-                  <div key={linkKeys.current[index] ?? `lk-${index}`} className="rounded-lg border p-3">
+                  <div
+                    key={linkKeys.current[index] ?? `lk-${index}`}
+                    className="rounded-lg border p-3"
+                  >
                     <div className="mb-3 flex items-center gap-2">
                       <Badge variant="secondary">
                         {link.targetKind === 'Medicine' ? 'Rx' : link.targetKind}

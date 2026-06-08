@@ -1,6 +1,5 @@
 import { copyFile, rm } from 'node:fs/promises'
 import { basename, join } from 'node:path'
-import { eq } from 'drizzle-orm'
 import { app, dialog } from 'electron'
 import type { DoctorProfileRecord, PaperSettingsRecord } from '../../shared/print'
 import {
@@ -10,9 +9,8 @@ import {
   type PaperSettingsFormValues,
   paperSettingsFormSchema
 } from '../../shared/settings'
-import { closeDatabase, getDatabasePath, getDb, getRawDb, initDatabase } from '../db/client'
+import { closeDatabase, getDatabasePath, getDb, initDatabase } from '../db/client'
 import { ensureSingletonRows, runMigrations } from '../db/migrate'
-import { doctorProfile, paperSettings } from '../db/schema'
 import { getDoctorProfileForPrint, getPaperSettingsForPrint } from './printing'
 
 function nullable(value: string | undefined): string | null {
@@ -33,26 +31,58 @@ export function getSettings(): {
 export function updateDoctorProfile(input: DoctorProfileFormValues): DoctorProfileRecord {
   const values = doctorProfileFormSchema.parse(input)
   getDb()
-    .update(doctorProfile)
-    .set({
-      name: nullable(values.name),
-      degrees: nullable(values.degrees),
-      speciality: nullable(values.speciality),
-      phone: nullable(values.phone),
-      email: nullable(values.email),
-      address: nullable(values.address),
-      chamber: nullable(values.chamber),
-      logoPath: nullable(values.logoPath),
-      signaturePath: nullable(values.signaturePath)
-    })
-    .where(eq(doctorProfile.doctorId, 1))
-    .run()
+    .prepare(
+      `
+UPDATE doctor_profile SET
+  name = ?,
+  degrees = ?,
+  speciality = ?,
+  phone = ?,
+  email = ?,
+  address = ?,
+  chamber = ?,
+  logo_path = ?,
+  signature_path = ?
+WHERE doctor_id = 1
+`
+    )
+    .run(
+      nullable(values.name),
+      nullable(values.degrees),
+      nullable(values.speciality),
+      nullable(values.phone),
+      nullable(values.email),
+      nullable(values.address),
+      nullable(values.chamber),
+      nullable(values.logoPath),
+      nullable(values.signaturePath)
+    )
   return getDoctorProfileForPrint()
 }
 
 export function updatePaperSettings(input: PaperSettingsFormValues): PaperSettingsRecord {
   const values = paperSettingsFormSchema.parse(input)
-  getDb().update(paperSettings).set(values).where(eq(paperSettings.paperSettingId, 1)).run()
+  getDb()
+    .prepare(
+      `
+UPDATE paper_settings SET
+  width_mm = ?,
+  height_mm = ?,
+  margin_top = ?,
+  margin_bottom = ?,
+  margin_left = ?,
+  margin_right = ?
+WHERE paper_setting_id = 1
+`
+    )
+    .run(
+      values.widthMm,
+      values.heightMm,
+      values.marginTop,
+      values.marginBottom,
+      values.marginLeft,
+      values.marginRight
+    )
   return getPaperSettingsForPrint()
 }
 
@@ -65,7 +95,7 @@ export async function exportBackup(): Promise<BackupActionResult> {
   })
   if (target.canceled || !target.filePath) return { ok: false }
 
-  await getRawDb().backup(target.filePath)
+  await getDb().backup(target.filePath)
   return { ok: true, path: target.filePath }
 }
 

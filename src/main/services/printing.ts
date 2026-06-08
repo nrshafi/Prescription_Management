@@ -1,11 +1,9 @@
-import { eq } from 'drizzle-orm'
 import type {
   DoctorProfileRecord,
   PaperSettingsRecord,
   PrescriptionPrintData
 } from '../../shared/print'
 import { getDb } from '../db/client'
-import { doctorProfile, paperSettings } from '../db/schema'
 import { getPrescription } from './prescriptions'
 
 const DEFAULT_DOCTOR_PROFILE: DoctorProfileRecord = {
@@ -32,36 +30,48 @@ const DEFAULT_PAPER_SETTINGS: PaperSettingsRecord = {
 }
 
 export function getDoctorProfileForPrint(): DoctorProfileRecord {
-  const row = getDb().select().from(doctorProfile).limit(1).get()
+  const row = getDb()
+    .prepare(
+      `
+SELECT
+  doctor_id AS id,
+  name AS name,
+  degrees AS degrees,
+  speciality AS speciality,
+  phone AS phone,
+  email AS email,
+  address AS address,
+  chamber AS chamber,
+  logo_path AS logoPath,
+  signature_path AS signaturePath
+FROM doctor_profile
+WHERE doctor_id = 1
+`
+    )
+    .get() as DoctorProfileRecord | undefined
   if (!row) return DEFAULT_DOCTOR_PROFILE
-
-  return {
-    id: row.doctorId,
-    name: row.name,
-    degrees: row.degrees,
-    speciality: row.speciality,
-    phone: row.phone,
-    email: row.email,
-    address: row.address,
-    chamber: row.chamber,
-    logoPath: row.logoPath,
-    signaturePath: row.signaturePath
-  }
+  return row
 }
 
 export function getPaperSettingsForPrint(): PaperSettingsRecord {
-  const row = getDb().select().from(paperSettings).where(eq(paperSettings.paperSettingId, 1)).get()
+  const row = getDb()
+    .prepare(
+      `
+SELECT
+  paper_setting_id AS id,
+  width_mm AS widthMm,
+  height_mm AS heightMm,
+  margin_top AS marginTop,
+  margin_bottom AS marginBottom,
+  margin_left AS marginLeft,
+  margin_right AS marginRight
+FROM paper_settings
+WHERE paper_setting_id = 1
+`
+    )
+    .get() as PaperSettingsRecord | undefined
   if (!row) return DEFAULT_PAPER_SETTINGS
-
-  return {
-    id: row.paperSettingId,
-    widthMm: row.widthMm,
-    heightMm: row.heightMm,
-    marginTop: row.marginTop,
-    marginBottom: row.marginBottom,
-    marginLeft: row.marginLeft,
-    marginRight: row.marginRight
-  }
+  return row
 }
 
 export function getPrescriptionPrintData(prescriptionId: number): PrescriptionPrintData {

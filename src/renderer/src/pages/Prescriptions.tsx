@@ -108,7 +108,9 @@ function formatDate(value: string): string {
 }
 
 function patientSummary(patient: PatientListItem): string {
-  return [patient.gender, patient.age && `Age ${patient.age}`, patient.phone].filter(Boolean).join(' · ')
+  return [patient.gender, patient.age && `Age ${patient.age}`, patient.phone]
+    .filter(Boolean)
+    .join(' · ')
 }
 
 export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.Element {
@@ -283,7 +285,13 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
       <div className="flex justify-end gap-1">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button type="button" variant="ghost" size="icon" aria-label="Edit" onClick={() => onEdit(visit.id)}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Edit"
+              onClick={() => onEdit(visit.id)}
+            >
               <Pencil className="size-4" />
             </Button>
           </TooltipTrigger>
@@ -545,8 +553,17 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
                         onClick={() => togglePatient(patient.id)}
                       >
                         <TableCell>
-                          <Button type="button" variant="ghost" size="icon" aria-label="Toggle prescriptions">
-                            {expanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Toggle prescriptions"
+                          >
+                            {expanded ? (
+                              <ChevronDown className="size-4" />
+                            ) : (
+                              <ChevronRight className="size-4" />
+                            )}
                           </Button>
                         </TableCell>
                         <TableCell className="font-mono text-xs">{patient.patientCode}</TableCell>
@@ -558,16 +575,25 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
                             <div>
                               <p className="font-medium">{patient.name}</p>
                               {patient.address ? (
-                                <p className="text-muted-foreground max-w-[12rem] truncate text-xs" title={patient.address}>
+                                <p
+                                  className="text-muted-foreground max-w-[12rem] truncate text-xs"
+                                  title={patient.address}
+                                >
                                   {patient.address}
                                 </p>
                               ) : null}
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-muted-foreground">{patient.phone || '-'}</TableCell>
-                        <TableCell className="text-muted-foreground">{patient.age || '-'}</TableCell>
-                        <TableCell className="text-muted-foreground">{patient.gender || '-'}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {patient.phone || '-'}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {patient.age || '-'}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {patient.gender || '-'}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="secondary">{patient.visitCount}</Badge>
                         </TableCell>
@@ -610,7 +636,9 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
                             <div className="flex flex-col gap-3">
                               {patient.address || patientSummary(patient) ? (
                                 <div className="text-muted-foreground text-sm">
-                                  {[patientSummary(patient), patient.address].filter(Boolean).join(' · ')}
+                                  {[patientSummary(patient), patient.address]
+                                    .filter(Boolean)
+                                    .join(' · ')}
                                 </div>
                               ) : null}
                               {renderVisits(patient)}
@@ -647,11 +675,16 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
                       onClick={() => togglePatient(patient.id)}
                     >
                       <CardTitle className="flex items-center gap-2">
-                        {expanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+                        {expanded ? (
+                          <ChevronDown className="size-4" />
+                        ) : (
+                          <ChevronRight className="size-4" />
+                        )}
                         <span className="truncate">{patient.name}</span>
                       </CardTitle>
                       <p className="text-muted-foreground text-xs">
-                        {patient.patientCode} · {patient.visitCount} visit{patient.visitCount === 1 ? '' : 's'}
+                        {patient.patientCode} · {patient.visitCount} visit
+                        {patient.visitCount === 1 ? '' : 's'}
                       </p>
                     </button>
                     <div className="bg-muted flex size-10 items-center justify-center rounded-full text-sm font-medium">
@@ -679,13 +712,22 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
                   {patient.address ? (
                     <div className="col-span-2">
                       <p className="text-muted-foreground text-xs">Address</p>
-                      <p className="truncate" title={patient.address}>{patient.address}</p>
+                      <p className="truncate" title={patient.address}>
+                        {patient.address}
+                      </p>
                     </div>
                   ) : null}
-                  {expanded ? <div className="col-span-2">{renderVisits(patient, true)}</div> : null}
+                  {expanded ? (
+                    <div className="col-span-2">{renderVisits(patient, true)}</div>
+                  ) : null}
                 </CardContent>
                 <CardFooter className="justify-end gap-1">
-                  <Button variant="ghost" size="icon" aria-label="Edit patient" onClick={() => openEditPatient(patient)}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Edit patient"
+                    onClick={() => openEditPatient(patient)}
+                  >
                     <Pencil className="size-4" />
                   </Button>
                   <Button

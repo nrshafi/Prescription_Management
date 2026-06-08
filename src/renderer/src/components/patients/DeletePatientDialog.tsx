@@ -61,8 +61,8 @@ export function DeletePatientDialog({
           <DialogTitle>Delete patient?</DialogTitle>
           <DialogDescription>
             This permanently removes <strong>{patient?.name}</strong> ({patient?.patientCode})
-            {count > 0 ? ` and ${count} prescription${count > 1 ? 's' : ''}` : ''}
-            . This cannot be undone.
+            {count > 0 ? ` and ${count} prescription${count > 1 ? 's' : ''}` : ''}. This cannot be
+            undone.
           </DialogDescription>
         </DialogHeader>
         {error && <p className="text-destructive text-sm">{error}</p>}
