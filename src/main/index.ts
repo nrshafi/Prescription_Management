@@ -4,7 +4,6 @@ import { app, BrowserWindow, shell } from 'electron'
 import icon from '../../resources/icon.png?asset'
 import { closeDatabase, initDatabase } from './db/client'
 import { ensureSingletonRows, runMigrations } from './db/migrate'
-import { seedDatabase } from './db/seed'
 import { registerIpcHandlers } from './ipc'
 
 function createWindow(): void {
@@ -54,11 +53,10 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // Initialize database, run migrations, seed singleton rows.
+  // Initialize database, run migrations, and ensure singleton rows.
   initDatabase()
   runMigrations()
   ensureSingletonRows()
-  seedDatabase()
 
   // Register IPC handlers.
   registerIpcHandlers()

@@ -54,10 +54,27 @@ function normalize(values: PatientFormValues): {
   }
 }
 
+function latestPatientSectionContent(sectionType: string): SQL<string | null> {
+  return sql<string | null>`(
+    SELECT ps.content
+    FROM prescription_sections ps
+    JOIN prescriptions p
+      ON p.prescription_id = ps.prescription_id
+    WHERE p.patient_id = ${patients.patientId}
+      AND ps.section_type = ${sectionType}
+      AND ps.content IS NOT NULL
+      AND ps.content <> ''
+    ORDER BY p.visit_no DESC, p.prescription_id DESC
+    LIMIT 1
+  )`
+}
+
 export function listPatients(query: PatientQuery = {}): PatientListItem[] {
   const db = getDb()
   const { search, gender, ageMin, ageMax, dateFrom, dateTo, minVisits, sortBy, sortDir } =
     patientQuerySchema.parse(query)
+  const lastComplaint = latestPatientSectionContent('Chief Complaint')
+  const lastDiagnosis = latestPatientSectionContent('Provisional Diagnosis')
 
   const filters: SQL[] = []
   if (search) {
@@ -109,29 +126,7 @@ export function listPatients(query: PatientQuery = {}): PatientListItem[] {
   const baseSortColumn = baseSortColumns[sortBy as keyof typeof baseSortColumns]
 
   const sortExpr =
-    sortBy === 'complaint'
-      ? sql`(
-          SELECT ps.content
-          FROM prescription_sections ps
-          JOIN prescriptions p ON p.prescription_id = ps.prescription_id
-          WHERE p.patient_id = ${patients.patientId}
-            AND ps.section_type = 'Chief Complaint'
-            AND ps.content IS NOT NULL AND ps.content <> ''
-          ORDER BY p.visit_no DESC, p.prescription_id DESC
-          LIMIT 1
-        )`
-      : sortBy === 'diagnosis'
-        ? sql`(
-            SELECT ps.content
-            FROM prescription_sections ps
-            JOIN prescriptions p ON p.prescription_id = ps.prescription_id
-            WHERE p.patient_id = ${patients.patientId}
-              AND ps.section_type = 'Provisional Diagnosis'
-              AND ps.content IS NOT NULL AND ps.content <> ''
-            ORDER BY p.visit_no DESC, p.prescription_id DESC
-            LIMIT 1
-          )`
-        : undefined
+    sortBy === 'complaint' ? lastComplaint : sortBy === 'diagnosis' ? lastDiagnosis : undefined
 
   const column = sortExpr ?? baseSortColumn
   const orderBy = (sortDir as SortDirection) === 'asc' ? asc(column) : desc(column)
@@ -147,26 +142,8 @@ export function listPatients(query: PatientQuery = {}): PatientListItem[] {
       address: patients.address,
       createdAt: patients.createdAt,
       updatedAt: patients.updatedAt,
-      lastDiagnosis: sql<string | null>`(
-        SELECT ps.content
-        FROM prescription_sections ps
-        JOIN prescriptions p ON p.prescription_id = ps.prescription_id
-        WHERE p.patient_id = ${patients.patientId}
-          AND ps.section_type = 'Provisional Diagnosis'
-          AND ps.content IS NOT NULL AND ps.content <> ''
-        ORDER BY p.visit_no DESC, p.prescription_id DESC
-        LIMIT 1
-      )`,
-      lastComplaint: sql<string | null>`(
-        SELECT ps.content
-        FROM prescription_sections ps
-        JOIN prescriptions p ON p.prescription_id = ps.prescription_id
-        WHERE p.patient_id = ${patients.patientId}
-          AND ps.section_type = 'Chief Complaint'
-          AND ps.content IS NOT NULL AND ps.content <> ''
-        ORDER BY p.visit_no DESC, p.prescription_id DESC
-        LIMIT 1
-      )`,
+      lastDiagnosis,
+      lastComplaint,
       visitCount
     })
     .from(patients)
