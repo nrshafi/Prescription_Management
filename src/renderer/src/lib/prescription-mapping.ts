@@ -54,6 +54,20 @@ export function contentFromChips(chips: string[]): string {
     .join('\n')
 }
 
+export function mergeChips(existing: string[], incoming: string[]): string[] {
+  const seen = new Set(existing.map((item) => item.trim().toLowerCase()))
+  const merged = [...existing]
+  for (const item of incoming) {
+    const trimmed = item.trim()
+    if (!trimmed) continue
+    const key = trimmed.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    merged.push(trimmed)
+  }
+  return merged
+}
+
 export function parseOe(content: string): { oe: OeValues; weight: string } {
   const oe: OeValues = { bp: '', pulse: '', temp: '', rr: '' }
   let weight = ''

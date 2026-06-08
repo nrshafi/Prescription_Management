@@ -26,6 +26,7 @@ import {
   createPreset,
   deletePreset,
   duplicatePrescription,
+  getPreset,
   getPrescription,
   listMedicineSuggestions,
   listPrescriptions,
@@ -78,6 +79,7 @@ export function registerIpcHandlers(): void {
     listMedicineSuggestions(search ?? '')
   )
   ipcMain.handle('presets:list', (_e, category?: string) => listPresets(category))
+  ipcMain.handle('presets:get', (_e, id: number) => getPreset(id))
   ipcMain.handle('presets:create', (_e, input: PresetFormValues) => createPreset(input))
   ipcMain.handle('presets:update', (_e, id: number, input: PresetFormValues) =>
     updatePreset(id, input)

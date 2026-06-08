@@ -411,7 +411,10 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex rounded-md border bg-background p-1" aria-label="Prescription view mode">
+          <fieldset
+            className="flex rounded-md border bg-background p-1"
+            aria-label="Prescription view mode"
+          >
             <Button
               type="button"
               variant={viewMode === 'list' ? 'secondary' : 'ghost'}
@@ -430,7 +433,7 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
             >
               <LayoutGrid data-icon="inline-start" /> Grid
             </Button>
-          </div>
+          </fieldset>
           <Button type="button" variant="outline" onClick={openCreatePatient}>
             <Plus data-icon="inline-start" /> New Patient
           </Button>

@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 const timestamps = {
   createdAt: text('created_at').notNull().default(sql`(CURRENT_TIMESTAMP)`),
@@ -77,6 +77,29 @@ export const presets = sqliteTable('presets', {
   content: text('content')
 })
 
+export const presetLinks = sqliteTable(
+  'preset_links',
+  {
+    linkId: integer('link_id').primaryKey({ autoIncrement: true }),
+    ownerPresetId: integer('owner_preset_id')
+      .notNull()
+      .references(() => presets.presetId, { onDelete: 'cascade' }),
+    targetKind: text('target_kind').notNull(),
+    targetPresetId: integer('target_preset_id').references(() => presets.presetId, {
+      onDelete: 'set null'
+    }),
+    label: text('label').notNull(),
+    dosage: text('dosage'),
+    frequency: text('frequency'),
+    duration: text('duration'),
+    position: integer('position').notNull().default(0)
+  },
+  (table) => [
+    index('preset_links_owner_preset_id_idx').on(table.ownerPresetId),
+    index('preset_links_target_preset_id_idx').on(table.targetPresetId)
+  ]
+)
+
 export const paperSettings = sqliteTable('paper_settings', {
   paperSettingId: integer('paper_setting_id').primaryKey({ autoIncrement: true }),
   widthMm: real('width_mm').notNull().default(210),
@@ -94,5 +117,6 @@ export type Prescription = typeof prescriptions.$inferSelect
 export type PrescriptionSection = typeof prescriptionSections.$inferSelect
 export type PrescriptionMedicine = typeof prescriptionMedicines.$inferSelect
 export type Preset = typeof presets.$inferSelect
+export type PresetLink = typeof presetLinks.$inferSelect
 export type Template = typeof templates.$inferSelect
 export type PaperSettings = typeof paperSettings.$inferSelect

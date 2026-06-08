@@ -45,10 +45,32 @@ export const PRESET_CATEGORIES = [
 
 export type PresetCategory = (typeof PRESET_CATEGORIES)[number]
 
+export const PRESET_BUNDLE_CATEGORIES = ['Chief Complaint', 'Provisional Diagnosis'] as const
+export type PresetBundleCategory = (typeof PRESET_BUNDLE_CATEGORIES)[number]
+
+export const PRESET_LINK_KINDS = [
+  'Medicine',
+  'Investigations',
+  'Advice',
+  'Provisional Diagnosis'
+] as const
+export type PresetLinkKind = (typeof PRESET_LINK_KINDS)[number]
+
+export const presetLinkFormSchema = z.object({
+  targetKind: z.enum(PRESET_LINK_KINDS),
+  targetPresetId: z.number().int().positive().nullable().optional(),
+  label: z.string().trim().min(1, 'Linked item is required').max(160, 'Linked item is too long'),
+  dosage: z.string().trim().max(120, 'Dosage is too long').optional().or(z.literal('')),
+  frequency: z.string().trim().max(120, 'Frequency is too long').optional().or(z.literal('')),
+  duration: z.string().trim().max(120, 'Duration is too long').optional().or(z.literal('')),
+  position: z.number().int().min(0).optional()
+})
+
 export const presetFormSchema = z.object({
   category: z.enum(PRESET_CATEGORIES),
   title: z.string().trim().min(1, 'Title is required').max(160, 'Title is too long'),
-  content: z.string().trim().max(4000, 'Content is too long').optional().or(z.literal(''))
+  content: z.string().trim().max(4000, 'Content is too long').optional().or(z.literal('')),
+  links: z.array(presetLinkFormSchema).optional()
 })
 
 export const prescriptionSectionInputSchema = z.object({
@@ -81,6 +103,7 @@ export const prescriptionFormSchema = z.object({
 export type PrescriptionSectionInput = z.infer<typeof prescriptionSectionInputSchema>
 export type PrescriptionMedicineInput = z.infer<typeof prescriptionMedicineInputSchema>
 export type PrescriptionFormValues = z.infer<typeof prescriptionFormSchema>
+export type PresetLinkFormValues = z.infer<typeof presetLinkFormSchema>
 export type PresetFormValues = z.infer<typeof presetFormSchema>
 
 export interface PrescriptionSectionRecord extends PrescriptionSectionInput {
@@ -118,6 +141,19 @@ export interface PresetRecord {
   category: PresetCategory
   title: string
   content: string | null
+  links?: PresetLinkRecord[]
+}
+
+export interface PresetLinkRecord {
+  id: number
+  ownerPresetId: number
+  targetKind: PresetLinkKind
+  targetPresetId: number | null
+  label: string
+  dosage: string | null
+  frequency: string | null
+  duration: string | null
+  position: number
 }
 
 export interface MedicineSuggestion {

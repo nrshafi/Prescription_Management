@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import {
   detailToUi,
   emptyUiState,
+  mergeChips,
   type PrescriptionUiState,
   presetTitlesByCategory,
   uiToFormValues
@@ -36,6 +37,7 @@ const DURATION_OPTIONS = [
   'Ongoing'
 ]
 const FOLLOWUP_UNITS = ['Days', 'Weeks', 'Months']
+const MEDICINE_DEFAULTS = { dosage: '1+1+1', frequency: 'After Meal', duration: '5 Days' }
 
 export interface PrescriptionPageActions {
   saveDraft: () => Promise<void>
@@ -282,6 +284,26 @@ export function NewPrescription({
   const adviceItems = useMemo(() => presetTitlesByCategory(presets, 'Advice'), [presets])
   const medicinePresets = useMemo(() => presetTitlesByCategory(presets, 'Medicine'), [presets])
 
+  const complaintPresetByTitle = useMemo(() => {
+    const map = new Map<string, PresetRecord>()
+    for (const preset of presets) {
+      if (preset.category === 'Chief Complaint') {
+        map.set(preset.content?.trim() ? preset.content.trim() : preset.title, preset)
+      }
+    }
+    return map
+  }, [presets])
+
+  const diagnosisPresetByTitle = useMemo(() => {
+    const map = new Map<string, PresetRecord>()
+    for (const preset of presets) {
+      if (preset.category === 'Provisional Diagnosis') {
+        map.set(preset.content?.trim() ? preset.content.trim() : preset.title, preset)
+      }
+    }
+    return map
+  }, [presets])
+
   const loadMeta = useCallback(async () => {
     const [presetRows, settings] = await Promise.all([
       window.api.presets.list(),
@@ -364,12 +386,77 @@ export function NewPrescription({
       {
         key: `m-${++medKey}`,
         medicineName: name,
-        dosage: '1+1+1',
-        frequency: 'After Meal',
-        duration: '5 Days',
+        dosage: MEDICINE_DEFAULTS.dosage,
+        frequency: MEDICINE_DEFAULTS.frequency,
+        duration: MEDICINE_DEFAULTS.duration,
         notes: ''
       }
     ])
+  }
+
+  const addBundleMedicines = (bundle: PresetRecord): void => {
+    const medicineLinks = (bundle.links ?? []).filter((link) => link.targetKind === 'Medicine')
+    if (medicineLinks.length === 0) return
+    setMedicines((prev) => {
+      const seen = new Set(prev.map((medicine) => medicine.medicineName.trim().toLowerCase()))
+      const additions = medicineLinks
+        .map((link) => ({
+          key: `m-${++medKey}`,
+          medicineName: link.label.trim(),
+          dosage: link.dosage?.trim() || MEDICINE_DEFAULTS.dosage,
+          frequency: link.frequency?.trim() || MEDICINE_DEFAULTS.frequency,
+          duration: link.duration?.trim() || MEDICINE_DEFAULTS.duration,
+          notes: ''
+        }))
+        .filter((medicine) => {
+          const key = medicine.medicineName.toLowerCase()
+          if (!medicine.medicineName || seen.has(key)) return false
+          seen.add(key)
+          return true
+        })
+      return additions.length ? [...prev, ...additions] : prev
+    })
+  }
+
+  const applyBundle = (bundle: PresetRecord): void => {
+    const links = bundle.links ?? []
+    if (links.length === 0) return
+    setUi((prev) => ({
+      ...prev,
+      diagnoses: mergeChips(
+        prev.diagnoses,
+        links
+          .filter((link) => link.targetKind === 'Provisional Diagnosis')
+          .map((link) => link.label)
+      ),
+      investigations: mergeChips(
+        prev.investigations,
+        links.filter((link) => link.targetKind === 'Investigations').map((link) => link.label)
+      ),
+      advice: mergeChips(
+        prev.advice,
+        links.filter((link) => link.targetKind === 'Advice').map((link) => link.label)
+      )
+    }))
+    addBundleMedicines(bundle)
+  }
+
+  const handleComplaintChange = (chiefComplaints: string[]): void => {
+    const added = chiefComplaints.filter((item) => !ui.chiefComplaints.includes(item))
+    patchUi({ chiefComplaints })
+    for (const item of added) {
+      const bundle = complaintPresetByTitle.get(item)
+      if (bundle) applyBundle(bundle)
+    }
+  }
+
+  const handleDiagnosisChange = (diagnoses: string[]): void => {
+    const added = diagnoses.filter((item) => !ui.diagnoses.includes(item))
+    patchUi({ diagnoses })
+    for (const item of added) {
+      const bundle = diagnosisPresetByTitle.get(item)
+      if (bundle) applyBundle(bundle)
+    }
   }
 
   const updateMedicine = (key: string, field: keyof MedicineRow, val: string): void => {
@@ -640,7 +727,7 @@ export function NewPrescription({
             <SearchMultiSelect
               items={complaintItems}
               selected={ui.chiefComplaints}
-              onChange={(chiefComplaints) => patchUi({ chiefComplaints })}
+              onChange={handleComplaintChange}
               placeholder="Search complaints..."
             />
           </SectionCard>
@@ -687,7 +774,7 @@ export function NewPrescription({
             <SearchMultiSelect
               items={diagnosisItems}
               selected={ui.diagnoses}
-              onChange={(diagnoses) => patchUi({ diagnoses })}
+              onChange={handleDiagnosisChange}
               placeholder="Search diagnoses..."
             />
           </SectionCard>

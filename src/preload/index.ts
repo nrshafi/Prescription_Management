@@ -70,6 +70,7 @@ const api = {
   presets: {
     list: (category?: string): Promise<PresetRecord[]> =>
       ipcRenderer.invoke('presets:list', category),
+    get: (id: number): Promise<PresetRecord | undefined> => ipcRenderer.invoke('presets:get', id),
     create: (input: PresetFormValues): Promise<PresetRecord> =>
       ipcRenderer.invoke('presets:create', input),
     update: (id: number, input: PresetFormValues): Promise<PresetRecord> =>

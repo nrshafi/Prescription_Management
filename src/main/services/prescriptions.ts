@@ -1,6 +1,7 @@
-import { and, asc, desc, eq, like, or, type SQL, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, like, or, type SQL, sql } from 'drizzle-orm'
 import {
   type MedicineSuggestion,
+  PRESET_BUNDLE_CATEGORIES,
   type PRESCRIPTION_SECTION_TYPES,
   type PrescriptionDetail,
   type PrescriptionFormValues,
@@ -9,6 +10,8 @@ import {
   type PrescriptionSortField,
   type PresetCategory,
   type PresetFormValues,
+  type PresetLinkKind,
+  type PresetLinkRecord,
   type PresetRecord,
   prescriptionFormSchema,
   prescriptionQuerySchema,
@@ -21,11 +24,14 @@ import {
   prescriptionMedicines,
   prescriptionSections,
   prescriptions,
+  presetLinks,
   presets
 } from '../db/schema'
 
 type Db = ReturnType<typeof getDb>
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
+
+const BUNDLE_CATEGORIES = new Set<string>(PRESET_BUNDLE_CATEGORIES)
 
 function sectionContentExpr(sectionType: string): SQL<string> {
   return sql<string>`(
@@ -317,7 +323,7 @@ export function duplicatePrescription(id: number): PrescriptionDetail {
 
 export function listPresets(category?: string): PresetRecord[] {
   const db = getDb()
-  return db
+  const rows = db
     .select({
       id: presets.presetId,
       category: presets.category,
@@ -329,6 +335,58 @@ export function listPresets(category?: string): PresetRecord[] {
     .orderBy(presets.category, presets.title)
     .all()
     .map((preset) => ({ ...preset, category: preset.category as PresetCategory }))
+
+  return attachPresetLinks(rows, db)
+}
+
+export function getPreset(id: number): PresetRecord | undefined {
+  const db = getDb()
+  const preset = db
+    .select({
+      id: presets.presetId,
+      category: presets.category,
+      title: presets.title,
+      content: presets.content
+    })
+    .from(presets)
+    .where(eq(presets.presetId, id))
+    .get()
+
+  if (!preset) return undefined
+  return attachPresetLinks([{ ...preset, category: preset.category as PresetCategory }], db)[0]
+}
+
+function attachPresetLinks(rows: PresetRecord[], db: Db | Tx = getDb()): PresetRecord[] {
+  const bundleIds = rows.filter((row) => BUNDLE_CATEGORIES.has(row.category)).map((row) => row.id)
+  if (bundleIds.length === 0) return rows
+
+  const links = db
+    .select({
+      id: presetLinks.linkId,
+      ownerPresetId: presetLinks.ownerPresetId,
+      targetKind: presetLinks.targetKind,
+      targetPresetId: presetLinks.targetPresetId,
+      label: presetLinks.label,
+      dosage: presetLinks.dosage,
+      frequency: presetLinks.frequency,
+      duration: presetLinks.duration,
+      position: presetLinks.position
+    })
+    .from(presetLinks)
+    .where(inArray(presetLinks.ownerPresetId, bundleIds))
+    .orderBy(presetLinks.ownerPresetId, presetLinks.position)
+    .all()
+
+  const linksByOwner = new Map<number, PresetLinkRecord[]>()
+  for (const link of links) {
+    const ownerLinks = linksByOwner.get(link.ownerPresetId) ?? []
+    ownerLinks.push({ ...link, targetKind: link.targetKind as PresetLinkKind })
+    linksByOwner.set(link.ownerPresetId, ownerLinks)
+  }
+
+  return rows.map((row) =>
+    BUNDLE_CATEGORIES.has(row.category) ? { ...row, links: linksByOwner.get(row.id) ?? [] } : row
+  )
 }
 
 function normalizePreset(input: PresetFormValues): PresetFormValues {
@@ -336,30 +394,70 @@ function normalizePreset(input: PresetFormValues): PresetFormValues {
   return {
     category: parsed.category,
     title: parsed.title.trim(),
-    content: parsed.content?.trim() ? parsed.content.trim() : ''
+    content: parsed.content?.trim() ? parsed.content.trim() : '',
+    links: BUNDLE_CATEGORIES.has(parsed.category)
+      ? (parsed.links ?? [])
+          .map((link, index) => ({
+            targetKind: link.targetKind,
+            targetPresetId: link.targetPresetId ?? null,
+            label: link.label.trim(),
+            dosage: link.dosage?.trim() ?? '',
+            frequency: link.frequency?.trim() ?? '',
+            duration: link.duration?.trim() ?? '',
+            position: link.position ?? index
+          }))
+          .filter((link) => link.label)
+      : []
   }
+}
+
+function replacePresetLinks(
+  ownerPresetId: number,
+  links: PresetFormValues['links'],
+  db: Db | Tx
+): void {
+  db.delete(presetLinks).where(eq(presetLinks.ownerPresetId, ownerPresetId)).run()
+  const rows = (links ?? []).map((link, index) => ({
+    ownerPresetId,
+    targetKind: link.targetKind,
+    targetPresetId: link.targetPresetId ?? null,
+    label: link.label,
+    dosage: link.targetKind === 'Medicine' && link.dosage ? link.dosage : null,
+    frequency: link.targetKind === 'Medicine' && link.frequency ? link.frequency : null,
+    duration: link.targetKind === 'Medicine' && link.duration ? link.duration : null,
+    position: link.position ?? index
+  }))
+  if (rows.length) db.insert(presetLinks).values(rows).run()
 }
 
 export function createPreset(input: PresetFormValues): PresetRecord {
   const values = normalizePreset(input)
-  const created = getDb()
-    .insert(presets)
-    .values({ category: values.category, title: values.title, content: values.content || null })
-    .returning({ id: presets.presetId })
-    .get()
-  const preset = listPresets().find((item) => item.id === created.id)
+  const db = getDb()
+  const id = db.transaction((tx) => {
+    const created = tx
+      .insert(presets)
+      .values({ category: values.category, title: values.title, content: values.content || null })
+      .returning({ id: presets.presetId })
+      .get()
+    replacePresetLinks(created.id, values.links, tx)
+    return created.id
+  })
+  const preset = getPreset(id)
   if (!preset) throw new Error('Could not load created preset.')
   return preset
 }
 
 export function updatePreset(id: number, input: PresetFormValues): PresetRecord {
   const values = normalizePreset(input)
-  getDb()
-    .update(presets)
-    .set({ category: values.category, title: values.title, content: values.content || null })
-    .where(eq(presets.presetId, id))
-    .run()
-  const preset = listPresets().find((item) => item.id === id)
+  const db = getDb()
+  db.transaction((tx) => {
+    tx.update(presets)
+      .set({ category: values.category, title: values.title, content: values.content || null })
+      .where(eq(presets.presetId, id))
+      .run()
+    replacePresetLinks(id, values.links, tx)
+  })
+  const preset = getPreset(id)
   if (!preset) throw new Error(`Preset ${id} not found`)
   return preset
 }

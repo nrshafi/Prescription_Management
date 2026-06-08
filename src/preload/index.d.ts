@@ -56,6 +56,7 @@ type Api = {
   }
   presets: {
     list: (category?: string) => Promise<PresetRecord[]>
+    get: (id: number) => Promise<PresetRecord | undefined>
     create: (input: PresetFormValues) => Promise<PresetRecord>
     update: (id: number, input: PresetFormValues) => Promise<PresetRecord>
     delete: (id: number) => Promise<{ id: number }>
