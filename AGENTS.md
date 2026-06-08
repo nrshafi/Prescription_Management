@@ -115,3 +115,19 @@ Do not run these commands without explicit user permission:
 | Build verification | `bun run build` |
 
 After completing a build task, list which commands you would run and wait for authorization. Read-only tasks (file exploration, dependency research) do not require permission.
+
+## Skills Usage
+
+Agents MUST load and use the following specialized skills before performing relevant tasks:
+
+### UI/Component Work
+- **shadcn**: Load when working with shadcn/ui components, adding new components, styling, or composing UI. Use `skill` tool with `name: "shadcn"` before tasks involving `src/renderer/src/components/ui/`, `components.json`, or shadcn-related work.
+
+### Database Work
+- **SQLite Database Expert**: Load when working with SQLite schema, migrations, queries, or database optimization. Use `skill` tool with `name: "SQLite Database Expert"` before tasks involving `src/main/db/`, `drizzle/`, or database-related changes.
+
+### React Performance
+- **vercel-react-best-practices**: Load when writing, reviewing, or refactoring React components. Use `skill` tool with `name: "vercel-react-best-practices"` before tasks involving React component optimization, rendering patterns, or performance improvements.
+
+### UI/UX Design
+- **web-design-guidelines**: Load when reviewing or implementing UI/UX features. Use `skill` tool with `name: "web-design-guidelines"` before tasks involving design reviews, accessibility checks, or UI compliance.

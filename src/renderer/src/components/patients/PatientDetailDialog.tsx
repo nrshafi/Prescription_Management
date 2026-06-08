@@ -89,7 +89,7 @@ export function PatientDetailDialog({
                     <TableHead>Pres. ID</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>C/C</TableHead>
-                    <TableHead>Dia</TableHead>
+                    <TableHead>Diagnosis</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

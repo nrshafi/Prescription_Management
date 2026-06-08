@@ -264,7 +264,7 @@ export function Patients(): React.JSX.Element {
                 onSort={handleSort}
               />
               <SortableHeader
-                label="Dia"
+                label="Diagnosis"
                 field="diagnosis"
                 active={sortBy === 'diagnosis'}
                 dir={sortDir}

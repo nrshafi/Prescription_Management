@@ -4,7 +4,6 @@ import {
   type PatientListItem,
   type PatientQuery,
   type PatientRecord,
-  type PatientSortField,
   type PatientVisit,
   patientFormSchema,
   patientQuerySchema,
@@ -55,26 +54,10 @@ function normalize(values: PatientFormValues): {
   }
 }
 
-// Subquery helpers: latest Provisional Diagnosis / Chief Complaint content per patient.
-function latestSectionExpr(sectionType: string): SQL<string> {
-  return sql<string>`(
-    SELECT ps.content
-    FROM prescription_sections ps
-    JOIN prescriptions p ON p.prescription_id = ps.prescription_id
-    WHERE p.patient_id = ${patients.patientId}
-      AND ps.section_type = ${sectionType}
-      AND ps.content IS NOT NULL AND ps.content <> ''
-    ORDER BY p.visit_no DESC, p.prescription_id DESC
-    LIMIT 1
-  )`
-}
-
 export function listPatients(query: PatientQuery = {}): PatientListItem[] {
   const db = getDb()
   const { search, gender, ageMin, ageMax, dateFrom, dateTo, minVisits, sortBy, sortDir } =
     patientQuerySchema.parse(query)
-  const lastDiagnosis = latestSectionExpr('Provisional Diagnosis')
-  const lastComplaint = latestSectionExpr('Chief Complaint')
 
   const filters: SQL[] = []
   if (search) {
@@ -113,20 +96,45 @@ export function listPatients(query: PatientQuery = {}): PatientListItem[] {
     ) >= ${minVisits}`)
   }
 
-  const sortColumns = {
-    id: patients.patientId,
-    name: patients.name,
-    age: patients.age,
-    gender: patients.gender,
-    complaint: lastComplaint,
-    diagnosis: lastDiagnosis
-  }
-  const column = sortColumns[sortBy as PatientSortField]
-  const orderBy = (sortDir as SortDirection) === 'asc' ? asc(column) : desc(column)
-
   const visitCount = sql<number>`(
     SELECT COUNT(*) FROM prescriptions p WHERE p.patient_id = ${patients.patientId}
   )`
+
+  const baseSortColumns = {
+    id: patients.patientId,
+    name: patients.name,
+    age: patients.age,
+    gender: patients.gender
+  }
+  const baseSortColumn = baseSortColumns[sortBy as keyof typeof baseSortColumns]
+
+  const sortExpr =
+    sortBy === 'complaint'
+      ? sql`(
+          SELECT ps.content
+          FROM prescription_sections ps
+          JOIN prescriptions p ON p.prescription_id = ps.prescription_id
+          WHERE p.patient_id = ${patients.patientId}
+            AND ps.section_type = 'Chief Complaint'
+            AND ps.content IS NOT NULL AND ps.content <> ''
+          ORDER BY p.visit_no DESC, p.prescription_id DESC
+          LIMIT 1
+        )`
+      : sortBy === 'diagnosis'
+        ? sql`(
+            SELECT ps.content
+            FROM prescription_sections ps
+            JOIN prescriptions p ON p.prescription_id = ps.prescription_id
+            WHERE p.patient_id = ${patients.patientId}
+              AND ps.section_type = 'Provisional Diagnosis'
+              AND ps.content IS NOT NULL AND ps.content <> ''
+            ORDER BY p.visit_no DESC, p.prescription_id DESC
+            LIMIT 1
+          )`
+        : undefined
+
+  const column = sortExpr ?? baseSortColumn
+  const orderBy = (sortDir as SortDirection) === 'asc' ? asc(column) : desc(column)
 
   return db
     .select({
@@ -139,8 +147,26 @@ export function listPatients(query: PatientQuery = {}): PatientListItem[] {
       address: patients.address,
       createdAt: patients.createdAt,
       updatedAt: patients.updatedAt,
-      lastDiagnosis,
-      lastComplaint,
+      lastDiagnosis: sql<string | null>`(
+        SELECT ps.content
+        FROM prescription_sections ps
+        JOIN prescriptions p ON p.prescription_id = ps.prescription_id
+        WHERE p.patient_id = ${patients.patientId}
+          AND ps.section_type = 'Provisional Diagnosis'
+          AND ps.content IS NOT NULL AND ps.content <> ''
+        ORDER BY p.visit_no DESC, p.prescription_id DESC
+        LIMIT 1
+      )`,
+      lastComplaint: sql<string | null>`(
+        SELECT ps.content
+        FROM prescription_sections ps
+        JOIN prescriptions p ON p.prescription_id = ps.prescription_id
+        WHERE p.patient_id = ${patients.patientId}
+          AND ps.section_type = 'Chief Complaint'
+          AND ps.content IS NOT NULL AND ps.content <> ''
+        ORDER BY p.visit_no DESC, p.prescription_id DESC
+        LIMIT 1
+      )`,
       visitCount
     })
     .from(patients)
