@@ -101,11 +101,23 @@ export function listPatients(query: PatientQuery = {}): PatientListItem[] {
   if (ageMax !== undefined && ageMax !== null) {
     filters.push(sql`CAST(${patients.age} AS INTEGER) <= ${ageMax}`)
   }
-  if (dateFrom) {
-    filters.push(sql`${patients.createdAt} >= ${dateFrom}`)
-  }
-  if (dateTo) {
-    filters.push(sql`${patients.createdAt} <= ${dateTo} || ' 23:59:59'`)
+  if (dateFrom && dateTo) {
+    filters.push(sql`EXISTS (
+      SELECT 1 FROM prescriptions p
+      WHERE p.patient_id = ${patients.patientId}
+        AND p.created_at >= ${dateFrom}
+        AND p.created_at <= ${dateTo} || ' 23:59:59'
+    )`)
+  } else if (dateFrom) {
+    filters.push(sql`EXISTS (
+      SELECT 1 FROM prescriptions p
+      WHERE p.patient_id = ${patients.patientId} AND p.created_at >= ${dateFrom}
+    )`)
+  } else if (dateTo) {
+    filters.push(sql`EXISTS (
+      SELECT 1 FROM prescriptions p
+      WHERE p.patient_id = ${patients.patientId} AND p.created_at <= ${dateTo} || ' 23:59:59'
+    )`)
   }
   if (minVisits !== undefined && minVisits !== null) {
     filters.push(sql`(

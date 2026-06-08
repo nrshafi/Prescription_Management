@@ -5,7 +5,6 @@ import type { AppPage } from '@/lib/navigation'
 import { Dashboard } from '@/pages/Dashboard'
 import { MedicinesManager } from '@/pages/MedicinesManager'
 import { NewPrescription, type PrescriptionPageActions } from '@/pages/NewPrescription'
-import { Patients } from '@/pages/Patients'
 import { Prescriptions } from '@/pages/Prescriptions'
 import { PresetsManager } from '@/pages/PresetsManager'
 import { PrintRenderer } from '@/pages/PrintRenderer'
@@ -59,8 +58,6 @@ function App(): React.JSX.Element {
             onStatus={setRxStatus}
           />
         )
-      case 'patients':
-        return <Patients />
       case 'prescriptions':
         return (
           <Prescriptions

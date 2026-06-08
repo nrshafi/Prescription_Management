@@ -23,7 +23,6 @@ interface SidebarProps {
 const navItems: { id: AppPage; label: string; icon: typeof Users }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'new-prescription', label: 'New Prescription', icon: FilePlus },
-  { id: 'patients', label: 'Patients', icon: Users },
   { id: 'prescriptions', label: 'Prescriptions', icon: FileText },
   { id: 'presets', label: 'Presets', icon: Sliders },
   { id: 'medicines', label: 'Medicines', icon: Pill },
