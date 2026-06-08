@@ -1,9 +1,21 @@
-import { ArrowDown, ArrowUp, ChevronsUpDown, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronsUpDown,
+  Eye,
+  LayoutGrid,
+  List,
+  Pencil,
+  Plus,
+  Search,
+  Trash2
+} from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { DeletePatientDialog } from '@/components/patients/DeletePatientDialog'
 import { PatientDetailDialog } from '@/components/patients/PatientDetailDialog'
 import { PatientFormDialog } from '@/components/patients/PatientFormDialog'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -30,6 +42,7 @@ import {
 } from '../../../shared/patient'
 
 const ALL_GENDERS = '__all__'
+type ViewMode = 'list' | 'grid'
 
 interface SortableHeaderProps {
   label: string
@@ -81,6 +94,7 @@ export function Patients(): React.JSX.Element {
   const [minVisits, setMinVisits] = useState('')
   const [sortBy, setSortBy] = useState<PatientSortField>('id')
   const [sortDir, setSortDir] = useState<SortDirection>('desc')
+  const [viewMode, setViewMode] = useState<ViewMode>('list')
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<PatientRecord | null>(null)
@@ -151,14 +165,36 @@ export function Patients(): React.JSX.Element {
 
   return (
     <div className="space-y-4 p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Patients</h1>
           <p className="text-muted-foreground text-sm">{rows.length} patients</p>
         </div>
-        <Button onClick={openCreate}>
-          <Plus className="size-4" /> New Patient
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-md border bg-background p-1" aria-label="Patient view mode">
+            <Button
+              type="button"
+              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+              size="sm"
+              aria-pressed={viewMode === 'list'}
+              onClick={() => setViewMode('list')}
+            >
+              <List data-icon="inline-start" /> List
+            </Button>
+            <Button
+              type="button"
+              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+              size="sm"
+              aria-pressed={viewMode === 'grid'}
+              onClick={() => setViewMode('grid')}
+            >
+              <LayoutGrid data-icon="inline-start" /> Grid
+            </Button>
+          </div>
+          <Button onClick={openCreate}>
+            <Plus className="size-4" /> New Patient
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -224,119 +260,200 @@ export function Patients(): React.JSX.Element {
         />
       </div>
 
-      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <SortableHeader
-                label="ID"
-                field="id"
-                active={sortBy === 'id'}
-                dir={sortDir}
-                onSort={handleSort}
-              />
-              <SortableHeader
-                label="Name"
-                field="name"
-                active={sortBy === 'name'}
-                dir={sortDir}
-                onSort={handleSort}
-              />
-              <SortableHeader
-                label="Age"
-                field="age"
-                active={sortBy === 'age'}
-                dir={sortDir}
-                onSort={handleSort}
-              />
-              <SortableHeader
-                label="Gender"
-                field="gender"
-                active={sortBy === 'gender'}
-                dir={sortDir}
-                onSort={handleSort}
-              />
-              <SortableHeader
-                label="C/C"
-                field="complaint"
-                active={sortBy === 'complaint'}
-                dir={sortDir}
-                onSort={handleSort}
-              />
-              <SortableHeader
-                label="Diagnosis"
-                field="diagnosis"
-                active={sortBy === 'diagnosis'}
-                dir={sortDir}
-                onSort={handleSort}
-              />
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
+      {viewMode === 'list' ? (
+        <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={7} className="text-muted-foreground py-8 text-center">
-                  Loading…
-                </TableCell>
+                <SortableHeader
+                  label="ID"
+                  field="id"
+                  active={sortBy === 'id'}
+                  dir={sortDir}
+                  onSort={handleSort}
+                />
+                <SortableHeader
+                  label="Name"
+                  field="name"
+                  active={sortBy === 'name'}
+                  dir={sortDir}
+                  onSort={handleSort}
+                />
+                <SortableHeader
+                  label="Age"
+                  field="age"
+                  active={sortBy === 'age'}
+                  dir={sortDir}
+                  onSort={handleSort}
+                />
+                <SortableHeader
+                  label="Gender"
+                  field="gender"
+                  active={sortBy === 'gender'}
+                  dir={sortDir}
+                  onSort={handleSort}
+                />
+                <SortableHeader
+                  label="C/C"
+                  field="complaint"
+                  active={sortBy === 'complaint'}
+                  dir={sortDir}
+                  onSort={handleSort}
+                />
+                <SortableHeader
+                  label="Diagnosis"
+                  field="diagnosis"
+                  active={sortBy === 'diagnosis'}
+                  dir={sortDir}
+                  onSort={handleSort}
+                />
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ) : error ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-destructive py-8 text-center">
-                  {error}
-                </TableCell>
-              </TableRow>
-            ) : rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-muted-foreground py-8 text-center">
-                  {search ? 'No patients match your search.' : 'No patients yet.'}
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((row) => (
-                <TableRow key={row.id} className="cursor-pointer" onClick={() => setViewing(row)}>
-                  <TableCell className="font-mono text-xs">{row.patientCode}</TableCell>
-                  <TableCell className="font-medium">{row.name}</TableCell>
-                  <TableCell>{row.age || '—'}</TableCell>
-                  <TableCell>{row.gender || '—'}</TableCell>
-                  <TableCell className="max-w-[14rem] truncate" title={row.lastComplaint ?? ''}>
-                    {row.lastComplaint || '—'}
-                  </TableCell>
-                  <TableCell className="max-w-[14rem] truncate" title={row.lastDiagnosis ?? ''}>
-                    {row.lastDiagnosis || '—'}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <span className="flex justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Edit"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          openEdit(row)
-                        }}
-                      >
-                        <Pencil className="size-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Delete"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setDeleting(row)
-                        }}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </span>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-muted-foreground py-8 text-center">
+                    Loading…
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ) : error ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-destructive py-8 text-center">
+                    {error}
+                  </TableCell>
+                </TableRow>
+              ) : rows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-muted-foreground py-8 text-center">
+                    {search ? 'No patients match your search.' : 'No patients yet.'}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                rows.map((row) => (
+                  <TableRow key={row.id} className="cursor-pointer" onClick={() => setViewing(row)}>
+                    <TableCell className="font-mono text-xs">{row.patientCode}</TableCell>
+                    <TableCell className="font-medium">{row.name}</TableCell>
+                    <TableCell>{row.age || '—'}</TableCell>
+                    <TableCell>{row.gender || '—'}</TableCell>
+                    <TableCell className="max-w-[14rem] truncate" title={row.lastComplaint ?? ''}>
+                      {row.lastComplaint || '—'}
+                    </TableCell>
+                    <TableCell className="max-w-[14rem] truncate" title={row.lastDiagnosis ?? ''}>
+                      {row.lastDiagnosis || '—'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Edit"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            openEdit(row)
+                          }}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Delete"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setDeleting(row)
+                          }}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      ) : loading ? (
+        <div className="text-muted-foreground rounded-xl border bg-card py-8 text-center shadow-sm">
+          Loading…
+        </div>
+      ) : error ? (
+        <div className="text-destructive rounded-xl border bg-card py-8 text-center shadow-sm">
+          {error}
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="text-muted-foreground rounded-xl border bg-card py-8 text-center shadow-sm">
+          {search ? 'No patients match your search.' : 'No patients yet.'}
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {rows.map((row) => (
+            <Card key={row.id} className="gap-4 transition-colors hover:bg-accent/40">
+              <CardHeader>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <CardTitle>{row.name}</CardTitle>
+                    <p className="text-muted-foreground font-mono text-xs">{row.patientCode}</p>
+                  </div>
+                  <div className="bg-muted flex size-10 items-center justify-center rounded-full text-sm font-medium">
+                    {row.name.charAt(0).toUpperCase()}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-muted-foreground text-xs">Age</p>
+                  <p>{row.age || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Gender</p>
+                  <p>{row.gender || '—'}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-muted-foreground text-xs">C/C</p>
+                  <p className="truncate" title={row.lastComplaint ?? ''}>
+                    {row.lastComplaint || '—'}
+                  </p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-muted-foreground text-xs">Diagnosis</p>
+                  <p className="truncate" title={row.lastDiagnosis ?? ''}>
+                    {row.lastDiagnosis || '—'}
+                  </p>
+                </div>
+              </CardContent>
+              <CardFooter className="justify-end gap-1">
+                <Button variant="ghost" size="icon" aria-label="View" onClick={() => setViewing(row)}>
+                  <Eye className="size-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Edit"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    openEdit(row)
+                  }}
+                >
+                  <Pencil className="size-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Delete"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setDeleting(row)
+                  }}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <PatientFormDialog
         open={formOpen}

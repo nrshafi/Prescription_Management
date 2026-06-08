@@ -6,12 +6,15 @@ import {
   Eye,
   FileDown,
   FileText,
+  LayoutGrid,
+  List,
   Pencil,
   Printer,
   Search
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -38,6 +41,7 @@ import type {
 import { GENDERS } from '../../../shared/prescription'
 
 const ALL_GENDERS = '__all__'
+type ViewMode = 'list' | 'grid'
 
 interface SortableHeaderProps {
   label: string
@@ -92,6 +96,7 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<ViewMode>('list')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -171,9 +176,31 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
             <p className="text-muted-foreground text-sm">{rows.length} visits</p>
           </div>
         </div>
-        <Button type="button" onClick={onNew}>
-          New Prescription
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-md border bg-background p-1" aria-label="Prescription view mode">
+            <Button
+              type="button"
+              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+              size="sm"
+              aria-pressed={viewMode === 'list'}
+              onClick={() => setViewMode('list')}
+            >
+              <List data-icon="inline-start" /> List
+            </Button>
+            <Button
+              type="button"
+              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+              size="sm"
+              aria-pressed={viewMode === 'grid'}
+              onClick={() => setViewMode('grid')}
+            >
+              <LayoutGrid data-icon="inline-start" /> Grid
+            </Button>
+          </div>
+          <Button type="button" onClick={onNew}>
+            New Prescription
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -216,155 +243,283 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
       {status && <p className="text-muted-foreground text-sm">{status}</p>}
       {error && <p className="text-destructive text-sm">{error}</p>}
 
-      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <SortableHeader
-                label="ID"
-                field="id"
-                active={sortBy === 'id'}
-                dir={sortDir}
-                onSort={handleSort}
-              />
-              <SortableHeader
-                label="Name"
-                field="patientName"
-                active={sortBy === 'patientName'}
-                dir={sortDir}
-                onSort={handleSort}
-              />
-              <TableHead>Phone</TableHead>
-              <TableHead>Age</TableHead>
-              <TableHead>Gender</TableHead>
-              <TableHead>C/C</TableHead>
-              <TableHead>Diagnosis</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+      {viewMode === 'list' ? (
+        <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <SortableHeader
+                  label="ID"
+                  field="id"
+                  active={sortBy === 'id'}
+                  dir={sortDir}
+                  onSort={handleSort}
+                />
+                <SortableHeader
+                  label="Name"
+                  field="patientName"
+                  active={sortBy === 'patientName'}
+                  dir={sortDir}
+                  onSort={handleSort}
+                />
+                <TableHead>Phone</TableHead>
+                <TableHead>Age</TableHead>
+                <TableHead>Gender</TableHead>
+                <TableHead>C/C</TableHead>
+                <TableHead>Diagnosis</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {loading ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-muted-foreground py-10 text-center">
-                  Loading...
-                </TableCell>
-              </TableRow>
-            ) : rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-muted-foreground py-10 text-center">
-                  No prescriptions yet.
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell className="px-4 py-3 font-medium">{row.id}</TableCell>
-                  <TableCell className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-muted flex size-8 items-center justify-center rounded-full text-xs font-medium">
-                        {row.patientName.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="font-medium">{row.patientName}</p>
-                        <p className="text-muted-foreground text-xs">{row.patientCode}</p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground px-4 py-3">{row.phone || '—'}</TableCell>
-                  <TableCell className="text-muted-foreground px-4 py-3">{row.age || '—'}</TableCell>
-                  <TableCell className="text-muted-foreground px-4 py-3">{row.gender || '—'}</TableCell>
-                  <TableCell
-                    className="max-w-[12rem] truncate px-4 py-3"
-                    title={row.chiefComplaint ?? ''}
-                  >
-                    {row.chiefComplaint || '—'}
-                  </TableCell>
-                  <TableCell
-                    className="max-w-[12rem] truncate px-4 py-3"
-                    title={row.provisionalDiagnosis ?? ''}
-                  >
-                    {row.provisionalDiagnosis || '—'}
-                  </TableCell>
-                  <TableCell className="px-4 py-3">
-                    <div className="flex justify-end gap-1">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Edit"
-                            onClick={() => onEdit(row.id)}
-                          >
-                            <Pencil className="size-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Edit</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Preview"
-                            onClick={() => runPrintAction(row.id, 'preview')}
-                          >
-                            <Eye className="size-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Preview</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            aria-label="PDF"
-                            onClick={() => runPrintAction(row.id, 'pdf')}
-                          >
-                            <FileDown className="size-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Export PDF</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Print"
-                            onClick={() => runPrintAction(row.id, 'print')}
-                          >
-                            <Printer className="size-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Print</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Duplicate"
-                            onClick={() => duplicatePrescription(row.id)}
-                          >
-                            <Copy className="size-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Duplicate</TooltipContent>
-                      </Tooltip>
-                    </div>
+                <TableRow>
+                  <TableCell colSpan={8} className="text-muted-foreground py-10 text-center">
+                    Loading...
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ) : rows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-muted-foreground py-10 text-center">
+                    No prescriptions yet.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                rows.map((row) => (
+                  <TableRow key={row.id}>
+                    <TableCell className="px-4 py-3 font-medium">{row.id}</TableCell>
+                    <TableCell className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-muted flex size-8 items-center justify-center rounded-full text-xs font-medium">
+                          {row.patientName.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-medium">{row.patientName}</p>
+                          <p className="text-muted-foreground text-xs">{row.patientCode}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground px-4 py-3">{row.phone || '—'}</TableCell>
+                    <TableCell className="text-muted-foreground px-4 py-3">{row.age || '—'}</TableCell>
+                    <TableCell className="text-muted-foreground px-4 py-3">{row.gender || '—'}</TableCell>
+                    <TableCell
+                      className="max-w-[12rem] truncate px-4 py-3"
+                      title={row.chiefComplaint ?? ''}
+                    >
+                      {row.chiefComplaint || '—'}
+                    </TableCell>
+                    <TableCell
+                      className="max-w-[12rem] truncate px-4 py-3"
+                      title={row.provisionalDiagnosis ?? ''}
+                    >
+                      {row.provisionalDiagnosis || '—'}
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
+                      <div className="flex justify-end gap-1">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              aria-label="Edit"
+                              onClick={() => onEdit(row.id)}
+                            >
+                              <Pencil className="size-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Edit</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              aria-label="Preview"
+                              onClick={() => runPrintAction(row.id, 'preview')}
+                            >
+                              <Eye className="size-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Preview</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              aria-label="PDF"
+                              onClick={() => runPrintAction(row.id, 'pdf')}
+                            >
+                              <FileDown className="size-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Export PDF</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              aria-label="Print"
+                              onClick={() => runPrintAction(row.id, 'print')}
+                            >
+                              <Printer className="size-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Print</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              aria-label="Duplicate"
+                              onClick={() => duplicatePrescription(row.id)}
+                            >
+                              <Copy className="size-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Duplicate</TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      ) : loading ? (
+        <div className="text-muted-foreground rounded-xl border bg-card py-10 text-center shadow-sm">
+          Loading...
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="text-muted-foreground rounded-xl border bg-card py-10 text-center shadow-sm">
+          No prescriptions yet.
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {rows.map((row) => (
+            <Card key={row.id} className="gap-4 transition-colors hover:bg-accent/40">
+              <CardHeader>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <CardTitle>{row.patientName}</CardTitle>
+                    <p className="text-muted-foreground text-xs">
+                      Pres_ID {row.id} · {row.patientCode}
+                    </p>
+                  </div>
+                  <div className="bg-muted flex size-10 items-center justify-center rounded-full text-sm font-medium">
+                    {row.patientName.charAt(0).toUpperCase()}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-muted-foreground text-xs">Phone</p>
+                  <p>{row.phone || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Age</p>
+                  <p>{row.age || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Gender</p>
+                  <p>{row.gender || '—'}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-muted-foreground text-xs">C/C</p>
+                  <p className="truncate" title={row.chiefComplaint ?? ''}>
+                    {row.chiefComplaint || '—'}
+                  </p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-muted-foreground text-xs">Diagnosis</p>
+                  <p className="truncate" title={row.provisionalDiagnosis ?? ''}>
+                    {row.provisionalDiagnosis || '—'}
+                  </p>
+                </div>
+              </CardContent>
+              <CardFooter className="justify-end gap-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Edit"
+                      onClick={() => onEdit(row.id)}
+                    >
+                      <Pencil className="size-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Edit</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Preview"
+                      onClick={() => runPrintAction(row.id, 'preview')}
+                    >
+                      <Eye className="size-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Preview</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="PDF"
+                      onClick={() => runPrintAction(row.id, 'pdf')}
+                    >
+                      <FileDown className="size-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Export PDF</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Print"
+                      onClick={() => runPrintAction(row.id, 'print')}
+                    >
+                      <Printer className="size-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Print</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Duplicate"
+                      onClick={() => duplicatePrescription(row.id)}
+                    >
+                      <Copy className="size-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Duplicate</TooltipContent>
+                </Tooltip>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
