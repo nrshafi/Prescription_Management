@@ -65,3 +65,15 @@ export interface PatientVisit {
   diagnosis: string | null
   complaint: string | null
 }
+
+export interface PatientDeleteOptions {
+  // Number of prescriptions the caller knows will be cascade-deleted.
+  // Deleting a patient that still has prescriptions is refused unless this
+  // matches the live count, so records can never vanish unacknowledged.
+  acknowledgedPrescriptions?: number
+}
+
+export interface PatientDeleteResult {
+  id: number
+  deletedPrescriptions: number
+}

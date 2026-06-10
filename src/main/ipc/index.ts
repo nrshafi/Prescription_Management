@@ -1,7 +1,7 @@
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app, dialog, ipcMain } from 'electron'
-import type { PatientFormValues, PatientQuery } from '../../shared/patient'
+import type { PatientDeleteOptions, PatientFormValues, PatientQuery } from '../../shared/patient'
 import type {
   PrescriptionFormValues,
   PrescriptionQuery,
@@ -60,7 +60,9 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('patients:update', (_e, id: number, input: PatientFormValues) =>
     updatePatient(id, input)
   )
-  ipcMain.handle('patients:delete', (_e, id: number) => deletePatient(id))
+  ipcMain.handle('patients:delete', (_e, id: number, options?: PatientDeleteOptions) =>
+    deletePatient(id, options)
+  )
   ipcMain.handle('patients:prescriptionCount', (_e, id: number) => prescriptionCount(id))
 
   ipcMain.handle('prescriptions:list', (_e, query?: PrescriptionQuery) => listPrescriptions(query))

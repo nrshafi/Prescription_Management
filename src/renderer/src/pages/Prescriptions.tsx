@@ -264,9 +264,9 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
     await load()
   }
 
-  async function handleDeletePatient(): Promise<void> {
+  async function handleDeletePatient(acknowledgedPrescriptions: number): Promise<void> {
     if (!deletingPatient) return
-    await window.api.patients.delete(deletingPatient.id)
+    await window.api.patients.delete(deletingPatient.id, { acknowledgedPrescriptions })
     setExpandedPatients((current) => {
       const next = new Set(current)
       next.delete(deletingPatient.id)

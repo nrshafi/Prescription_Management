@@ -1,5 +1,7 @@
 import type Database from 'better-sqlite3'
 import {
+  type PatientDeleteOptions,
+  type PatientDeleteResult,
   type PatientFormValues,
   type PatientListItem,
   type PatientQuery,
@@ -268,8 +270,32 @@ export function prescriptionCount(patientId: number): number {
   return row?.count ?? 0
 }
 
-export function deletePatient(id: number): { id: number } {
+export function deletePatient(
+  id: number,
+  options: PatientDeleteOptions = {}
+): PatientDeleteResult {
   const db = getDb()
-  db.prepare('DELETE FROM patients WHERE patient_id = ?').run(id)
-  return { id }
+
+  return db.transaction(() => {
+    const existing = db
+      .prepare('SELECT patient_id FROM patients WHERE patient_id = ?')
+      .get(id) as { patient_id: number } | undefined
+    if (!existing) {
+      throw new Error(`Patient ${id} not found`)
+    }
+
+    // Deleting a patient cascades to their prescriptions. Require the caller
+    // to acknowledge the exact count so prescriptions can never be destroyed
+    // by a stale UI (e.g. a visit added between opening the dialog and
+    // confirming the delete).
+    const count = prescriptionCount(id)
+    if (count > 0 && options.acknowledgedPrescriptions !== count) {
+      throw new Error(
+        `Patient ${id} has ${count} prescription${count === 1 ? '' : 's'} that will also be deleted. Refresh and confirm the deletion again.`
+      )
+    }
+
+    db.prepare('DELETE FROM patients WHERE patient_id = ?').run(id)
+    return { id, deletedPrescriptions: count }
+  })()
 }
