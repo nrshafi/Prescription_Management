@@ -6,6 +6,22 @@ import { closeDatabase, initDatabase } from './db/client'
 import { ensureSingletonRows, runMigrations } from './db/migrate'
 import { registerIpcHandlers } from './ipc'
 
+// Only hand off protocols that are safe to open with the OS default handler.
+// Arbitrary URLs (file:, smb:, app protocols, ...) must never reach
+// shell.openExternal — on Windows that can execute local content.
+const ALLOWED_EXTERNAL_PROTOCOLS = new Set(['https:', 'http:', 'mailto:', 'tel:'])
+
+function openExternalSafely(url: string): void {
+  try {
+    const { protocol } = new URL(url)
+    if (ALLOWED_EXTERNAL_PROTOCOLS.has(protocol)) {
+      void shell.openExternal(url)
+    }
+  } catch {
+    // Ignore unparseable URLs.
+  }
+}
+
 function createWindow(): void {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
@@ -23,11 +39,6 @@ function createWindow(): void {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
-  })
-
-  mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
-    return { action: 'deny' }
   })
 
   // HMR for renderer base on electron-vite cli.
@@ -51,6 +62,25 @@ app.whenReady().then(() => {
   // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
+  })
+
+  // Apply one navigation policy to every window (main + print windows):
+  // new windows are denied and vetted links open in the system browser, and
+  // in-app navigation is locked to the dev server during development.
+  app.on('web-contents-created', (_event, contents) => {
+    contents.setWindowOpenHandler((details) => {
+      openExternalSafely(details.url)
+      return { action: 'deny' }
+    })
+
+    contents.on('will-navigate', (event, url) => {
+      const devServerUrl = process.env.ELECTRON_RENDERER_URL
+      const isDevNavigation = is.dev && devServerUrl && url.startsWith(devServerUrl)
+      if (!isDevNavigation) {
+        event.preventDefault()
+        openExternalSafely(url)
+      }
+    })
   })
 
   // Initialize database, run migrations, and ensure singleton rows.
