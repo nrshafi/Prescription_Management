@@ -562,23 +562,31 @@ export function NewPrescription({
     let id = editingIdRef.current
     if (!id) id = await saveAndGetId()
     if (!id) return
-    const result = await window.api.printing.pdf(id)
-    onStatus?.(result.path ? `Exported PDF: ${result.path}` : 'PDF export cancelled.')
+    try {
+      const result = await window.api.printing.pdf(id)
+      onStatus?.(result.path ? `Exported PDF: ${result.path}` : 'PDF export cancelled.')
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Could not export PDF.')
+    }
   }
 
   const printRx = async (): Promise<void> => {
     let id = editingIdRef.current
     if (!id) id = await saveAndGetId()
     if (!id) return
-    const result = await window.api.printing.print(id)
-    if (!result.ok) {
-      setSaveError(result.message ?? 'Print failed.')
-      if (result.fallbackPreview) {
-        onStatus?.('Opened print preview — use Ctrl+P to print, or export PDF.')
+    try {
+      const result = await window.api.printing.print(id)
+      if (!result.ok) {
+        setSaveError(result.message ?? 'Print failed.')
+        if (result.fallbackPreview) {
+          onStatus?.('Opened print preview — use Ctrl+P to print, or export PDF.')
+        }
+        return
       }
-      return
+      onStatus?.(`Sent Pres_ID ${id} to printer.`)
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Print failed.')
     }
-    onStatus?.(`Sent Pres_ID ${id} to printer.`)
   }
 
   const actionsRef = useRef({ saveDraft, exportPdf, print: printRx })

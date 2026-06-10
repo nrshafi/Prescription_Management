@@ -101,8 +101,6 @@ CREATE INDEX IF NOT EXISTS preset_links_target_preset_id_idx ON preset_links (ta
 `
 ]
 
-
-
 function bootstrapUserVersionFromDrizzle(db: Database.Database): void {
   const version = db.pragma('user_version', { simple: true }) as number
   if (version > 0) return
@@ -112,7 +110,11 @@ function bootstrapUserVersionFromDrizzle(db: Database.Database): void {
     )
     .get() as { name: string } | undefined
   if (drizzleTable) {
-    db.pragma(`user_version = ${MIGRATIONS.length}`)
+    // A Drizzle-era database already has the baseline schema (migration 1),
+    // but may predate later migrations. Only mark the baseline as applied and
+    // let the remaining (idempotent) migrations run so older databases pick
+    // up newer tables such as preset_links.
+    db.pragma('user_version = 1')
   }
 }
 

@@ -27,4 +27,5 @@ export type PaperSettingsFormValues = z.infer<typeof paperSettingsFormSchema>
 export interface BackupActionResult {
   ok: boolean
   path?: string
+  message?: string
 }

@@ -107,8 +107,12 @@ export function Settings(): React.JSX.Element {
   async function exportBackup(): Promise<void> {
     setError(null)
     setStatus(null)
-    const result = await window.api.settings.exportBackup()
-    setStatus(result.path ? `Backup exported: ${result.path}` : 'Backup export cancelled.')
+    try {
+      const result = await window.api.settings.exportBackup()
+      setStatus(result.path ? `Backup exported: ${result.path}` : 'Backup export cancelled.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not export backup.')
+    }
   }
 
   async function importBackup(): Promise<void> {
@@ -117,7 +121,11 @@ export function Settings(): React.JSX.Element {
     try {
       const result = await window.api.settings.importBackup()
       if (!result.ok) {
-        setStatus('Backup import cancelled.')
+        if (result.message) {
+          setError(result.message)
+        } else {
+          setStatus('Backup import cancelled.')
+        }
         return
       }
       const settings = await window.api.settings.get()

@@ -29,6 +29,23 @@ function lines(value: string | null | undefined): string[] {
     .filter(Boolean)
 }
 
+function SectionLines({
+  sectionId,
+  content
+}: {
+  sectionId: number
+  content: string | null | undefined
+}): React.JSX.Element {
+  return (
+    <div className="mt-1 space-y-1 leading-5">
+      {lines(content).map((line, index) => {
+        // biome-ignore lint/suspicious/noArrayIndexKey: lines are static print text and may repeat
+        return <p key={`${sectionId}-${index}`}>{line}</p>
+      })}
+    </div>
+  )
+}
+
 interface PrintRendererProps {
   prescriptionId: number | null
 }
@@ -210,11 +227,7 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
                   <h2 className="font-sans text-xs font-bold tracking-[0.18em] uppercase">
                     {SECTION_LABELS[section.sectionType]}
                   </h2>
-                  <div className="mt-1 space-y-1 leading-5">
-                    {lines(section.content).map((line) => (
-                      <p key={`${section.id}-${line}`}>{line}</p>
-                    ))}
-                  </div>
+                  <SectionLines sectionId={section.id} content={section.content} />
                 </section>
               ))}
           </aside>
@@ -257,11 +270,7 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
                   <h2 className="font-sans text-xs font-bold tracking-[0.18em] uppercase">
                     {SECTION_LABELS[section.sectionType]}
                   </h2>
-                  <div className="mt-1 space-y-1 leading-5">
-                    {lines(section.content).map((line) => (
-                      <p key={`${section.id}-${line}`}>{line}</p>
-                    ))}
-                  </div>
+                  <SectionLines sectionId={section.id} content={section.content} />
                 </section>
               ))}
           </section>

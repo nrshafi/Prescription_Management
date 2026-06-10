@@ -104,12 +104,15 @@ export function serializeOe(oe: OeValues, weight: string): string {
 
 export function parseFollowUp(content: string): { value: string; unit: string } {
   const trimmed = content.trim()
-  if (!trimmed) return { value: '7', unit: 'Days' }
+  // An empty section means the prescription was saved without a follow-up.
+  // Returning a default here would silently re-add "Follow-up after 7 Days"
+  // every time an existing prescription is edited and saved.
+  if (!trimmed) return { value: '', unit: 'Days' }
   const after = /^After:\s*(\d+)\s+(\w+)/i.exec(trimmed)
   if (after) return { value: after[1], unit: after[2] }
   const follow = /Follow-up after\s+(\d+)\s+(\w+)/i.exec(trimmed)
   if (follow) return { value: follow[1], unit: follow[2] }
-  return { value: '7', unit: 'Days' }
+  return { value: '', unit: 'Days' }
 }
 
 export function serializeFollowUp(value: string, unit: string): string {
