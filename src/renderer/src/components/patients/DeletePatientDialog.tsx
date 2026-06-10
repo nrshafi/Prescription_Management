@@ -13,7 +13,9 @@ import type { PatientListItem } from '../../../../shared/patient'
 interface DeletePatientDialogProps {
   patient: PatientListItem | null
   onOpenChange: (open: boolean) => void
-  onConfirm: () => Promise<void>
+  // Receives the prescription count shown to the user, so the caller can pass
+  // it to the delete API as the acknowledged cascade size.
+  onConfirm: (acknowledgedPrescriptions: number) => Promise<void>
 }
 
 export function DeletePatientDialog({
@@ -28,6 +30,7 @@ export function DeletePatientDialog({
   useEffect(() => {
     if (!patient) {
       setPrescriptionCount(null)
+      setError(null)
       return
     }
     let cancelled = false
@@ -43,7 +46,7 @@ export function DeletePatientDialog({
     setBusy(true)
     setError(null)
     try {
-      await onConfirm()
+      await onConfirm(prescriptionCount ?? 0)
       onOpenChange(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not delete patient.')
@@ -53,6 +56,7 @@ export function DeletePatientDialog({
   }
 
   const count = prescriptionCount ?? 0
+  const countLoaded = prescriptionCount !== null
 
   return (
     <Dialog open={Boolean(patient)} onOpenChange={onOpenChange}>
@@ -70,7 +74,7 @@ export function DeletePatientDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
             Cancel
           </Button>
-          <Button variant="destructive" onClick={handleConfirm} disabled={busy}>
+          <Button variant="destructive" onClick={handleConfirm} disabled={busy || !countLoaded}>
             Delete
           </Button>
         </DialogFooter>

@@ -22,14 +22,15 @@ import { getDb } from '../db/client'
 
 const BUNDLE_CATEGORIES = new Set<string>(PRESET_BUNDLE_CATEGORIES)
 
-function sectionContentSubquery(sectionType: string): string {
-  return `(
+// The section type is bound as a `?` parameter by the caller (in SELECT-list
+// order, ahead of any WHERE parameters) instead of being interpolated into
+// the SQL string.
+const SECTION_CONTENT_SUBQUERY = `(
     SELECT ps.content FROM prescription_sections ps
     WHERE ps.prescription_id = prescriptions.prescription_id
-      AND ps.section_type = '${sectionType.replace(/'/g, "''")}'
+      AND ps.section_type = ?
     ORDER BY ps.position LIMIT 1
   )`
-}
 
 function normalize(values: PrescriptionFormValues): PrescriptionFormValues {
   const parsed = prescriptionFormSchema.parse(values)
@@ -109,11 +110,10 @@ function replacePrescriptionContent(
 export function listPrescriptions(query: PrescriptionQuery = {}): PrescriptionListItem[] {
   const db = getDb()
   const { search, gender, dateFrom, dateTo, sortBy, sortDir } = prescriptionQuerySchema.parse(query)
-  const chiefComplaint = sectionContentSubquery('Chief Complaint')
-  const provisionalDiagnosis = sectionContentSubquery('Provisional Diagnosis')
 
+  // Bound in SELECT-list order, ahead of the filter parameters.
+  const params: unknown[] = ['Chief Complaint', 'Provisional Diagnosis']
   const filters: string[] = []
-  const params: unknown[] = []
 
   if (search) {
     const term = `%${search}%`
@@ -158,8 +158,8 @@ SELECT
   prescriptions.visit_no AS visitNo,
   prescriptions.created_at AS createdAt,
   prescriptions.updated_at AS updatedAt,
-  ${chiefComplaint} AS chiefComplaint,
-  ${provisionalDiagnosis} AS provisionalDiagnosis
+  ${SECTION_CONTENT_SUBQUERY} AS chiefComplaint,
+  ${SECTION_CONTENT_SUBQUERY} AS provisionalDiagnosis
 FROM prescriptions
 INNER JOIN patients ON prescriptions.patient_id = patients.patient_id
 ${whereClause}
@@ -171,8 +171,6 @@ ORDER BY ${column} ${orderDir}
 
 export function getPrescription(id: number): PrescriptionDetail | undefined {
   const db = getDb()
-  const chiefComplaint = sectionContentSubquery('Chief Complaint')
-  const provisionalDiagnosis = sectionContentSubquery('Provisional Diagnosis')
 
   const row = db
     .prepare(
@@ -190,14 +188,16 @@ SELECT
   prescriptions.visit_no AS visitNo,
   prescriptions.created_at AS createdAt,
   prescriptions.updated_at AS updatedAt,
-  ${chiefComplaint} AS chiefComplaint,
-  ${provisionalDiagnosis} AS provisionalDiagnosis
+  ${SECTION_CONTENT_SUBQUERY} AS chiefComplaint,
+  ${SECTION_CONTENT_SUBQUERY} AS provisionalDiagnosis
 FROM prescriptions
 INNER JOIN patients ON prescriptions.patient_id = patients.patient_id
 WHERE prescriptions.prescription_id = ?
 `
     )
-    .get(id) as Omit<PrescriptionDetail, 'sections' | 'medicines'> | undefined
+    .get('Chief Complaint', 'Provisional Diagnosis', id) as
+    | Omit<PrescriptionDetail, 'sections' | 'medicines'>
+    | undefined
 
   if (!row) return undefined
 

@@ -1,6 +1,8 @@
 import { electronAPI } from '@electron-toolkit/preload'
 import { contextBridge, ipcRenderer } from 'electron'
 import type {
+  PatientDeleteOptions,
+  PatientDeleteResult,
   PatientFormValues,
   PatientListItem,
   PatientQuery,
@@ -47,7 +49,8 @@ const api = {
       ipcRenderer.invoke('patients:create', input),
     update: (id: number, input: PatientFormValues): Promise<PatientRecord> =>
       ipcRenderer.invoke('patients:update', id, input),
-    delete: (id: number): Promise<{ id: number }> => ipcRenderer.invoke('patients:delete', id),
+    delete: (id: number, options?: PatientDeleteOptions): Promise<PatientDeleteResult> =>
+      ipcRenderer.invoke('patients:delete', id, options),
     prescriptionCount: (id: number): Promise<number> =>
       ipcRenderer.invoke('patients:prescriptionCount', id)
   },

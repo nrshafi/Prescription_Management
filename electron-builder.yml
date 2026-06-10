@@ -39,6 +39,7 @@ linux:
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
-publish:
-  provider: generic
-  url: https://example.com/auto-updates
+# Auto-update publishing is intentionally not configured. This offline app has
+# no updater wired up (no electron-updater); the previous `publish` block
+# pointed at a placeholder URL that would have been embedded in packaged
+# builds. Add a real `publish` provider here if an auto-update flow is added.

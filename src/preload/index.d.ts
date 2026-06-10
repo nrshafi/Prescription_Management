@@ -1,5 +1,7 @@
 import type { ElectronAPI } from '@electron-toolkit/preload'
 import type {
+  PatientDeleteOptions,
+  PatientDeleteResult,
   PatientFormValues,
   PatientListItem,
   PatientQuery,
@@ -42,7 +44,7 @@ type Api = {
     visits: (id: number) => Promise<PatientVisit[]>
     create: (input: PatientFormValues) => Promise<PatientRecord>
     update: (id: number, input: PatientFormValues) => Promise<PatientRecord>
-    delete: (id: number) => Promise<{ id: number }>
+    delete: (id: number, options?: PatientDeleteOptions) => Promise<PatientDeleteResult>
     prescriptionCount: (id: number) => Promise<number>
   }
   prescriptions: {
