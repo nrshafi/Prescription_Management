@@ -129,3 +129,9 @@ Agents MUST load and use the following specialized skills before performing rele
 
 ### UI/UX Design
 - **web-design-guidelines**: Load when reviewing or implementing UI/UX features. Use `skill` tool with `name: "web-design-guidelines"` before tasks involving design reviews, accessibility checks, or UI compliance.
+
+### Tauri Development
+- **tauri-v2**: Load when working with Tauri v2+ cross-platform app development, Rust backend commands, IPC patterns (invoke, emit, channels), permissions/capabilities configuration, or troubleshooting Tauri build issues. Use `skill` tool with `name: "tauri-v2"` before tasks involving `src-tauri/`, `tauri.conf.json`, Rust commands, or Tauri-related changes.
+
+### Rust Development
+- **rust-best-practices**: Load when writing, reviewing, or refactoring Rust code, making ownership/borrowing decisions, implementing error handling, optimizing for performance, or writing Rust tests. Use `skill` tool with `name: "rust-best-practices"` before tasks involving `.rs` files, `Cargo.toml`, Rust backend code, or Tauri-related Rust code.
