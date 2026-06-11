@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "PrescriptX",
+  "version": "0.1.0",
+  "identifier": "com.prescriptx.app",
+  "build": {
+    "beforeDevCommand": "bun run dev:renderer",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "bun run build:renderer",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "PrescriptX",
+        "width": 1200,
+        "height": 800
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": ["../build/icon.icns", "../build/icon.ico", "../build/icon.png"]
+  }
+}
