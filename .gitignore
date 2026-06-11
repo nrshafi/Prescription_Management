@@ -6,6 +6,10 @@ out
 .eslintcache
 *.log*
 
+# Tauri build artifacts
+src-tauri/target
+src-tauri/gen
+
 # Local SQLite artifacts (dev)
 *.db
 *.db-shm

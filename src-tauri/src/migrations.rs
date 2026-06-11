@@ -1,8 +1,10 @@
-import type Database from 'better-sqlite3'
-import { getDb } from './client'
+use rusqlite::Connection;
 
-const MIGRATIONS: string[] = [
-  `
+/// Ordered, append-only migration scripts. The current schema version is
+/// tracked with `PRAGMA user_version`, mirroring the previous Electron
+/// implementation so existing databases continue to migrate cleanly.
+const MIGRATIONS: [&str; 3] = [
+    r#"
 CREATE TABLE IF NOT EXISTS doctor_profile (
   doctor_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
   name TEXT,
@@ -77,12 +79,12 @@ CREATE TABLE IF NOT EXISTS presets (
   title TEXT NOT NULL,
   content TEXT
 );
-`,
-  `
+"#,
+    r#"
 UPDATE prescription_sections SET section_type = 'Provisional Diagnosis' WHERE section_type = 'Probational Diagnosis';
 UPDATE presets SET category = 'Provisional Diagnosis' WHERE category = 'Probational Diagnosis';
-`,
-  `
+"#,
+    r#"
 CREATE TABLE IF NOT EXISTS preset_links (
   link_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
   owner_preset_id INTEGER NOT NULL,
@@ -98,51 +100,55 @@ CREATE TABLE IF NOT EXISTS preset_links (
 );
 CREATE INDEX IF NOT EXISTS preset_links_owner_preset_id_idx ON preset_links (owner_preset_id);
 CREATE INDEX IF NOT EXISTS preset_links_target_preset_id_idx ON preset_links (target_preset_id);
-`
-]
+"#,
+];
 
-function bootstrapUserVersionFromDrizzle(db: Database.Database): void {
-  const version = db.pragma('user_version', { simple: true }) as number
-  if (version > 0) return
-  const drizzleTable = db
-    .prepare(
-      `SELECT name FROM sqlite_master WHERE type = 'table' AND name = '__drizzle_migrations'`
+fn user_version(conn: &Connection) -> Result<i64, String> {
+    conn.query_row("PRAGMA user_version", [], |row| row.get(0))
+        .map_err(|e| e.to_string())
+}
+
+/// A Drizzle-era database already has the baseline schema (migration 1), but
+/// may predate later migrations. Only mark the baseline as applied and let the
+/// remaining (idempotent) migrations run so older databases pick up newer
+/// tables such as preset_links.
+fn bootstrap_user_version_from_drizzle(conn: &Connection) -> Result<(), String> {
+    if user_version(conn)? > 0 {
+        return Ok(());
+    }
+    let has_drizzle: bool = conn
+        .query_row(
+            "SELECT EXISTS (SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = '__drizzle_migrations')",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|e| e.to_string())?;
+    if has_drizzle {
+        conn.execute_batch("PRAGMA user_version = 1;")
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+pub fn run_migrations(conn: &Connection) -> Result<(), String> {
+    bootstrap_user_version_from_drizzle(conn)?;
+    let current = user_version(conn)? as usize;
+
+    for (index, sql) in MIGRATIONS.iter().enumerate().skip(current) {
+        let script = format!(
+            "BEGIN;\n{}\nPRAGMA user_version = {};\nCOMMIT;",
+            sql,
+            index + 1
+        );
+        conn.execute_batch(&script)
+            .map_err(|e| format!("Migration {} failed: {e}", index + 1))?;
+    }
+    Ok(())
+}
+
+pub fn ensure_singleton_rows(conn: &Connection) -> Result<(), String> {
+    conn.execute_batch(
+        "INSERT OR IGNORE INTO doctor_profile (doctor_id) VALUES (1);\nINSERT OR IGNORE INTO paper_settings (paper_setting_id) VALUES (1);",
     )
-    .get() as { name: string } | undefined
-  if (drizzleTable) {
-    // A Drizzle-era database already has the baseline schema (migration 1),
-    // but may predate later migrations. Only mark the baseline as applied and
-    // let the remaining (idempotent) migrations run so older databases pick
-    // up newer tables such as preset_links.
-    db.pragma('user_version = 1')
-  }
-}
-
-export function runMigrations(): void {
-  const db = getDb()
-  bootstrapUserVersionFromDrizzle(db)
-  const current = db.pragma('user_version', { simple: true }) as number
-
-  for (let i = current; i < MIGRATIONS.length; i++) {
-    const migrate = db.transaction(() => {
-      db.exec(MIGRATIONS[i])
-      db.pragma(`user_version = ${i + 1}`)
-    })
-    migrate()
-  }
-}
-
-export function ensureSingletonRows(): void {
-  const db = getDb()
-  const doctor = db.prepare('SELECT doctor_id FROM doctor_profile WHERE doctor_id = 1').get()
-  if (!doctor) {
-    db.prepare('INSERT INTO doctor_profile (doctor_id) VALUES (1)').run()
-  }
-
-  const paper = db
-    .prepare('SELECT paper_setting_id FROM paper_settings WHERE paper_setting_id = 1')
-    .get()
-  if (!paper) {
-    db.prepare('INSERT INTO paper_settings (paper_setting_id) VALUES (1)').run()
-  }
+    .map_err(|e| e.to_string())
 }
