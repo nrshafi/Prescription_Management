@@ -34,9 +34,9 @@ bun run build
 
 | Scope | Covered? | Typical target | Notes |
 |-------|----------|----------------|-------|
-| Unit | no detected tests | `[TODO]` | No unit test files or runner config found. |
-| Integration | no detected tests | `[TODO]` | No IPC/database integration test files found. |
-| E2E | no detected tests | `[TODO]` | No Electron E2E tooling found. |
+| Unit | no detected tests | `[TODO]` | No unit test files or runner config found (JS or Rust). |
+| Integration | no detected tests | `[TODO]` | No command/database integration test files found. |
+| E2E | no detected tests | `[TODO]` | No Tauri E2E tooling found. |
 
 ### 4) Mocking and Isolation Strategy
 
@@ -55,8 +55,7 @@ bun run build
 ### 6) Evidence
 
 - `package.json`
-- `tsconfig.node.json`
-- `tsconfig.web.json`
+- `tsconfig.json`
 - `biome.json`
 - `AGENTS.md`
 - Phase 1 scan terminal output
