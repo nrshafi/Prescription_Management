@@ -30,7 +30,6 @@ import type {
 } from '../shared/settings'
 
 type Api = {
-  health: () => Promise<{ ok: boolean; dbPath: string }>
   dashboard: {
     stats: () => Promise<{
       totalPatients: number

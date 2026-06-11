@@ -11,7 +11,7 @@ import {
   uiToFormValues
 } from '@/lib/prescription-mapping'
 import type { PatientFormValues, PatientListItem } from '../../../shared/patient'
-import type { PresetRecord } from '../../../shared/prescription'
+import type { MedicineSuggestion, PresetRecord } from '../../../shared/prescription'
 import type { DoctorProfileRecord } from '../../../shared/print'
 
 const DOSAGE_OPTIONS = ['1+0+1', '1+1+1', '0+0+1', '1+0+0', '0+1+0', '1+1+0', '0+0+2', '1+1+2']
@@ -182,10 +182,11 @@ function MedSearch({
   onAdd
 }: {
   presets: string[]
-  onAdd: (name: string) => void
+  onAdd: (name: string, defaults?: { dosage?: string; frequency?: string; duration?: string }) => void
 }): React.JSX.Element {
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
+  const [suggestions, setSuggestions] = useState<MedicineSuggestion[]>([])
   const ref = useRef<HTMLDivElement>(null)
   const filtered = presets.filter((p) => p.toLowerCase().includes(query.toLowerCase()))
 
@@ -197,11 +198,32 @@ function MedSearch({
     return () => document.removeEventListener('mousedown', h)
   }, [])
 
-  const handleAdd = (name: string): void => {
-    onAdd(name)
+  useEffect(() => {
+    if (!query.trim()) {
+      setSuggestions([])
+      return
+    }
+    const t = setTimeout(() => {
+      window.api.prescriptions
+        .medicineSuggestions(query)
+        .then((rows) => setSuggestions(rows))
+        .catch(() => setSuggestions([]))
+    }, 200)
+    return () => clearTimeout(t)
+  }, [query])
+
+  const handleAdd = (
+    name: string,
+    defaults?: { dosage?: string; frequency?: string; duration?: string }
+  ): void => {
+    onAdd(name, defaults)
     setQuery('')
     setIsOpen(false)
+    setSuggestions([])
   }
+
+  const suggestionNames = new Set(suggestions.map((s) => s.medicineName.toLowerCase()))
+  const mergedPresets = filtered.filter((p) => !suggestionNames.has(p.toLowerCase()))
 
   return (
     <div ref={ref} className="relative print:hidden">
@@ -215,7 +237,14 @@ function MedSearch({
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault()
-              if (filtered.length > 0) handleAdd(filtered[0])
+              if (suggestions.length > 0) {
+                const s = suggestions[0]
+                handleAdd(s.medicineName, {
+                  dosage: s.dosage ?? undefined,
+                  frequency: s.frequency ?? undefined,
+                  duration: s.duration ?? undefined
+                })
+              } else if (mergedPresets.length > 0) handleAdd(mergedPresets[0])
               else if (query.trim()) handleAdd(query.trim())
             }
             if (e.key === 'Escape') setIsOpen(false)
@@ -224,9 +253,31 @@ function MedSearch({
           className="border-primary/30 bg-primary/5 focus:ring-ring w-full rounded-lg border border-dashed py-1.5 pr-3 pl-8 text-sm focus:ring-2 focus:outline-none"
         />
       </div>
-      {isOpen && (query || filtered.length > 0) && (
-        <div className="bg-popover absolute z-50 mt-1 max-h-44 w-full overflow-y-auto rounded-lg border shadow-lg">
-          {filtered.map((item) => (
+      {isOpen && (query || suggestions.length > 0 || mergedPresets.length > 0) && (
+        <div className="bg-popover absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border shadow-lg">
+          {suggestions.map((s) => (
+            <button
+              key={s.medicineName}
+              type="button"
+              onClick={() =>
+                handleAdd(s.medicineName, {
+                  dosage: s.dosage ?? undefined,
+                  frequency: s.frequency ?? undefined,
+                  duration: s.duration ?? undefined
+                })
+              }
+              className="hover:bg-accent w-full px-3 py-2 text-left text-sm"
+            >
+              <div className="font-medium">{s.medicineName}</div>
+              <div className="text-muted-foreground flex gap-2 text-xs">
+                {s.dosage && <span>{s.dosage}</span>}
+                {s.frequency && <span>{s.frequency}</span>}
+                {s.duration && <span>{s.duration}</span>}
+                <span className="ml-auto">Used {s.useCount}x</span>
+              </div>
+            </button>
+          ))}
+          {mergedPresets.map((item) => (
             <button
               key={item}
               type="button"
@@ -237,7 +288,8 @@ function MedSearch({
             </button>
           ))}
           {query.trim() &&
-            !filtered.find((f) => f.toLowerCase() === query.trim().toLowerCase()) && (
+            !suggestions.find((s) => s.medicineName.toLowerCase() === query.trim().toLowerCase()) &&
+            !mergedPresets.find((f) => f.toLowerCase() === query.trim().toLowerCase()) && (
               <button
                 type="button"
                 onClick={() => handleAdd(query.trim())}
@@ -380,15 +432,18 @@ export function NewPrescription({
     })
   }
 
-  const addMedicine = (name: string): void => {
+  const addMedicine = (
+    name: string,
+    defaults?: { dosage?: string; frequency?: string; duration?: string }
+  ): void => {
     setMedicines((prev) => [
       ...prev,
       {
         key: `m-${++medKey}`,
         medicineName: name,
-        dosage: MEDICINE_DEFAULTS.dosage,
-        frequency: MEDICINE_DEFAULTS.frequency,
-        duration: MEDICINE_DEFAULTS.duration,
+        dosage: defaults?.dosage || MEDICINE_DEFAULTS.dosage,
+        frequency: defaults?.frequency || MEDICINE_DEFAULTS.frequency,
+        duration: defaults?.duration || MEDICINE_DEFAULTS.duration,
         notes: ''
       }
     ])

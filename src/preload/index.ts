@@ -32,7 +32,6 @@ import type {
 
 // Custom typed API exposed to the renderer.
 const api = {
-  health: (): Promise<{ ok: boolean; dbPath: string }> => ipcRenderer.invoke('app:health'),
   dashboard: {
     stats: (): Promise<{
       totalPatients: number

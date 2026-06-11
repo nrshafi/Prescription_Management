@@ -9,7 +9,6 @@ import type {
 } from '../../shared/prescription'
 import type { PrintActionResult } from '../../shared/print'
 import type { DoctorProfileFormValues, PaperSettingsFormValues } from '../../shared/settings'
-import { getDatabasePath } from '../db/client'
 import { createPrintWindow, printPageSize } from '../print-window'
 import { getDashboardStats } from '../services/dashboard'
 import {
@@ -45,10 +44,6 @@ import {
 } from '../services/settings'
 
 export function registerIpcHandlers(): void {
-  ipcMain.handle('app:health', () => {
-    return { ok: true, dbPath: getDatabasePath() }
-  })
-
   ipcMain.handle('dashboard:stats', () => {
     return getDashboardStats()
   })
