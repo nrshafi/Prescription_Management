@@ -21,6 +21,7 @@ export interface PrescriptionUiState {
   patientAge: string
   patientGender: string
   patientWeight: string
+  patientAddress: string
   chiefComplaints: string[]
   oe: OeValues
   investigations: string[]
@@ -165,6 +166,7 @@ export function detailToUi(detail: PrescriptionDetail): PrescriptionUiState {
     patientAge: detail.age ?? '',
     patientGender: detail.gender ?? 'Male',
     patientWeight: weight,
+    patientAddress: detail.address ?? '',
     chiefComplaints: chipsFromContent(map.get('Chief Complaint')),
     oe,
     investigations: chipsFromContent(map.get('Investigations')),
@@ -241,6 +243,7 @@ export function emptyUiState(): PrescriptionUiState {
     patientAge: '',
     patientGender: 'Male',
     patientWeight: '',
+    patientAddress: '',
     chiefComplaints: [],
     oe: { bp: '', pulse: '', temp: '', rr: '' },
     investigations: [],

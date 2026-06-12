@@ -435,7 +435,8 @@ export function NewPrescription({
       patientId: foundPatient.id,
       patientName: foundPatient.name,
       patientAge: foundPatient.age ?? '',
-      patientGender: foundPatient.gender ?? 'Male'
+      patientGender: foundPatient.gender ?? 'Male',
+      patientAddress: foundPatient.address ?? ''
     })
   }
 
@@ -552,7 +553,19 @@ export function NewPrescription({
   }
 
   const resolvePatientId = async (): Promise<number> => {
-    if (ui.patientId > 0) return ui.patientId
+    if (ui.patientId > 0) {
+      if (ui.patientAddress.trim() !== (foundPatient?.address ?? '').trim()) {
+        const values: PatientFormValues = {
+          name: ui.patientName.trim(),
+          age: ui.patientAge,
+          gender: (ui.patientGender as PatientFormValues['gender']) || '',
+          phone: ui.patientPhone.trim(),
+          address: ui.patientAddress
+        }
+        await api.patients.update(ui.patientId, values)
+      }
+      return ui.patientId
+    }
     const name = ui.patientName.trim()
     if (!name) throw new Error('Patient name is required.')
     const phone = ui.patientPhone.trim()
@@ -566,7 +579,7 @@ export function NewPrescription({
       age: ui.patientAge,
       gender: (ui.patientGender as PatientFormValues['gender']) || '',
       phone,
-      address: ''
+      address: ui.patientAddress
     }
     const created = await api.patients.create(values)
     patchUi({ patientId: created.id })
@@ -787,6 +800,22 @@ export function NewPrescription({
               />
             </div>
           </div>
+        </div>
+        <div className="mt-3">
+          <label
+            htmlFor="rx-patient-address"
+            className="text-muted-foreground mb-1 block text-xs font-medium"
+          >
+            Address
+          </label>
+          <textarea
+            id="rx-patient-address"
+            rows={2}
+            value={ui.patientAddress}
+            onChange={(e) => patchUi({ patientAddress: e.target.value })}
+            className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+            placeholder="Patient address"
+          />
         </div>
         {saveError && <p className="text-destructive mt-2 text-sm">{saveError}</p>}
       </div>
