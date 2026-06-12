@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp, Plus, Search, Trash2, UserCheck, X } from 'lucide-r
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { SearchMultiSelect } from '@/components/SearchMultiSelect'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { api } from '@/lib/api'
 import {
   detailToUi,
@@ -994,15 +995,18 @@ export function NewPrescription({
                       onChange={(e) => patchUi({ followUpValue: e.target.value })}
                       className="border-input w-16 rounded-lg border px-2 py-1.5 text-center text-sm"
                     />
-                    <select
-                      value={ui.followUpUnit}
-                      onChange={(e) => patchUi({ followUpUnit: e.target.value })}
-                      className="border-input flex-1 rounded-lg border px-2 py-1.5 text-sm"
-                    >
-                      {FOLLOWUP_UNITS.map((u) => (
-                        <option key={u}>{u}</option>
-                      ))}
-                    </select>
+                    <Select value={ui.followUpUnit} onValueChange={(val) => patchUi({ followUpUnit: val })}>
+                      <SelectTrigger className="w-24">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FOLLOWUP_UNITS.map((u) => (
+                          <SelectItem key={u} value={u}>
+                            {u}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   {ui.followUpValue !== '' && (
                     <p className="mt-1 text-sm">
