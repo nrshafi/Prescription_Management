@@ -1,5 +1,14 @@
-import { Download, FileJson, RotateCcw, Save, Upload } from 'lucide-react'
+import {
+  AlertCircleIcon,
+  Download,
+  FileJson,
+  InfoIcon,
+  RotateCcw,
+  Save,
+  Upload
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -17,8 +26,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { api } from '@/lib/api'
 import type { DoctorProfileRecord, PaperSettingsRecord } from '../../../shared/print'
 import {
-  JSON_EXPORT_EXAMPLE,
   type DoctorProfileFormValues,
+  JSON_EXPORT_EXAMPLE,
   type PaperSettingsFormValues
 } from '../../../shared/settings'
 
@@ -192,7 +201,7 @@ export function Settings(): React.JSX.Element {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 p-6">
+    <div className="mx-auto w-full max-w-7xl space-y-4 p-4 sm:p-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
         <p className="text-muted-foreground text-sm">
@@ -320,50 +329,89 @@ export function Settings(): React.JSX.Element {
             <CardHeader>
               <CardTitle>Backup</CardTitle>
               <CardDescription>
-                Export or restore the offline SQLite database, or merge portable JSON data.
+                Backup (<code className="font-mono">.db</code>) is a full snapshot you can use to
+                restore this computer. JSON is a portable merge of patients, prescriptions, and
+                presets only — doctor profile and paper settings are not affected.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={exportBackup}>
-                <Download className="size-4" /> Export Backup
-              </Button>
-              <Button variant="outline" onClick={importBackup}>
-                <Upload className="size-4" /> Import Backup
-              </Button>
-              <Button variant="outline" onClick={exportJson}>
-                <FileJson className="size-4" /> Export JSON
-              </Button>
-              <Dialog open={jsonHelpOpen} onOpenChange={setJsonHelpOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline">
-                    <FileJson className="size-4" /> Import JSON
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Import from JSON</DialogTitle>
-                    <DialogDescription>
-                      Imports are merged into existing data. Patients, prescriptions, and presets are
-                      imported; doctor profile and paper settings are ignored. The file must match
-                      this format.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <pre className="max-h-96 overflow-auto rounded-md bg-muted p-4 text-xs leading-relaxed">
-                    <code>{JSON_EXPORT_EXAMPLE}</code>
-                  </pre>
-                  <DialogFooter>
-                    <Button variant="ghost" onClick={() => setJsonHelpOpen(false)}>
-                      Cancel
+            <CardContent className="flex flex-col gap-4">
+              <Alert variant="destructive">
+                <AlertCircleIcon />
+                <AlertTitle>Importing a backup replaces the entire database</AlertTitle>
+                <AlertDescription>
+                  Doctor profile and paper settings are overwritten with the values from the backup
+                  file. A pre-import snapshot of the current database is taken automatically and is
+                  restored if the import fails.
+                </AlertDescription>
+              </Alert>
+              <Alert>
+                <InfoIcon />
+                <AlertTitle>Importing JSON merges into existing data</AlertTitle>
+                <AlertDescription>
+                  New patients, prescriptions, and presets from the file are added; existing records
+                  are updated in place. Doctor profile and paper settings are ignored.
+                </AlertDescription>
+              </Alert>
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1">
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" onClick={exportBackup}>
+                      <Download className="size-4" /> Export Backup
                     </Button>
-                    <Button onClick={importJson}>
-                      <Upload className="size-4" /> Choose File...
+                    <Button variant="outline" onClick={importBackup}>
+                      <Upload className="size-4" /> Import Backup
                     </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-              <Button variant="ghost" onClick={() => setPaper(defaultPaper)}>
-                <RotateCcw className="size-4" /> A4 Defaults
-              </Button>
+                  </div>
+                  <p className="text-muted-foreground text-xs">
+                    Full database snapshot. Importing replaces everything on this computer — doctor
+                    profile and paper settings included.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" onClick={exportJson}>
+                      <FileJson className="size-4" /> Export JSON
+                    </Button>
+                    <Dialog open={jsonHelpOpen} onOpenChange={setJsonHelpOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline">
+                          <FileJson className="size-4" /> Import JSON
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle>Import from JSON</DialogTitle>
+                          <DialogDescription>
+                            Imports are merged into existing data. Patients, prescriptions, and
+                            presets are imported; doctor profile and paper settings are ignored. The
+                            file must match this format.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <pre className="max-h-96 overflow-auto rounded-md bg-muted p-4 text-xs leading-relaxed">
+                          <code>{JSON_EXPORT_EXAMPLE}</code>
+                        </pre>
+                        <DialogFooter>
+                          <Button variant="ghost" onClick={() => setJsonHelpOpen(false)}>
+                            Cancel
+                          </Button>
+                          <Button onClick={importJson}>
+                            <Upload className="size-4" /> Choose File...
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                  <p className="text-muted-foreground text-xs">
+                    Portable export of patients, prescriptions, and presets. Importing merges into
+                    existing data and skips doctor profile and paper settings.
+                  </p>
+                </div>
+              </div>
+              <div>
+                <Button variant="ghost" onClick={() => setPaper(defaultPaper)}>
+                  <RotateCcw className="size-4" /> A4 Defaults
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
