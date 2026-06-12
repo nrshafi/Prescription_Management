@@ -276,6 +276,8 @@ struct ImportPatient {
 }
 
 struct ImportPrescription {
+    visit_no: Option<i64>,
+    created_at: Option<String>,
     sections: Vec<super::prescriptions::PrescriptionSectionInput>,
     medicines: Vec<super::prescriptions::PrescriptionMedicineInput>,
 }
@@ -297,6 +299,7 @@ struct ImportStats {
     patients_created: usize,
     patients_matched: usize,
     prescriptions_imported: usize,
+    prescriptions_skipped: usize,
     presets_created: usize,
     presets_skipped: usize,
 }
@@ -304,10 +307,11 @@ struct ImportStats {
 impl ImportStats {
     fn message(&self) -> String {
         format!(
-            "JSON import complete: {} patient(s) created, {} patient(s) matched, {} prescription(s) imported, {} preset(s) created, {} preset(s) skipped.",
+            "JSON import complete: {} patient(s) created, {} patient(s) matched, {} prescription(s) imported, {} prescription(s) skipped, {} preset(s) created, {} preset(s) skipped.",
             self.patients_created,
             self.patients_matched,
             self.prescriptions_imported,
+            self.prescriptions_skipped,
             self.presets_created,
             self.presets_skipped
         )
@@ -664,7 +668,12 @@ fn validate_json_import(export: JsonExport) -> Result<ValidatedJsonImport, Strin
                 });
             }
 
-            prescriptions.push(ImportPrescription { sections, medicines });
+            prescriptions.push(ImportPrescription {
+                visit_no: prescription.visit_no,
+                created_at: prescription.created_at,
+                sections,
+                medicines,
+            });
         }
 
         patients.push(ImportPatient {
@@ -839,13 +848,43 @@ fn import_json_into_db(conn: &Connection, input: ValidatedJsonImport) -> Result<
         };
 
         for prescription in patient.prescriptions {
+            let visit_no = match prescription.visit_no {
+                Some(v) if v >= 1 => v,
+                _ => tx
+                    .query_row(
+                        "SELECT COALESCE(MAX(visit_no), 0) + 1 FROM prescriptions WHERE patient_id = ?",
+                        [patient_id],
+                        |row| row.get(0),
+                    )
+                    .map_err(|e| e.to_string())?,
+            };
+
+            let duplicate: Option<i64> = tx
+                .query_row(
+                    "SELECT prescription_id FROM prescriptions WHERE patient_id = ? AND visit_no = ? LIMIT 1",
+                    params![patient_id, visit_no],
+                    |row| row.get(0),
+                )
+                .optional()
+                .map_err(|e| e.to_string())?;
+            if duplicate.is_some() {
+                stats.prescriptions_skipped += 1;
+                continue;
+            }
+
             let form = super::prescriptions::PrescriptionFormValues {
                 patient_id,
                 template_id: None,
                 sections: prescription.sections,
                 medicines: prescription.medicines,
             };
-            super::prescriptions::import_prescription(&tx, patient_id, &form)?;
+            super::prescriptions::import_prescription_with_visit(
+                &tx,
+                patient_id,
+                &form,
+                visit_no,
+                prescription.created_at.as_deref(),
+            )?;
             stats.prescriptions_imported += 1;
         }
     }

@@ -298,26 +298,29 @@ fn create_prescription_internal(
     Ok(prescription_id)
 }
 
-pub(crate) fn import_prescription(
+pub(crate) fn import_prescription_with_visit(
     conn: &Connection,
     patient_id: i64,
     input: &PrescriptionFormValues,
+    visit_no: i64,
+    created_at: Option<&str>,
 ) -> Result<i64, String> {
     let mut values = normalize_prescription(input)?;
     values.patient_id = patient_id;
 
-    let max_visit_no: i64 = conn
-        .query_row(
-            "SELECT COALESCE(MAX(visit_no), 0) FROM prescriptions WHERE patient_id = ?",
-            [values.patient_id],
-            |row| row.get(0),
+    if let Some(timestamp) = created_at {
+        conn.execute(
+            "INSERT INTO prescriptions (patient_id, template_id, visit_no, created_at) VALUES (?, ?, ?, ?)",
+            params![values.patient_id, values.template_id, visit_no, timestamp],
         )
         .map_err(|e| e.to_string())?;
-    conn.execute(
-        "INSERT INTO prescriptions (patient_id, template_id, visit_no) VALUES (?, ?, ?)",
-        params![values.patient_id, values.template_id, max_visit_no + 1],
-    )
-    .map_err(|e| e.to_string())?;
+    } else {
+        conn.execute(
+            "INSERT INTO prescriptions (patient_id, template_id, visit_no) VALUES (?, ?, ?)",
+            params![values.patient_id, values.template_id, visit_no],
+        )
+        .map_err(|e| e.to_string())?;
+    }
     let prescription_id = conn.last_insert_rowid();
     replace_prescription_content(conn, prescription_id, &values)?;
     Ok(prescription_id)
