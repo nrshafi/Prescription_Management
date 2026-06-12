@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useState } from 'react'
+import { api } from '@/lib/api'
 import type { PrescriptionSectionType } from '../../../shared/prescription'
 import type { PrescriptionPrintData } from '../../../shared/print'
 
@@ -61,7 +62,7 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
     }
 
     let cancelled = false
-    window.api.printing
+    api.printing
       .data(prescriptionId)
       .then((loaded) => {
         if (!cancelled) {
@@ -82,12 +83,12 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
 
   useLayoutEffect(() => {
     if (!prescriptionId) {
-      window.api.printing.ready()
+      api.printing.ready()
       return
     }
 
     if (error) {
-      window.api.printing.ready()
+      api.printing.ready()
       return
     }
 
@@ -99,7 +100,7 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
       await new Promise<void>((resolve) => {
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
       })
-      if (!cancelled) window.api.printing.ready()
+      if (!cancelled) api.printing.ready()
     })()
 
     return () => {

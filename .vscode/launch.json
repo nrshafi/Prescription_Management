@@ -2,24 +2,22 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug Main Process",
-      "type": "node",
-      "request": "launch",
-      "cwd": "${workspaceRoot}",
-      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron-vite",
-      "windows": {
-        "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron-vite.cmd"
+      "name": "Launch Tauri Development",
+      "type": "lldb",
+      "request": "attach",
+      "program": "${workspaceFolder}/src-tauri/target/debug/prescriptx",
+      "processId": "${command:pickProcess}",
+      "sourceMap": {
+        "/cargo/registry": "${env:USERPROFILE}/.cargo/registry",
+        "/cargo/git": "${env:USERPROFILE}/.cargo/git"
       },
-      "runtimeArgs": ["--sourcemap"],
-      "env": {
-        "REMOTE_DEBUGGING_PORT": "9222"
-      }
+      "preLaunchTask": ""
     },
     {
-      "name": "Debug Renderer Process",
-      "port": 9222,
-      "request": "attach",
+      "name": "Debug Renderer (Chrome)",
       "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:1420",
       "webRoot": "${workspaceFolder}/src/renderer",
       "timeout": 60000,
       "presentation": {
@@ -29,8 +27,8 @@
   ],
   "compounds": [
     {
-      "name": "Debug All",
-      "configurations": ["Debug Main Process", "Debug Renderer Process"],
+      "name": "Debug All (Tauri + Renderer)",
+      "configurations": ["Launch Tauri Development", "Debug Renderer (Chrome)"],
       "presentation": {
         "order": 1
       }

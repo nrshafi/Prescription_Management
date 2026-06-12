@@ -11,6 +11,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import {
   PRESET_BUNDLE_CATEGORIES,
@@ -294,7 +295,7 @@ export function PresetsManager(): React.JSX.Element {
   const load = useCallback(async () => {
     setError(null)
     try {
-      setRows(await window.api.presets.list())
+      setRows(await api.presets.list())
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load presets.')
     }
@@ -324,8 +325,8 @@ export function PresetsManager(): React.JSX.Element {
   }
 
   async function saveBundle(input: PresetFormValues, id?: number): Promise<void> {
-    if (id) await window.api.presets.update(id, input)
-    else await window.api.presets.create(input)
+    if (id) await api.presets.update(id, input)
+    else await api.presets.create(input)
     await load()
   }
 
@@ -337,7 +338,7 @@ export function PresetsManager(): React.JSX.Element {
     const title = addVal.trim()
     if (!title) return
     const input: PresetFormValues = { category: tab, title, content: title }
-    await window.api.presets.create(input)
+    await api.presets.create(input)
     setAddVal('')
     await load()
   }
@@ -345,13 +346,13 @@ export function PresetsManager(): React.JSX.Element {
   async function saveEdit(id: number): Promise<void> {
     const title = editTitle.trim()
     if (!title) return
-    await window.api.presets.update(id, { category: tab, title, content: title })
+    await api.presets.update(id, { category: tab, title, content: title })
     setEditingId(null)
     await load()
   }
 
   async function remove(id: number): Promise<void> {
-    await window.api.presets.delete(id)
+    await api.presets.delete(id)
     if (editingId === id) setEditingId(null)
     await load()
   }

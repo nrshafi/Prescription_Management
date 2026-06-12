@@ -114,13 +114,3 @@ export const api = {
 }
 
 export type Api = typeof api
-
-declare global {
-  interface Window {
-    api: Api
-  }
-}
-
-// Temporary compatibility shim: pages still call `window.api.*` like they did
-// with the Electron preload bridge. New code should import `api` directly.
-window.api = api

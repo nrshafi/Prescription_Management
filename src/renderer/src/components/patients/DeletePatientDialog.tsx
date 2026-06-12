@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
+import { api } from '@/lib/api'
 import type { PatientListItem } from '../../../../shared/patient'
 
 interface DeletePatientDialogProps {
@@ -34,7 +35,7 @@ export function DeletePatientDialog({
       return
     }
     let cancelled = false
-    window.api.patients.prescriptionCount(patient.id).then((count) => {
+    api.patients.prescriptionCount(patient.id).then((count) => {
       if (!cancelled) setPrescriptionCount(count)
     })
     return () => {

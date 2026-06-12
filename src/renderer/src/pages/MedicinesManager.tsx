@@ -2,6 +2,7 @@ import { Pencil, Pill, Plus, Save, Trash2, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { api } from '@/lib/api'
 import type { PresetFormValues, PresetRecord } from '../../../shared/prescription'
 
 export function MedicinesManager(): React.JSX.Element {
@@ -15,7 +16,7 @@ export function MedicinesManager(): React.JSX.Element {
   const load = useCallback(async () => {
     setError(null)
     try {
-      setRows(await window.api.presets.list('Medicine'))
+      setRows(await api.presets.list('Medicine'))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load medicines.')
     }
@@ -37,7 +38,7 @@ export function MedicinesManager(): React.JSX.Element {
     const title = newTitle.trim()
     if (!title) return
     const input: PresetFormValues = { category: 'Medicine', title, content: title }
-    await window.api.presets.create(input)
+    await api.presets.create(input)
     setNewTitle('')
     await load()
   }
@@ -47,13 +48,13 @@ export function MedicinesManager(): React.JSX.Element {
     if (!title) return
     const row = rows.find((r) => r.id === id)
     if (!row) return
-    await window.api.presets.update(id, { category: 'Medicine', title, content: title })
+    await api.presets.update(id, { category: 'Medicine', title, content: title })
     setEditingId(null)
     await load()
   }
 
   async function remove(id: number): Promise<void> {
-    await window.api.presets.delete(id)
+    await api.presets.delete(id)
     if (editingId === id) setEditingId(null)
     await load()
   }

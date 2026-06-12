@@ -1,6 +1,7 @@
 import { Calendar, Clock, FilePlus, FileText, TrendingUp, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { api } from '@/lib/api'
 import type { AppPage } from '@/lib/navigation'
 import type { PrescriptionListItem } from '../../../shared/prescription'
 import type { DoctorProfileRecord } from '../../../shared/print'
@@ -19,10 +20,10 @@ export function Dashboard({ onNavigate }: DashboardProps): React.JSX.Element {
 
   useEffect(() => {
     Promise.all([
-      window.api.dashboard.stats(),
-      window.api.prescriptions.list(),
-      window.api.presets.list('Medicine'),
-      window.api.settings.get()
+      api.dashboard.stats(),
+      api.prescriptions.list(),
+      api.presets.list('Medicine'),
+      api.settings.get()
     ]).then(([stats, allRx, medPresets, settings]) => {
       setTotalPatients(stats.totalPatients)
       setTodaysRx(stats.todaysPrescriptions)

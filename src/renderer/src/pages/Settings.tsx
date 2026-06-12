@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { api } from '@/lib/api'
 import type { DoctorProfileRecord, PaperSettingsRecord } from '../../../shared/print'
 import type { DoctorProfileFormValues, PaperSettingsFormValues } from '../../../shared/settings'
 
@@ -62,7 +63,7 @@ export function Settings(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    window.api.settings
+    api.settings
       .get()
       .then((settings) => {
         setDoctor(doctorToForm(settings.doctorProfile))
@@ -84,7 +85,7 @@ export function Settings(): React.JSX.Element {
     setError(null)
     setStatus(null)
     try {
-      const saved = await window.api.settings.updateDoctorProfile(doctor)
+      const saved = await api.settings.updateDoctorProfile(doctor)
       setDoctor(doctorToForm(saved))
       setStatus('Doctor profile saved.')
     } catch (err) {
@@ -96,7 +97,7 @@ export function Settings(): React.JSX.Element {
     setError(null)
     setStatus(null)
     try {
-      const saved = await window.api.settings.updatePaperSettings(paper)
+      const saved = await api.settings.updatePaperSettings(paper)
       setPaper(paperToForm(saved))
       setStatus('Paper settings saved.')
     } catch (err) {
@@ -108,7 +109,7 @@ export function Settings(): React.JSX.Element {
     setError(null)
     setStatus(null)
     try {
-      const result = await window.api.settings.exportBackup()
+      const result = await api.settings.exportBackup()
       setStatus(result.path ? `Backup exported: ${result.path}` : 'Backup export cancelled.')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not export backup.')
@@ -119,7 +120,7 @@ export function Settings(): React.JSX.Element {
     setError(null)
     setStatus(null)
     try {
-      const result = await window.api.settings.importBackup()
+      const result = await api.settings.importBackup()
       if (!result.ok) {
         if (result.message) {
           setError(result.message)
@@ -128,7 +129,7 @@ export function Settings(): React.JSX.Element {
         }
         return
       }
-      const settings = await window.api.settings.get()
+      const settings = await api.settings.get()
       setDoctor(doctorToForm(settings.doctorProfile))
       setPaper(paperToForm(settings.paperSettings))
       setStatus(`Backup restored${result.path ? ` from ${result.path}` : ''}.`)

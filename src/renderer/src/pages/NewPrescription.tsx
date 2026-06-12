@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp, ChevronDown, Plus, Search, Trash2, UserCheck, X } f
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { SearchMultiSelect } from '@/components/SearchMultiSelect'
 import { Button } from '@/components/ui/button'
+import { api } from '@/lib/api'
 import {
   detailToUi,
   emptyUiState,
@@ -204,7 +205,7 @@ function MedSearch({
       return
     }
     const t = setTimeout(() => {
-      window.api.prescriptions
+      api.prescriptions
         .medicineSuggestions(query)
         .then((rows) => setSuggestions(rows))
         .catch(() => setSuggestions([]))
@@ -358,8 +359,8 @@ export function NewPrescription({
 
   const loadMeta = useCallback(async () => {
     const [presetRows, settings] = await Promise.all([
-      window.api.presets.list(),
-      window.api.settings.get()
+      api.presets.list(),
+      api.settings.get()
     ])
     setPresets(presetRows)
     setDoctor(settings.doctorProfile)
@@ -367,7 +368,7 @@ export function NewPrescription({
 
   const loadEdit = useCallback(
     async (id: number) => {
-      const detail = await window.api.prescriptions.get(id)
+      const detail = await api.prescriptions.get(id)
       if (!detail) {
         setSaveError('Prescription not found.')
         return
@@ -410,7 +411,7 @@ export function NewPrescription({
       return
     }
     const t = setTimeout(() => {
-      window.api.patients.list({ search: phone }).then((rows) => {
+      api.patients.list({ search: phone }).then((rows) => {
         const match = rows.find((p) => p.phone === phone)
         setFoundPatient(match ?? null)
       })
@@ -550,7 +551,7 @@ export function NewPrescription({
     if (!name) throw new Error('Patient name is required.')
     const phone = ui.patientPhone.trim()
     if (phone) {
-      const rows = await window.api.patients.list({ search: phone })
+      const rows = await api.patients.list({ search: phone })
       const existing = rows.find((p) => p.phone === phone)
       if (existing) return existing.id
     }
@@ -561,7 +562,7 @@ export function NewPrescription({
       phone,
       address: ''
     }
-    const created = await window.api.patients.create(values)
+    const created = await api.patients.create(values)
     patchUi({ patientId: created.id })
     return created.id
   }
@@ -584,9 +585,9 @@ export function NewPrescription({
     const patientId = await resolvePatientId()
     const formValues = uiToFormValues(buildUiForSave(patientId))
     const currentId = editingIdRef.current
-    if (currentId) return window.api.prescriptions.update(currentId, formValues)
-    if (mode === 'draft') return window.api.prescriptions.saveDraft(formValues)
-    return window.api.prescriptions.create(formValues)
+    if (currentId) return api.prescriptions.update(currentId, formValues)
+    if (mode === 'draft') return api.prescriptions.saveDraft(formValues)
+    return api.prescriptions.create(formValues)
   }
 
   const saveAndGetId = async (): Promise<number | null> => {
@@ -618,7 +619,7 @@ export function NewPrescription({
     if (!id) id = await saveAndGetId()
     if (!id) return
     try {
-      const result = await window.api.printing.pdf(id)
+      const result = await api.printing.pdf(id)
       onStatus?.(result.path ? `Exported PDF: ${result.path}` : 'PDF export cancelled.')
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Could not export PDF.')
@@ -630,7 +631,7 @@ export function NewPrescription({
     if (!id) id = await saveAndGetId()
     if (!id) return
     try {
-      const result = await window.api.printing.print(id)
+      const result = await api.printing.print(id)
       if (!result.ok) {
         setSaveError(result.message ?? 'Print failed.')
         if (result.fallbackPreview) {

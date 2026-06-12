@@ -39,6 +39,7 @@ import {
   TableRow
 } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import type {
   PatientFormValues,
@@ -136,7 +137,7 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
     setLoading(true)
     setError(null)
     try {
-      const data = await window.api.patients.list({
+      const data = await api.patients.list({
         search,
         gender: gender === ALL_GENDERS ? undefined : (gender as (typeof GENDERS)[number]),
         dateFrom: dateFrom || undefined,
@@ -167,7 +168,7 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
     }))
 
     try {
-      const visits = await window.api.patients.visits(patientId)
+      const visits = await api.patients.visits(patientId)
       setVisitsByPatient((current) => ({
         ...current,
         [patientId]: { loading: false, error: null, visits }
@@ -200,12 +201,12 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
     setError(null)
     try {
       if (action === 'preview') {
-        await window.api.printing.preview(id)
+        await api.printing.preview(id)
         setStatus(`Opened preview for Pres_ID ${id}.`)
         return
       }
       if (action === 'print') {
-        const result = await window.api.printing.print(id)
+        const result = await api.printing.print(id)
         if (!result.ok) {
           setError(result.message ?? 'Print failed.')
           if (result.fallbackPreview) {
@@ -216,7 +217,7 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
         setStatus(`Sent Pres_ID ${id} to printer.`)
         return
       }
-      const result = await window.api.printing.pdf(id)
+      const result = await api.printing.pdf(id)
       setStatus(result.path ? `Exported PDF: ${result.path}` : 'PDF export cancelled.')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Print action failed.')
@@ -226,7 +227,7 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
   async function duplicatePrescription(id: number): Promise<void> {
     setError(null)
     try {
-      const duplicated = await window.api.prescriptions.duplicate(id)
+      const duplicated = await api.prescriptions.duplicate(id)
       setStatus(`Duplicated to Pres_ID ${duplicated.id}.`)
       await load()
       if (expandedPatients.has(duplicated.patientId)) await loadVisits(duplicated.patientId, true)
@@ -257,16 +258,16 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
 
   async function handlePatientSubmit(values: PatientFormValues): Promise<void> {
     if (editingPatient) {
-      await window.api.patients.update(editingPatient.id, values)
+      await api.patients.update(editingPatient.id, values)
     } else {
-      await window.api.patients.create(values)
+      await api.patients.create(values)
     }
     await load()
   }
 
   async function handleDeletePatient(acknowledgedPrescriptions: number): Promise<void> {
     if (!deletingPatient) return
-    await window.api.patients.delete(deletingPatient.id, { acknowledgedPrescriptions })
+    await api.patients.delete(deletingPatient.id, { acknowledgedPrescriptions })
     setExpandedPatients((current) => {
       const next = new Set(current)
       next.delete(deletingPatient.id)
