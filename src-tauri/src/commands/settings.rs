@@ -785,6 +785,8 @@ fn resolve_patient_id(conn: &Connection, patient: &ImportPatient) -> Result<Opti
 }
 
 fn import_json_into_db(conn: &Connection, input: ValidatedJsonImport) -> Result<ImportStats, String> {
+    migrations::ensure_preset_links_table(conn)?;
+
     let mut stats = ImportStats::default();
     let mut next_seq = next_patient_sequence(conn)?;
     let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;

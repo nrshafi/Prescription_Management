@@ -152,3 +152,26 @@ pub fn ensure_singleton_rows(conn: &Connection) -> Result<(), String> {
     )
     .map_err(|e| e.to_string())
 }
+
+/// Ensures the preset_links table exists even if user_version was already
+/// bumped (e.g. by an imported backup) before this migration was added.
+pub fn ensure_preset_links_table(conn: &Connection) -> Result<(), String> {
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS preset_links (
+            link_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            owner_preset_id INTEGER NOT NULL,
+            target_kind TEXT NOT NULL,
+            target_preset_id INTEGER,
+            label TEXT NOT NULL,
+            dosage TEXT,
+            frequency TEXT,
+            duration TEXT,
+            position INTEGER DEFAULT 0 NOT NULL,
+            FOREIGN KEY (owner_preset_id) REFERENCES presets(preset_id) ON UPDATE no action ON DELETE cascade,
+            FOREIGN KEY (target_preset_id) REFERENCES presets(preset_id) ON UPDATE no action ON DELETE set null
+        );
+        CREATE INDEX IF NOT EXISTS preset_links_owner_preset_id_idx ON preset_links (owner_preset_id);
+        CREATE INDEX IF NOT EXISTS preset_links_target_preset_id_idx ON preset_links (target_preset_id);",
+    )
+    .map_err(|e| e.to_string())
+}
