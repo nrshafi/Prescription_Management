@@ -3,7 +3,6 @@ import {
   Download,
   FileJson,
   InfoIcon,
-  MessageCircle,
   RotateCcw,
   Save,
   Upload
@@ -302,9 +301,14 @@ export function Settings(): React.JSX.Element {
                   </div>
                 ))}
               </div>
-              <Button onClick={savePaper}>
-                <Save className="size-4" /> Save Paper Settings
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => setPaper(defaultPaper)}>
+                  <RotateCcw className="size-4" /> A4 Defaults
+                </Button>
+                <Button className="flex-1" onClick={savePaper}>
+                  <Save className="size-4" /> Save Paper Settings
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
@@ -323,24 +327,6 @@ export function Settings(): React.JSX.Element {
                   {mode[0].toUpperCase() + mode.slice(1)}
                 </Button>
               ))}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Support</CardTitle>
-              <CardDescription>Get in touch with the developer.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-2">
-              <a
-                href="https://t.me/nafiur_rahman_shafi"
-                target="_blank"
-                rel="noreferrer noopener"
-                className="text-primary inline-flex items-center gap-2 text-sm font-medium hover:underline"
-              >
-                <MessageCircle className="size-4" />
-                Contact on Telegram
-              </a>
             </CardContent>
           </Card>
 
@@ -426,13 +412,22 @@ export function Settings(): React.JSX.Element {
                   </p>
                 </div>
               </div>
-              <div>
-                <Button variant="ghost" onClick={() => setPaper(defaultPaper)}>
-                  <RotateCcw className="size-4" /> A4 Defaults
-                </Button>
-              </div>
             </CardContent>
           </Card>
+        </div>
+        <div className="text-center">
+          <p className="text-muted-foreground text-xs">
+            Facing issues?{' '}
+            <a
+              href="https://t.me/nafiur_rahman_shafi"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="text-primary hover:underline"
+            >
+              Contact the developer on Telegram
+            </a>
+            .
+          </p>
         </div>
       </div>
     </div>
