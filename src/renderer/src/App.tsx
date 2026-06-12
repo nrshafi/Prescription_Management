@@ -94,7 +94,7 @@ function App(): React.JSX.Element {
         <Header
           currentPage={page}
           showPrescriptionActions={page === 'new-prescription'}
-          onSaveDraft={() => rxActionsRef.current?.saveDraft()}
+          onSavePrescription={() => rxActionsRef.current?.savePrescription()}
           onExportPdf={() => rxActionsRef.current?.exportPdf()}
           onPrint={() => rxActionsRef.current?.print()}
         />

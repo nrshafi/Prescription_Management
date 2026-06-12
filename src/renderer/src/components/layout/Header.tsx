@@ -4,7 +4,7 @@ import { type AppPage, PAGE_TITLES } from '@/lib/navigation'
 
 interface HeaderProps {
   currentPage: AppPage
-  onSaveDraft?: () => void
+  onSavePrescription?: () => void
   onExportPdf?: () => void
   onPrint?: () => void
   showPrescriptionActions: boolean
@@ -12,7 +12,7 @@ interface HeaderProps {
 
 export function Header({
   currentPage,
-  onSaveDraft,
+  onSavePrescription,
   onExportPdf,
   onPrint,
   showPrescriptionActions
@@ -22,9 +22,9 @@ export function Header({
       <h1 className="text-xl font-semibold">{PAGE_TITLES[currentPage]}</h1>
       {showPrescriptionActions && (
         <div className="flex items-center gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={onSaveDraft}>
+          <Button type="button" variant="outline" size="sm" onClick={onSavePrescription}>
             <Save className="size-4" />
-            Save Draft
+            Save Prescription
           </Button>
           <Button type="button" variant="outline" size="sm" onClick={onExportPdf}>
             <FileDown className="size-4" />

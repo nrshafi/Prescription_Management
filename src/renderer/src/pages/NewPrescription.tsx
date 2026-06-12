@@ -41,7 +41,7 @@ const FOLLOWUP_UNITS = ['Days', 'Weeks', 'Months']
 const MEDICINE_DEFAULTS = { dosage: '1+1+1', frequency: 'After Meal', duration: '5 Days' }
 
 export interface PrescriptionPageActions {
-  saveDraft: () => Promise<void>
+  savePrescription: () => Promise<void>
   exportPdf: () => Promise<void>
   print: () => Promise<void>
 }
@@ -608,14 +608,14 @@ export function NewPrescription({
     }
   }
 
-  const saveDraft = async (): Promise<void> => {
+  const savePrescription = async (): Promise<void> => {
     try {
       const saved = await persist('draft')
       onEditIdChange(saved.id)
       editingIdRef.current = saved.id
-      onStatus?.(`Draft saved as Pres_ID ${saved.id}.`)
+      onStatus?.(`Saved as Pres_ID ${saved.id}.`)
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Could not save draft.')
+      setSaveError(err instanceof Error ? err.message : 'Could not save prescription.')
     }
   }
 
@@ -650,12 +650,12 @@ export function NewPrescription({
     }
   }
 
-  const actionsRef = useRef({ saveDraft, exportPdf, print: printRx })
-  actionsRef.current = { saveDraft, exportPdf, print: printRx }
+  const actionsRef = useRef({ savePrescription, exportPdf, print: printRx })
+  actionsRef.current = { savePrescription, exportPdf, print: printRx }
 
   useEffect(() => {
     onBindActions({
-      saveDraft: () => actionsRef.current.saveDraft(),
+      savePrescription: () => actionsRef.current.savePrescription(),
       exportPdf: () => actionsRef.current.exportPdf(),
       print: () => actionsRef.current.print()
     })
@@ -847,9 +847,6 @@ export function NewPrescription({
               placeholder="Search diagnoses..."
             />
           </SectionCard>
-          <Button type="button" className="w-full" onClick={() => saveAndGetId()}>
-            Save Prescription
-          </Button>
         </div>
 
         <div className="min-w-0 flex-1 overflow-y-auto print:w-full">
