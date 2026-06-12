@@ -2,6 +2,7 @@ import { Link2, Pencil, Plus, Save, Search, Sliders, Trash2, X } from 'lucide-re
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -212,25 +213,33 @@ function BundleEditor({
                       </Button>
                     </div>
                     <div className="grid gap-2 md:grid-cols-[1fr_1fr]">
-                      <select
-                        value={link.targetPresetId ?? ''}
-                        onChange={(e) => {
-                          const presetId = e.target.value ? Number(e.target.value) : null
+                      <Select
+                        value={link.targetPresetId != null ? String(link.targetPresetId) : '__custom'}
+                        onValueChange={(val) => {
+                          if (val === '__custom') {
+                            updateLink(index, { targetPresetId: null, label: link.label })
+                            return
+                          }
+                          const presetId = Number(val)
                           const selected = options.find((preset) => preset.id === presetId)
                           updateLink(index, {
                             targetPresetId: presetId,
                             label: selected?.title ?? link.label
                           })
                         }}
-                        className="border-input bg-background h-9 rounded-md border px-3 text-sm"
                       >
-                        <option value="">Custom / deleted preset</option>
-                        {options.map((preset) => (
-                          <option key={preset.id} value={preset.id}>
-                            {preset.title}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="Custom / deleted preset" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__custom">Custom / deleted preset</SelectItem>
+                          {options.map((preset) => (
+                            <SelectItem key={preset.id} value={String(preset.id)}>
+                              {preset.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <Input
                         value={link.label}
                         onChange={(e) =>

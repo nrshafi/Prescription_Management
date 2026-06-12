@@ -1,5 +1,6 @@
 import { Check, Plus, Search, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 
 interface SearchMultiSelectProps {
@@ -19,6 +20,9 @@ export function SearchMultiSelect({
 }: SearchMultiSelectProps): React.JSX.Element {
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(
+    null
+  )
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -47,6 +51,13 @@ export function SearchMultiSelect({
     onChange(selected.filter((s) => s !== item))
   }
 
+  const updatePosition = useCallback((): void => {
+    if (inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect()
+      setDropdownPos({ top: rect.bottom + 4, left: rect.left, width: rect.width })
+    }
+  }, [])
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent): void => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -56,6 +67,18 @@ export function SearchMultiSelect({
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  useEffect(() => {
+    if (!isOpen) return
+    updatePosition()
+    const scrollContainer = containerRef.current?.closest('[class*="overflow"]')
+    scrollContainer?.addEventListener('scroll', updatePosition, { passive: true })
+    window.addEventListener('scroll', updatePosition, { passive: true })
+    return () => {
+      scrollContainer?.removeEventListener('scroll', updatePosition)
+      window.removeEventListener('scroll', updatePosition)
+    }
+  }, [isOpen, updatePosition])
 
   const showDropdown = isOpen && (filtered.length > 0 || query.trim().length > 0)
   const canAddCustom =
@@ -86,7 +109,10 @@ export function SearchMultiSelect({
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => setIsOpen(true)}
+          onFocus={() => {
+            setIsOpen(true)
+            updatePosition()
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault()
@@ -103,34 +129,40 @@ export function SearchMultiSelect({
         />
       </div>
 
-      {showDropdown && (
-        <div className="bg-popover absolute z-50 mt-1 max-h-52 w-full overflow-y-auto rounded-lg border shadow-lg">
-          {filtered.map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => toggle(item)}
-              className="hover:bg-accent flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors"
-            >
-              <Check className="size-4 text-transparent" />
-              {item}
-            </button>
-          ))}
-          {canAddCustom && (
-            <button
-              type="button"
-              onClick={addCustom}
-              className="text-primary hover:bg-accent flex w-full items-center gap-2 border-t px-3 py-2 text-left text-sm"
-            >
-              <Plus className="size-4" />
-              Add &ldquo;{query.trim()}&rdquo;
-            </button>
-          )}
-          {filtered.length === 0 && !canAddCustom && (
-            <div className="text-muted-foreground px-3 py-2 text-sm">No results</div>
-          )}
-        </div>
-      )}
+      {showDropdown &&
+        dropdownPos &&
+        createPortal(
+          <div
+            className="bg-popover text-popover-foreground z-50 max-h-52 overflow-y-auto rounded-lg border shadow-md"
+            style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width }}
+          >
+            {filtered.map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => toggle(item)}
+                className="hover:bg-accent flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors"
+              >
+                <Check className="size-4 text-transparent" />
+                {item}
+              </button>
+            ))}
+            {canAddCustom && (
+              <button
+                type="button"
+                onClick={addCustom}
+                className="text-primary hover:bg-accent flex w-full items-center gap-2 border-t px-3 py-2 text-left text-sm"
+              >
+                <Plus className="size-4" />
+                Add &ldquo;{query.trim()}&rdquo;
+              </button>
+            )}
+            {filtered.length === 0 && !canAddCustom && (
+              <div className="text-muted-foreground px-3 py-2 text-sm">No results</div>
+            )}
+          </div>,
+          document.body
+        )}
     </div>
   )
 }

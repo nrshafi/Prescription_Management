@@ -760,16 +760,16 @@ export function NewPrescription({
               >
                 Gender
               </label>
-              <select
-                id="rx-patient-gender"
-                value={ui.patientGender}
-                onChange={(e) => patchUi({ patientGender: e.target.value })}
-                className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm"
-              >
-                <option>Male</option>
-                <option>Female</option>
-                <option>Other</option>
-              </select>
+              <Select value={ui.patientGender} onValueChange={(val) => patchUi({ patientGender: val })}>
+                <SelectTrigger id="rx-patient-gender" className="w-full">
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Female">Female</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex-1">
               <label
