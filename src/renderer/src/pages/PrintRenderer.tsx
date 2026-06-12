@@ -47,6 +47,17 @@ function SectionLines({
   )
 }
 
+function FollowUpLine({ content }: { content: string | null | undefined }): React.JSX.Element {
+  const line = lines(content)[0] ?? ''
+  return (
+    <div className="mt-1 space-y-1 leading-5">
+      <p>
+        <strong>Follow up:</strong> {line.replace(/^Follow up:\s*/i, '')}
+      </p>
+    </div>
+  )
+}
+
 interface PrintRendererProps {
   prescriptionId: number | null
 }
@@ -268,10 +279,16 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
               )
               .map((section) => (
                 <section key={section.id} className="mt-6 text-sm">
-                  <h2 className="font-sans text-xs font-bold tracking-[0.18em] uppercase">
-                    {SECTION_LABELS[section.sectionType]}
-                  </h2>
-                  <SectionLines sectionId={section.id} content={section.content} />
+                  {section.sectionType !== 'Follow Up' && (
+                    <h2 className="font-sans text-xs font-bold tracking-[0.18em] uppercase">
+                      {SECTION_LABELS[section.sectionType]}
+                    </h2>
+                  )}
+                  {section.sectionType === 'Follow Up' ? (
+                    <FollowUpLine content={section.content} />
+                  ) : (
+                    <SectionLines sectionId={section.id} content={section.content} />
+                  )}
                 </section>
               ))}
           </section>

@@ -1009,16 +1009,10 @@ export function NewPrescription({
                   </div>
                   {ui.followUpValue !== '' && (
                     <p className="mt-1 text-sm">
-                      {ui.followUpValue === '0' ? (
-                        'N/A'
-                      ) : (
-                        <>
-                          Follow-up after{' '}
-                          <strong>
-                            {ui.followUpValue} {ui.followUpUnit}
-                          </strong>
-                        </>
-                      )}
+                      <strong>Follow up:</strong>{' '}
+                      {ui.followUpValue === '0'
+                        ? 'N/A'
+                        : `After ${ui.followUpValue} ${ui.followUpUnit}`}
                     </p>
                   )}
                 </div>
