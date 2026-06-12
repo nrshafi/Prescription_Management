@@ -1,3 +1,4 @@
+import { open } from '@tauri-apps/plugin-shell'
 import { Download, FileJson, RotateCcw, Save, Upload } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
@@ -395,15 +396,22 @@ export function Settings(): React.JSX.Element {
 
       <div className="text-center">
         <p className="text-sm">
-          Facing issues?{' '}
-          <a
-            href="https://t.me/nafiur_rahman_shafi"
-            target="_blank"
-            rel="noreferrer noopener"
-            className="text-blue-300 font-medium underline-offset-4 hover:underline"
+          Facing issues? Contact the developer on{' '}
+          <button
+            type="button"
+            onClick={() => open('https://t.me/nafiur_rahman_shafi')}
+            className="text-blue-400 font-medium underline-offset-4 hover:underline"
           >
-            Contact the developer on Telegram
-          </a>
+            Telegram
+          </button>
+          {' '}or{' '}
+          <button
+            type="button"
+            onClick={() => open('https://discord.com/users/775961069083951115')}
+            className="text-blue-400 font-medium underline-offset-4 hover:underline"
+          >
+            Discord
+          </button>
         </p>
       </div>
     </div>

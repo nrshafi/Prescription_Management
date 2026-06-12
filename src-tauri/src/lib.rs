@@ -9,6 +9,7 @@ mod migrations;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             let conn = db::init_database(app.handle()).map_err(std::io::Error::other)?;
             app.manage(db::Db(Mutex::new(conn)));
