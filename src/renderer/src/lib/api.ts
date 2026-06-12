@@ -90,7 +90,9 @@ export const api = {
     updatePaperSettings: (input: PaperSettingsFormValues): Promise<PaperSettingsRecord> =>
       invoke('settings_update_paper_settings', { input }),
     exportBackup: (): Promise<BackupActionResult> => invoke('settings_export_backup'),
-    importBackup: (): Promise<BackupActionResult> => invoke('settings_import_backup')
+    importBackup: (): Promise<BackupActionResult> => invoke('settings_import_backup'),
+    exportJson: (): Promise<BackupActionResult> => invoke('settings_export_json'),
+    importJson: (): Promise<BackupActionResult> => invoke('settings_import_json')
   },
   printing: {
     data: (prescriptionId: number): Promise<PrescriptionPrintData> =>

@@ -1,13 +1,26 @@
-import { Download, RotateCcw, Save, Upload } from 'lucide-react'
+import { Download, FileJson, RotateCcw, Save, Upload } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { api } from '@/lib/api'
 import type { DoctorProfileRecord, PaperSettingsRecord } from '../../../shared/print'
-import type { DoctorProfileFormValues, PaperSettingsFormValues } from '../../../shared/settings'
+import {
+  JSON_EXPORT_EXAMPLE,
+  type DoctorProfileFormValues,
+  type PaperSettingsFormValues
+} from '../../../shared/settings'
 
 const defaultDoctor: DoctorProfileFormValues = {
   name: '',
@@ -61,6 +74,7 @@ export function Settings(): React.JSX.Element {
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') ?? 'system')
   const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [jsonHelpOpen, setJsonHelpOpen] = useState(false)
 
   useEffect(() => {
     api.settings
@@ -135,6 +149,41 @@ export function Settings(): React.JSX.Element {
       setStatus(`Backup restored${result.path ? ` from ${result.path}` : ''}.`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not import backup.')
+    }
+  }
+
+  async function exportJson(): Promise<void> {
+    setError(null)
+    setStatus(null)
+    try {
+      const result = await api.settings.exportJson()
+      setStatus(result.path ? `JSON exported: ${result.path}` : 'JSON export cancelled.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not export JSON.')
+    }
+  }
+
+  async function importJson(): Promise<void> {
+    setError(null)
+    setStatus(null)
+    try {
+      const result = await api.settings.importJson()
+      setJsonHelpOpen(false)
+      if (!result.ok) {
+        if (result.message) {
+          setError(result.message)
+        } else {
+          setStatus('JSON import cancelled.')
+        }
+        return
+      }
+      const settings = await api.settings.get()
+      setDoctor(doctorToForm(settings.doctorProfile))
+      setPaper(paperToForm(settings.paperSettings))
+      setStatus(result.message ?? 'JSON import complete.')
+    } catch (err) {
+      setJsonHelpOpen(false)
+      setError(err instanceof Error ? err.message : 'Could not import JSON.')
     }
   }
 
@@ -270,7 +319,9 @@ export function Settings(): React.JSX.Element {
           <Card>
             <CardHeader>
               <CardTitle>Backup</CardTitle>
-              <CardDescription>Export or restore the offline SQLite database.</CardDescription>
+              <CardDescription>
+                Export or restore the offline SQLite database, or merge portable JSON data.
+              </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={exportBackup}>
@@ -279,6 +330,37 @@ export function Settings(): React.JSX.Element {
               <Button variant="outline" onClick={importBackup}>
                 <Upload className="size-4" /> Import Backup
               </Button>
+              <Button variant="outline" onClick={exportJson}>
+                <FileJson className="size-4" /> Export JSON
+              </Button>
+              <Dialog open={jsonHelpOpen} onOpenChange={setJsonHelpOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <FileJson className="size-4" /> Import JSON
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Import from JSON</DialogTitle>
+                    <DialogDescription>
+                      Imports are merged into existing data. Patients, prescriptions, and presets are
+                      imported; doctor profile and paper settings are ignored. The file must match
+                      this format.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <pre className="max-h-96 overflow-auto rounded-md bg-muted p-4 text-xs leading-relaxed">
+                    <code>{JSON_EXPORT_EXAMPLE}</code>
+                  </pre>
+                  <DialogFooter>
+                    <Button variant="ghost" onClick={() => setJsonHelpOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={importJson}>
+                      <Upload className="size-4" /> Choose File...
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
               <Button variant="ghost" onClick={() => setPaper(defaultPaper)}>
                 <RotateCcw className="size-4" /> A4 Defaults
               </Button>

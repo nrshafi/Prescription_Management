@@ -281,6 +281,22 @@ fn get_preset_internal(conn: &Connection, id: i64) -> Result<Option<PresetRecord
     Ok(rows.pop())
 }
 
+pub(crate) fn import_preset(conn: &Connection, input: &PresetFormValues) -> Result<i64, String> {
+    let values = normalize_preset(input)?;
+    conn.execute(
+        "INSERT INTO presets (category, title, content) VALUES (?, ?, ?)",
+        params![
+            values.category,
+            values.title,
+            if values.content.is_empty() { None } else { Some(values.content.as_str()) }
+        ],
+    )
+    .map_err(|e| e.to_string())?;
+    let id = conn.last_insert_rowid();
+    replace_preset_links(conn, id, &values.links)?;
+    Ok(id)
+}
+
 #[tauri::command]
 pub fn presets_list(
     state: State<'_, Db>,

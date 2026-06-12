@@ -41,6 +41,8 @@ pub fn run() {
             commands::settings::settings_update_paper_settings,
             commands::settings::settings_export_backup,
             commands::settings::settings_import_backup,
+            commands::settings::settings_export_json,
+            commands::settings::settings_import_json,
             commands::printing::printing_data,
             commands::printing::printing_preview,
             commands::printing::printing_print,
