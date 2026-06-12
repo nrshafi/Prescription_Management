@@ -25,19 +25,17 @@ export type PatientSortField = (typeof PATIENT_SORT_FIELDS)[number]
 export const SORT_DIRECTIONS = ['asc', 'desc'] as const
 export type SortDirection = (typeof SORT_DIRECTIONS)[number]
 
-export const patientQuerySchema = z.object({
-  search: z.string().trim().optional().default(''),
-  gender: z.enum(GENDERS).optional(),
-  ageMin: z.coerce.number().int().min(0).max(200).optional(),
-  ageMax: z.coerce.number().int().min(0).max(200).optional(),
-  dateFrom: z.string().trim().optional(),
-  dateTo: z.string().trim().optional(),
-  minVisits: z.coerce.number().int().min(0).optional(),
-  sortBy: z.enum(PATIENT_SORT_FIELDS).optional().default('id'),
-  sortDir: z.enum(SORT_DIRECTIONS).optional().default('desc')
-})
-
-export type PatientQuery = z.input<typeof patientQuerySchema>
+export type PatientQuery = {
+  search?: string
+  gender?: (typeof GENDERS)[number]
+  ageMin?: number
+  ageMax?: number
+  dateFrom?: string
+  dateTo?: string
+  minVisits?: number
+  sortBy?: (typeof PATIENT_SORT_FIELDS)[number]
+  sortDir?: (typeof SORT_DIRECTIONS)[number]
+}
 
 // Shared row/result shapes (kept here so the renderer never imports main-process code).
 export interface PatientRecord {

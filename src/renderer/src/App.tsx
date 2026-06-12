@@ -37,9 +37,8 @@ function App(): React.JSX.Element {
     setPage('new-prescription')
   }, [])
 
-  if (window.location.pathname === '/print' || printPrescriptionId) {
-    const id = new URLSearchParams(window.location.search).get('id') ?? printPrescriptionId
-    const prescriptionId = id ? Number(id) : Number.NaN
+  if (printPrescriptionId) {
+    const prescriptionId = Number(printPrescriptionId)
     return (
       <PrintRenderer prescriptionId={Number.isFinite(prescriptionId) ? prescriptionId : null} />
     )

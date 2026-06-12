@@ -64,14 +64,4 @@ function TableCell({ className, ...props }: React.ComponentProps<'td'>): React.J
   )
 }
 
-function TableCaption({ className, ...props }: React.ComponentProps<'caption'>): React.JSX.Element {
-  return (
-    <caption
-      data-slot="table-caption"
-      className={cn('text-muted-foreground mt-4 text-sm', className)}
-      {...props}
-    />
-  )
-}
-
-export { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow }
+export { Table, TableBody, TableCell, TableHead, TableHeader, TableRow }

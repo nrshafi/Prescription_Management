@@ -1,10 +1,8 @@
 import { z } from 'zod'
 
-export const JSON_FORMAT_VERSION = 1
-
 export const JSON_EXPORT_EXAMPLE = JSON.stringify(
   {
-    formatVersion: JSON_FORMAT_VERSION,
+    formatVersion: 1,
     exportedAt: '2026-06-12T15:00:00.000Z',
     doctorProfile: {
       name: 'Dr. Jane Doe',
@@ -38,8 +36,8 @@ export const JSON_EXPORT_EXAMPLE = JSON.stringify(
             visitNo: 1,
             createdAt: '2026-01-10 09:30:00',
             sections: [
-              { sectionType: 'Chief Complaint', content: 'Chest pain', position: 0 },
-              { sectionType: 'Provisional Diagnosis', content: 'Angina', position: 3 }
+              { sectionType: 'Chief Complaint', content: 'Chest pain' },
+              { sectionType: 'Provisional Diagnosis', content: 'Angina' }
             ],
             medicines: [
               {
@@ -47,8 +45,7 @@ export const JSON_EXPORT_EXAMPLE = JSON.stringify(
                 dosage: '75mg',
                 frequency: '1+0+0',
                 duration: '30 days',
-                notes: 'After meal',
-                position: 0
+                notes: 'After meal'
               }
             ]
           }

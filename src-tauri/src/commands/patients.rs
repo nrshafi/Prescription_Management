@@ -321,12 +321,6 @@ pub fn patients_list(
 }
 
 #[tauri::command]
-pub fn patients_get(state: State<'_, Db>, id: i64) -> Result<Option<PatientRecord>, String> {
-    let conn = state.conn()?;
-    fetch_patient(&conn, id)
-}
-
-#[tauri::command]
 pub fn patients_visits(state: State<'_, Db>, id: i64) -> Result<Vec<PatientVisit>, String> {
     let conn = state.conn()?;
     let mut stmt = conn

@@ -4,25 +4,14 @@ import { GENDERS, SORT_DIRECTIONS, type SortDirection } from './patient'
 
 export { GENDERS, SORT_DIRECTIONS, type SortDirection }
 
-export const PRESCRIPTION_SORT_FIELDS = [
-  'id',
-  'patientName',
-  'patientCode',
-  'visitNo',
-  'createdAt'
-] as const
-export type PrescriptionSortField = (typeof PRESCRIPTION_SORT_FIELDS)[number]
-
-export const prescriptionQuerySchema = z.object({
-  search: z.string().trim().optional().default(''),
-  gender: z.enum(GENDERS).optional(),
-  dateFrom: z.string().trim().optional(),
-  dateTo: z.string().trim().optional(),
-  sortBy: z.enum(PRESCRIPTION_SORT_FIELDS).optional().default('createdAt'),
-  sortDir: z.enum(SORT_DIRECTIONS).optional().default('desc')
-})
-
-export type PrescriptionQuery = z.input<typeof prescriptionQuerySchema>
+export type PrescriptionQuery = {
+  search?: string
+  gender?: (typeof GENDERS)[number]
+  dateFrom?: string
+  dateTo?: string
+  sortBy?: 'id' | 'patientName' | 'patientCode' | 'visitNo' | 'createdAt'
+  sortDir?: 'asc' | 'desc'
+}
 
 export const PRESCRIPTION_SECTION_TYPES = [
   'Chief Complaint',
@@ -46,7 +35,6 @@ export const PRESET_CATEGORIES = [
 export type PresetCategory = (typeof PRESET_CATEGORIES)[number]
 
 export const PRESET_BUNDLE_CATEGORIES = ['Chief Complaint', 'Provisional Diagnosis'] as const
-export type PresetBundleCategory = (typeof PRESET_BUNDLE_CATEGORIES)[number]
 
 export const PRESET_LINK_KINDS = [
   'Medicine',
@@ -75,8 +63,7 @@ export const presetFormSchema = z.object({
 
 export const prescriptionSectionInputSchema = z.object({
   sectionType: z.enum(PRESCRIPTION_SECTION_TYPES),
-  content: z.string().trim().max(4000, 'Section content is too long').optional().or(z.literal('')),
-  position: z.number().int().min(0)
+  content: z.string().trim().max(4000, 'Section content is too long').optional().or(z.literal(''))
 })
 
 export const prescriptionMedicineInputSchema = z.object({
@@ -89,13 +76,11 @@ export const prescriptionMedicineInputSchema = z.object({
   dosage: z.string().trim().max(120, 'Dosage is too long').optional().or(z.literal('')),
   frequency: z.string().trim().max(120, 'Frequency is too long').optional().or(z.literal('')),
   duration: z.string().trim().max(120, 'Duration is too long').optional().or(z.literal('')),
-  notes: z.string().trim().max(300, 'Notes are too long').optional().or(z.literal('')),
-  position: z.number().int().min(0)
+  notes: z.string().trim().max(300, 'Notes are too long').optional().or(z.literal(''))
 })
 
 export const prescriptionFormSchema = z.object({
   patientId: z.number().int().positive('Patient is required'),
-  templateId: z.number().int().positive().nullable().optional(),
   sections: z.array(prescriptionSectionInputSchema),
   medicines: z.array(prescriptionMedicineInputSchema)
 })
@@ -130,7 +115,6 @@ export interface PrescriptionListItem {
 }
 
 export interface PrescriptionDetail extends PrescriptionListItem {
-  templateId: number | null
   address: string | null
   sections: PrescriptionSectionRecord[]
   medicines: PrescriptionMedicineRecord[]

@@ -343,12 +343,6 @@ pub fn presets_list(
 }
 
 #[tauri::command]
-pub fn presets_get(state: State<'_, Db>, id: i64) -> Result<Option<PresetRecord>, String> {
-    let conn = state.conn()?;
-    get_preset_internal(&conn, id)
-}
-
-#[tauri::command]
 pub fn presets_create(state: State<'_, Db>, input: PresetFormValues) -> Result<PresetRecord, String> {
     let values = normalize_preset(&input)?;
     let conn = state.conn()?;

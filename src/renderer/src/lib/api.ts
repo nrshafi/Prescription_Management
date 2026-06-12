@@ -29,8 +29,7 @@ import type {
   PaperSettingsFormValues
 } from '../../../shared/settings'
 
-// Renderer-side API adapter backed by Tauri commands. Mirrors the surface of
-// the old Electron preload bridge so existing pages keep working unchanged.
+// Renderer-side API adapter backed by Tauri commands.
 export const api = {
   dashboard: {
     stats: (): Promise<{
@@ -42,8 +41,6 @@ export const api = {
   patients: {
     list: (query?: PatientQuery): Promise<PatientListItem[]> =>
       invoke('patients_list', { query: query ?? {} }),
-    get: (id: number): Promise<PatientRecord | undefined> =>
-      invoke<PatientRecord | null>('patients_get', { id }).then((value) => value ?? undefined),
     visits: (id: number): Promise<PatientVisit[]> => invoke('patients_visits', { id }),
     create: (input: PatientFormValues): Promise<PatientRecord> =>
       invoke('patients_create', { input }),
@@ -75,8 +72,6 @@ export const api = {
   presets: {
     list: (category?: string): Promise<PresetRecord[]> =>
       invoke('presets_list', { category: category ?? null }),
-    get: (id: number): Promise<PresetRecord | undefined> =>
-      invoke<PresetRecord | null>('presets_get', { id }).then((value) => value ?? undefined),
     create: (input: PresetFormValues): Promise<PresetRecord> => invoke('presets_create', { input }),
     update: (id: number, input: PresetFormValues): Promise<PresetRecord> =>
       invoke('presets_update', { id, input }),

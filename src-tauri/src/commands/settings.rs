@@ -641,7 +641,6 @@ fn validate_json_import(export: JsonExport) -> Result<ValidatedJsonImport, Strin
                 sections.push(super::prescriptions::PrescriptionSectionInput {
                     section_type,
                     content: Some(content),
-                    position: section.position,
                 });
             }
 
@@ -664,7 +663,6 @@ fn validate_json_import(export: JsonExport) -> Result<ValidatedJsonImport, Strin
                     frequency: Some(frequency),
                     duration: Some(duration),
                     notes: Some(notes),
-                    position: medicine.position,
                 });
             }
 
@@ -874,7 +872,6 @@ fn import_json_into_db(conn: &Connection, input: ValidatedJsonImport) -> Result<
 
             let form = super::prescriptions::PrescriptionFormValues {
                 patient_id,
-                template_id: None,
                 sections: prescription.sections,
                 medicines: prescription.medicines,
             };

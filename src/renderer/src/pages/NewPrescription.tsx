@@ -2,7 +2,13 @@ import { ArrowDown, ArrowUp, Plus, Search, Trash2, UserCheck, X } from 'lucide-r
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { SearchMultiSelect } from '@/components/SearchMultiSelect'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 import { api } from '@/lib/api'
 import {
   detailToUi,
@@ -189,7 +195,10 @@ function MedSearch({
   onAdd
 }: {
   presets: string[]
-  onAdd: (name: string, defaults?: { dosage?: string; frequency?: string; duration?: string }) => void
+  onAdd: (
+    name: string,
+    defaults?: { dosage?: string; frequency?: string; duration?: string }
+  ) => void
 }): React.JSX.Element {
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
@@ -364,10 +373,7 @@ export function NewPrescription({
   }, [presets])
 
   const loadMeta = useCallback(async () => {
-    const [presetRows, settings] = await Promise.all([
-      api.presets.list(),
-      api.settings.get()
-    ])
+    const [presetRows, settings] = await Promise.all([api.presets.list(), api.settings.get()])
     setPresets(presetRows)
     setDoctor(settings.doctorProfile)
   }, [])
@@ -653,9 +659,6 @@ export function NewPrescription({
       const result = await api.printing.print(id)
       if (!result.ok) {
         setSaveError(result.message ?? 'Print failed.')
-        if (result.fallbackPreview) {
-          onStatus?.('Opened print preview — use Ctrl+P to print, or export PDF.')
-        }
         return
       }
       onStatus?.(`Sent Pres_ID ${id} to printer.`)
@@ -773,7 +776,10 @@ export function NewPrescription({
               >
                 Gender
               </label>
-              <Select value={ui.patientGender} onValueChange={(val) => patchUi({ patientGender: val })}>
+              <Select
+                value={ui.patientGender}
+                onValueChange={(val) => patchUi({ patientGender: val })}
+              >
                 <SelectTrigger id="rx-patient-gender" className="w-full">
                   <SelectValue placeholder="Select gender" />
                 </SelectTrigger>
@@ -1024,7 +1030,10 @@ export function NewPrescription({
                       onChange={(e) => patchUi({ followUpValue: e.target.value })}
                       className="border-input w-16 rounded-lg border px-2 py-1.5 text-center text-sm"
                     />
-                    <Select value={ui.followUpUnit} onValueChange={(val) => patchUi({ followUpUnit: val })}>
+                    <Select
+                      value={ui.followUpUnit}
+                      onValueChange={(val) => patchUi({ followUpUnit: val })}
+                    >
                       <SelectTrigger className="w-24">
                         <SelectValue />
                       </SelectTrigger>

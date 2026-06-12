@@ -2,7 +2,13 @@ import { Link2, Pencil, Plus, Save, Search, Sliders, Trash2, X } from 'lucide-re
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -214,7 +220,9 @@ function BundleEditor({
                     </div>
                     <div className="grid gap-2 md:grid-cols-[1fr_1fr]">
                       <Select
-                        value={link.targetPresetId != null ? String(link.targetPresetId) : '__custom'}
+                        value={
+                          link.targetPresetId != null ? String(link.targetPresetId) : '__custom'
+                        }
                         onValueChange={(val) => {
                           if (val === '__custom') {
                             updateLink(index, { targetPresetId: null, label: link.label })

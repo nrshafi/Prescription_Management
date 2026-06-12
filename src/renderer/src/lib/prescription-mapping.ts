@@ -7,7 +7,7 @@ import {
   type PrescriptionSectionType
 } from '../../../shared/prescription'
 
-export interface OeValues {
+interface OeValues {
   bp: string
   pulse: string
   temp: string
@@ -30,7 +30,6 @@ export interface PrescriptionUiState {
   followUpValue: string
   followUpUnit: string
   medicines: PrescriptionMedicineInput[]
-  templateId: number | null
 }
 
 const OE_KEYS = ['bp', 'pulse', 'temp', 'rr'] as const
@@ -41,14 +40,14 @@ const OE_LABELS: Record<(typeof OE_KEYS)[number], string> = {
   rr: 'R/R'
 }
 
-export function chipsFromContent(content: string | null | undefined): string[] {
+function chipsFromContent(content: string | null | undefined): string[] {
   return (content ?? '')
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean)
 }
 
-export function contentFromChips(chips: string[]): string {
+function contentFromChips(chips: string[]): string {
   return chips
     .map((c) => c.trim())
     .filter(Boolean)
@@ -69,7 +68,7 @@ export function mergeChips(existing: string[], incoming: string[]): string[] {
   return merged
 }
 
-export function parseOe(content: string): { oe: OeValues; weight: string } {
+function parseOe(content: string): { oe: OeValues; weight: string } {
   const oe: OeValues = { bp: '', pulse: '', temp: '', rr: '' }
   let weight = ''
   for (const line of content.split('\n')) {
@@ -93,7 +92,7 @@ export function parseOe(content: string): { oe: OeValues; weight: string } {
   return { oe, weight }
 }
 
-export function serializeOe(oe: OeValues, weight: string): string {
+function serializeOe(oe: OeValues, weight: string): string {
   const lines: string[] = []
   if (oe.bp) lines.push(`BP: ${oe.bp}`)
   if (oe.pulse) lines.push(`Pulse: ${oe.pulse}`)
@@ -103,7 +102,7 @@ export function serializeOe(oe: OeValues, weight: string): string {
   return lines.join('\n')
 }
 
-export function parseFollowUp(content: string): { value: string; unit: string } {
+function parseFollowUp(content: string): { value: string; unit: string } {
   const trimmed = content.trim()
   // "Follow up: N/A" is the marker for a follow-up value of 0.
   if (/^Follow up:\s*N\/?A$/i.test(trimmed)) return { value: '0', unit: 'Days' }
@@ -121,7 +120,7 @@ export function parseFollowUp(content: string): { value: string; unit: string } 
   return { value: '', unit: 'Days' }
 }
 
-export function serializeFollowUp(value: string, unit: string): string {
+function serializeFollowUp(value: string, unit: string): string {
   const trimmed = value.trim()
   // 0 (or empty) renders as "Follow up: N/A" so the section stays visible
   // but is clearly indicating there is no scheduled follow-up.
@@ -130,10 +129,9 @@ export function serializeFollowUp(value: string, unit: string): string {
 }
 
 function emptySections(): PrescriptionSectionInput[] {
-  return PRESCRIPTION_SECTION_TYPES.map((sectionType, position) => ({
+  return PRESCRIPTION_SECTION_TYPES.map((sectionType) => ({
     sectionType,
-    content: '',
-    position
+    content: ''
   }))
 }
 
@@ -150,8 +148,7 @@ export function detailToUi(detail: PrescriptionDetail): PrescriptionUiState {
     detail.sections.length
       ? detail.sections.map((s) => ({
           sectionType: s.sectionType,
-          content: s.content ?? '',
-          position: s.position
+          content: s.content ?? ''
         }))
       : emptySections()
   )
@@ -174,15 +171,13 @@ export function detailToUi(detail: PrescriptionDetail): PrescriptionUiState {
     advice: chipsFromContent(map.get('Advice')),
     followUpValue: follow.value,
     followUpUnit: follow.unit,
-    medicines: detail.medicines.map((m, position) => ({
+    medicines: detail.medicines.map((m) => ({
       medicineName: m.medicineName ?? '',
       dosage: m.dosage ?? '',
       frequency: m.frequency ?? '',
       duration: m.duration ?? '',
-      notes: m.notes ?? '',
-      position
-    })),
-    templateId: detail.templateId
+      notes: m.notes ?? ''
+    }))
   }
 }
 
@@ -215,23 +210,21 @@ export function uiToFormValues(ui: PrescriptionUiState): PrescriptionFormValues 
   })
 
   const medicines = ui.medicines
-    .map((medicine, position) => ({
+    .map((medicine) => ({
       medicineName: medicine.medicineName?.trim() ?? '',
       dosage: medicine.dosage?.trim() ?? '',
       frequency: medicine.frequency?.trim() ?? '',
       duration: medicine.duration?.trim() ?? '',
-      notes: medicine.notes?.trim() ?? '',
-      position
+      notes: medicine.notes?.trim() ?? ''
     }))
     .filter((m) => m.medicineName || m.dosage || m.frequency || m.duration || m.notes)
 
   return {
     patientId: ui.patientId,
-    templateId: ui.templateId,
     sections,
     medicines: medicines.length
       ? medicines
-      : [{ medicineName: '', dosage: '', frequency: '', duration: '', notes: '', position: 0 }]
+      : [{ medicineName: '', dosage: '', frequency: '', duration: '', notes: '' }]
   }
 }
 
@@ -251,8 +244,7 @@ export function emptyUiState(): PrescriptionUiState {
     advice: [],
     followUpValue: '0',
     followUpUnit: 'Days',
-    medicines: [],
-    templateId: null
+    medicines: []
   }
 }
 

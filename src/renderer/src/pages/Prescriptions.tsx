@@ -192,9 +192,6 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
         const result = await api.printing.print(id)
         if (!result.ok) {
           setError(result.message ?? 'Print failed.')
-          if (result.fallbackPreview) {
-            setStatus('Opened print preview; use Ctrl+P to print from there, or export PDF.')
-          }
           return
         }
         setStatus(`Sent Pres_ID ${id} to printer.`)

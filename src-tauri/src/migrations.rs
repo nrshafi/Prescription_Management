@@ -3,7 +3,7 @@ use rusqlite::Connection;
 /// Ordered, append-only migration scripts. The current schema version is
 /// tracked with `PRAGMA user_version`, mirroring the previous Electron
 /// implementation so existing databases continue to migrate cleanly.
-const MIGRATIONS: [&str; 3] = [
+const MIGRATIONS: [&str; 4] = [
     r#"
 CREATE TABLE IF NOT EXISTS doctor_profile (
   doctor_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -38,21 +38,13 @@ CREATE TABLE IF NOT EXISTS patients (
   updated_at TEXT DEFAULT (CURRENT_TIMESTAMP) NOT NULL
 );
 CREATE UNIQUE INDEX IF NOT EXISTS patients_patient_code_unique ON patients (patient_code);
-CREATE TABLE IF NOT EXISTS templates (
-  template_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-  name TEXT NOT NULL,
-  paper_size TEXT DEFAULT 'A4' NOT NULL,
-  layout_json TEXT
-);
 CREATE TABLE IF NOT EXISTS prescriptions (
   prescription_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
   patient_id INTEGER NOT NULL,
-  template_id INTEGER,
   visit_no INTEGER DEFAULT 1 NOT NULL,
   created_at TEXT DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
   updated_at TEXT DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
-  FOREIGN KEY (patient_id) REFERENCES patients(patient_id) ON UPDATE no action ON DELETE cascade,
-  FOREIGN KEY (template_id) REFERENCES templates(template_id) ON UPDATE no action ON DELETE no action
+  FOREIGN KEY (patient_id) REFERENCES patients(patient_id) ON UPDATE no action ON DELETE cascade
 );
 CREATE TABLE IF NOT EXISTS prescription_sections (
   section_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -100,6 +92,9 @@ CREATE TABLE IF NOT EXISTS preset_links (
 );
 CREATE INDEX IF NOT EXISTS preset_links_owner_preset_id_idx ON preset_links (owner_preset_id);
 CREATE INDEX IF NOT EXISTS preset_links_target_preset_id_idx ON preset_links (target_preset_id);
+"#,
+    r#"
+DROP TABLE IF EXISTS templates;
 "#,
 ];
 

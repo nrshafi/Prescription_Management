@@ -62,7 +62,6 @@ pub struct PrescriptionMedicineRecord {
 pub struct PrescriptionDetail {
     #[serde(flatten)]
     pub item: PrescriptionListItem,
-    pub template_id: Option<i64>,
     pub address: Option<String>,
     pub sections: Vec<PrescriptionSectionRecord>,
     pub medicines: Vec<PrescriptionMedicineRecord>,
@@ -97,8 +96,6 @@ pub struct PrescriptionSectionInput {
     pub section_type: String,
     #[serde(default)]
     pub content: Option<String>,
-    #[serde(default)]
-    pub position: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -114,16 +111,12 @@ pub struct PrescriptionMedicineInput {
     pub duration: Option<String>,
     #[serde(default)]
     pub notes: Option<String>,
-    #[serde(default)]
-    pub position: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PrescriptionFormValues {
     pub patient_id: i64,
-    #[serde(default)]
-    pub template_id: Option<i64>,
     pub sections: Vec<PrescriptionSectionInput>,
     pub medicines: Vec<PrescriptionMedicineInput>,
 }
@@ -145,7 +138,6 @@ struct NormalizedMedicine {
 
 struct NormalizedPrescription {
     patient_id: i64,
-    template_id: Option<i64>,
     sections: Vec<NormalizedSection>,
     medicines: Vec<NormalizedMedicine>,
 }
@@ -166,11 +158,6 @@ fn to_nullable(value: &str) -> Option<&str> {
 fn normalize_prescription(input: &PrescriptionFormValues) -> Result<NormalizedPrescription, String> {
     if input.patient_id <= 0 {
         return Err("Patient is required".to_string());
-    }
-    if let Some(template_id) = input.template_id {
-        if template_id <= 0 {
-            return Err("Invalid template".to_string());
-        }
     }
 
     let mut sections = Vec::with_capacity(input.sections.len());
@@ -222,7 +209,6 @@ fn normalize_prescription(input: &PrescriptionFormValues) -> Result<NormalizedPr
 
     Ok(NormalizedPrescription {
         patient_id: input.patient_id,
-        template_id: input.template_id,
         sections,
         medicines,
     })
@@ -288,8 +274,8 @@ fn create_prescription_internal(
         )
         .map_err(|e| e.to_string())?;
     tx.execute(
-        "INSERT INTO prescriptions (patient_id, template_id, visit_no) VALUES (?, ?, ?)",
-        params![values.patient_id, values.template_id, max_visit_no + 1],
+        "INSERT INTO prescriptions (patient_id, visit_no) VALUES (?, ?)",
+        params![values.patient_id, max_visit_no + 1],
     )
     .map_err(|e| e.to_string())?;
     let prescription_id = tx.last_insert_rowid();
@@ -310,14 +296,14 @@ pub(crate) fn import_prescription_with_visit(
 
     if let Some(timestamp) = created_at {
         conn.execute(
-            "INSERT INTO prescriptions (patient_id, template_id, visit_no, created_at) VALUES (?, ?, ?, ?)",
-            params![values.patient_id, values.template_id, visit_no, timestamp],
+            "INSERT INTO prescriptions (patient_id, visit_no, created_at) VALUES (?, ?, ?)",
+            params![values.patient_id, visit_no, timestamp],
         )
         .map_err(|e| e.to_string())?;
     } else {
         conn.execute(
-            "INSERT INTO prescriptions (patient_id, template_id, visit_no) VALUES (?, ?, ?)",
-            params![values.patient_id, values.template_id, visit_no],
+            "INSERT INTO prescriptions (patient_id, visit_no) VALUES (?, ?)",
+            params![values.patient_id, visit_no],
         )
         .map_err(|e| e.to_string())?;
     }
@@ -331,7 +317,7 @@ pub(crate) fn get_prescription_internal(
     id: i64,
 ) -> Result<Option<PrescriptionDetail>, String> {
     let sql = format!(
-        "SELECT prescriptions.prescription_id, patients.patient_id, patients.patient_code, patients.name, patients.phone, patients.age, patients.gender, prescriptions.visit_no, prescriptions.created_at, prescriptions.updated_at, {SECTION_CONTENT_SUBQUERY}, {SECTION_CONTENT_SUBQUERY}, prescriptions.template_id, patients.address FROM prescriptions INNER JOIN patients ON prescriptions.patient_id = patients.patient_id WHERE prescriptions.prescription_id = ?"
+        "SELECT prescriptions.prescription_id, patients.patient_id, patients.patient_code, patients.name, patients.phone, patients.age, patients.gender, prescriptions.visit_no, prescriptions.created_at, prescriptions.updated_at, {SECTION_CONTENT_SUBQUERY}, {SECTION_CONTENT_SUBQUERY}, patients.address FROM prescriptions INNER JOIN patients ON prescriptions.patient_id = patients.patient_id WHERE prescriptions.prescription_id = ?"
     );
     let base = conn
         .query_row(&sql, params!["Chief Complaint", "Provisional Diagnosis", id], |row| {
@@ -350,14 +336,13 @@ pub(crate) fn get_prescription_internal(
                     chief_complaint: row.get(10)?,
                     provisional_diagnosis: row.get(11)?,
                 },
-                row.get::<_, Option<i64>>(12)?,
-                row.get::<_, Option<String>>(13)?,
+                row.get::<_, Option<String>>(12)?,
             ))
         })
         .optional()
         .map_err(|e| e.to_string())?;
 
-    let Some((item, template_id, address)) = base else {
+    let Some((item, address)) = base else {
         return Ok(None);
     };
 
@@ -398,7 +383,6 @@ pub(crate) fn get_prescription_internal(
 
     Ok(Some(PrescriptionDetail {
         item,
-        template_id,
         address,
         sections,
         medicines,
@@ -542,8 +526,8 @@ pub fn prescriptions_update(
 
     let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
     tx.execute(
-        "UPDATE prescriptions SET template_id = ?, updated_at = (CURRENT_TIMESTAMP) WHERE prescription_id = ?",
-        params![values.template_id, id],
+        "UPDATE prescriptions SET updated_at = (CURRENT_TIMESTAMP) WHERE prescription_id = ?",
+        params![id],
     )
     .map_err(|e| e.to_string())?;
     replace_prescription_content(&tx, id, &values)?;
@@ -561,7 +545,6 @@ pub fn prescriptions_duplicate(state: State<'_, Db>, id: i64) -> Result<Prescrip
 
     let values = NormalizedPrescription {
         patient_id: source.item.patient_id,
-        template_id: source.template_id,
         sections: source
             .sections
             .iter()

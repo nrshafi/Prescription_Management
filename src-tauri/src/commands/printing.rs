@@ -23,8 +23,6 @@ pub struct PrintActionResult {
     pub path: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub fallback_preview: Option<bool>,
 }
 
 impl PrintActionResult {
@@ -33,7 +31,6 @@ impl PrintActionResult {
             ok: true,
             path: None,
             message: None,
-            fallback_preview: None,
         }
     }
 }
@@ -101,6 +98,5 @@ pub async fn printing_pdf(app: AppHandle, prescription_id: i64) -> Result<PrintA
             "Choose 'Save as PDF' as the destination in the print dialog to export a PDF."
                 .to_string(),
         ),
-        fallback_preview: None,
     })
 }

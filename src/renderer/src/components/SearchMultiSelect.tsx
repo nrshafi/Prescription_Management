@@ -20,9 +20,11 @@ export function SearchMultiSelect({
 }: SearchMultiSelectProps): React.JSX.Element {
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
-  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(
-    null
-  )
+  const [dropdownPos, setDropdownPos] = useState<{
+    top: number
+    left: number
+    width: number
+  } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -134,7 +136,12 @@ export function SearchMultiSelect({
         createPortal(
           <div
             className="bg-popover text-popover-foreground z-50 max-h-52 overflow-y-auto rounded-lg border shadow-md"
-            style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width }}
+            style={{
+              position: 'fixed',
+              top: dropdownPos.top,
+              left: dropdownPos.left,
+              width: dropdownPos.width
+            }}
           >
             {filtered.map((item) => (
               <button

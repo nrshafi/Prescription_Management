@@ -9,7 +9,6 @@ mod migrations;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let conn = db::init_database(app.handle()).map_err(std::io::Error::other)?;
             app.manage(db::Db(Mutex::new(conn)));
@@ -18,7 +17,6 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::dashboard::dashboard_stats,
             commands::patients::patients_list,
-            commands::patients::patients_get,
             commands::patients::patients_visits,
             commands::patients::patients_create,
             commands::patients::patients_update,
@@ -32,7 +30,6 @@ pub fn run() {
             commands::prescriptions::prescriptions_duplicate,
             commands::prescriptions::prescriptions_medicine_suggestions,
             commands::presets::presets_list,
-            commands::presets::presets_get,
             commands::presets::presets_create,
             commands::presets::presets_update,
             commands::presets::presets_delete,

@@ -3,6 +3,7 @@ import {
   Download,
   FileJson,
   InfoIcon,
+  MessageCircle,
   RotateCcw,
   Save,
   Upload
@@ -322,6 +323,24 @@ export function Settings(): React.JSX.Element {
                   {mode[0].toUpperCase() + mode.slice(1)}
                 </Button>
               ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Support</CardTitle>
+              <CardDescription>Get in touch with the developer.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-2">
+              <a
+                href="https://t.me/nafiur_rahman_shafi"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="text-primary inline-flex items-center gap-2 text-sm font-medium hover:underline"
+              >
+                <MessageCircle className="size-4" />
+                Contact on Telegram
+              </a>
             </CardContent>
           </Card>
 
