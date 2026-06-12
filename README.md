@@ -1,6 +1,12 @@
 # PrescriptX
 
-Offline prescription management desktop app for a single doctor. Built with Tauri v2, React, and TypeScript, with a Rust backend and SQLite storage.
+PrescriptX is an offline desktop app for single-doctor prescription management.
+It is built with Tauri v2, React, TypeScript, and Tailwind CSS, backed by a Rust
+backend and local SQLite storage.
+
+The renderer is a Vite-powered React app. Desktop integration, native windows,
+and backend commands are handled through Tauri v2. Application data is stored in
+SQLite on the local machine.
 
 ## Project Setup
 
@@ -13,18 +19,23 @@ Offline prescription management desktop app for a single doctor. Built with Taur
 ### Install
 
 ```bash
-$ bun install
+bun install
 ```
 
-### Development
+## Development Commands
 
 ```bash
-$ bun run dev
+bun run dev          # Start the Tauri desktop app in development mode
+bun run dev:renderer # Start the Vite renderer only
+bun run typecheck    # Run TypeScript type checking
+bun run lint         # Run Biome linting
+bun run check        # Run Biome checks, formatting, and import sorting
+bun run format       # Format files with Biome
 ```
 
 ### Build
 
 ```bash
 # Builds a bundle for the current operating system
-$ bun run build
+bun run build
 ```

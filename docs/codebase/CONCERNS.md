@@ -49,15 +49,7 @@
 | `src/preload/index.ts` and `src/preload/index.d.ts` | Runtime bridge and type declaration must match | 8 recent changes each in Phase 1 scan terminal output | Update both files together and verify renderer typecheck. |
 | `src/main/db/migrate.ts` | Schema evolution and singleton-row setup | 6 recent changes in Phase 1 scan terminal output | Test fresh DB and legacy DB upgrade paths before shipping. |
 
-### 6) `[ASK USER]` Questions
-
-1. [ASK USER] Should local SQLite data be encrypted or protected beyond Electron `userData` storage?
-2. [ASK USER] What is the intended rationale for `sandbox: false` in BrowserWindow configuration?
-3. [ASK USER] What user-facing error redaction policy should be used for database, backup, and print failures?
-4. [ASK USER] Which automated test framework should be adopted for this Electron + React + SQLite app?
-5. [ASK USER] Should `README.md` be updated to match the package-described PrescriptX/offline single-doctor intent?
-
-### 7) Evidence
+### 6) Evidence
 
 - Phase 1 scan terminal output
 - `package.json`
