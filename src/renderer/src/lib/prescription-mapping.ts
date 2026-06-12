@@ -104,6 +104,8 @@ export function serializeOe(oe: OeValues, weight: string): string {
 
 export function parseFollowUp(content: string): { value: string; unit: string } {
   const trimmed = content.trim()
+  // "N/A" is the marker for a follow-up value of 0 (or no follow-up set).
+  if (/^n\/?a$/i.test(trimmed)) return { value: '0', unit: 'Days' }
   // An empty section means the prescription was saved without a follow-up.
   // Returning a default here would silently re-add "Follow-up after 7 Days"
   // every time an existing prescription is edited and saved.
@@ -116,8 +118,11 @@ export function parseFollowUp(content: string): { value: string; unit: string } 
 }
 
 export function serializeFollowUp(value: string, unit: string): string {
-  if (!value.trim()) return ''
-  return `Follow-up after ${value.trim()} ${unit}`
+  const trimmed = value.trim()
+  // 0 (or empty) renders as "N/A" so the section stays visible but is
+  // clearly indicating there is no scheduled follow-up.
+  if (!trimmed || trimmed === '0') return 'N/A'
+  return `Follow-up after ${trimmed} ${unit}`
 }
 
 function emptySections(): PrescriptionSectionInput[] {
@@ -238,7 +243,7 @@ export function emptyUiState(): PrescriptionUiState {
     investigations: [],
     diagnoses: [],
     advice: [],
-    followUpValue: '7',
+    followUpValue: '0',
     followUpUnit: 'Days',
     medicines: [],
     templateId: null

@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, ChevronDown, Plus, Search, Trash2, UserCheck, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, Plus, Search, Trash2, UserCheck, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { SearchMultiSelect } from '@/components/SearchMultiSelect'
 import { Button } from '@/components/ui/button'
@@ -68,32 +68,34 @@ function formatDate(date: Date): string {
   return date.toLocaleDateString('en-BD', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-function SelectCell({
+function EditableSelectCell({
   value,
   options,
   onChange,
-  placeholder
+  placeholder,
+  listId
 }: {
   value: string
   options: string[]
   onChange: (val: string) => void
   placeholder: string
+  listId: string
 }): React.JSX.Element {
   return (
     <div className="relative print:contents">
-      <select
+      <input
+        type="text"
+        list={listId}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="border-input bg-muted text-foreground focus:ring-ring print:border-0 print:bg-transparent cursor-pointer appearance-none rounded border py-0.5 pr-6 pl-2 text-xs focus:ring-1 focus:outline-none print:p-0"
-      >
-        {value === '' && <option value="">{placeholder}</option>}
+        placeholder={placeholder}
+        className="border-input bg-muted text-foreground focus:ring-ring print:border-0 print:bg-transparent rounded border py-0.5 pr-4 pl-2 text-xs focus:ring-1 focus:outline-none print:p-0"
+      />
+      <datalist id={listId}>
         {options.map((o) => (
-          <option key={o} value={o}>
-            {o}
-          </option>
+          <option key={o} value={o} />
         ))}
-      </select>
-      <ChevronDown className="text-muted-foreground pointer-events-none absolute top-1/2 right-1 size-3 -translate-y-1/2 print:hidden" />
+      </datalist>
     </div>
   )
 }
@@ -123,23 +125,26 @@ function MedRow({
       <div className="min-w-0 flex-1">
         <div className="mb-1 text-sm font-medium">{med.medicineName}</div>
         <div className="flex flex-wrap items-center gap-1.5">
-          <SelectCell
+          <EditableSelectCell
             value={med.dosage}
             options={DOSAGE_OPTIONS}
             onChange={(v) => onChange(med.key, 'dosage', v)}
             placeholder="Dosage"
+            listId={`dosage-options-${med.key}`}
           />
-          <SelectCell
+          <EditableSelectCell
             value={med.frequency}
             options={INSTRUCTION_OPTIONS}
             onChange={(v) => onChange(med.key, 'frequency', v)}
             placeholder="Instruction"
+            listId={`frequency-options-${med.key}`}
           />
-          <SelectCell
+          <EditableSelectCell
             value={med.duration}
             options={DURATION_OPTIONS}
             onChange={(v) => onChange(med.key, 'duration', v)}
             placeholder="Duration"
+            listId={`duration-options-${med.key}`}
           />
         </div>
       </div>
@@ -987,7 +992,7 @@ export function NewPrescription({
                     <span className="text-sm whitespace-nowrap">After:</span>
                     <input
                       type="number"
-                      min={1}
+                      min={0}
                       value={ui.followUpValue}
                       onChange={(e) => patchUi({ followUpValue: e.target.value })}
                       className="border-input w-16 rounded-lg border px-2 py-1.5 text-center text-sm"
@@ -1002,12 +1007,18 @@ export function NewPrescription({
                       ))}
                     </select>
                   </div>
-                  {ui.followUpValue && (
+                  {ui.followUpValue !== '' && (
                     <p className="mt-1 text-sm">
-                      Follow-up after{' '}
-                      <strong>
-                        {ui.followUpValue} {ui.followUpUnit}
-                      </strong>
+                      {ui.followUpValue === '0' ? (
+                        'N/A'
+                      ) : (
+                        <>
+                          Follow-up after{' '}
+                          <strong>
+                            {ui.followUpValue} {ui.followUpUnit}
+                          </strong>
+                        </>
+                      )}
                     </p>
                   )}
                 </div>
