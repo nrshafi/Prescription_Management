@@ -4,21 +4,18 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronsUpDown,
-  Copy,
-  Eye,
-  FileDown,
   FileText,
   LayoutGrid,
   List,
   Pencil,
   Plus,
-  Printer,
   Search,
   Trash2
 } from 'lucide-react'
 import { Fragment, useCallback, useEffect, useState } from 'react'
 import { DeletePatientDialog } from '@/components/patients/DeletePatientDialog'
 import { PatientFormDialog } from '@/components/patients/PatientFormDialog'
+import { PatientVisitsTable, type VisitState } from '@/components/prescriptions/PatientVisitsTable'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -40,13 +37,11 @@ import {
 } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { api } from '@/lib/api'
-import { cn } from '@/lib/utils'
 import type {
   PatientFormValues,
   PatientListItem,
   PatientRecord,
   PatientSortField,
-  PatientVisit,
   SortDirection
 } from '../../../shared/patient'
 import { GENDERS } from '../../../shared/patient'
@@ -60,12 +55,6 @@ interface SortableHeaderProps {
   active: boolean
   dir: SortDirection
   onSort: (field: PatientSortField) => void
-}
-
-interface VisitState {
-  loading: boolean
-  error: string | null
-  visits: PatientVisit[] | null
 }
 
 interface PrescriptionsProps {
@@ -100,12 +89,6 @@ function SortableHeader({
       </button>
     </TableHead>
   )
-}
-
-function formatDate(value: string): string {
-  const date = new Date(value.includes('T') ? value : `${value.replace(' ', 'T')}Z`)
-  if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
 function patientSummary(patient: PatientListItem): string {
@@ -281,129 +264,15 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
     await load()
   }
 
-  function renderVisitActions(visit: PatientVisit): React.JSX.Element {
-    return (
-      <div className="flex justify-end gap-1">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label="Edit"
-              onClick={() => onEdit(visit.id)}
-            >
-              <Pencil className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Edit</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label="Preview"
-              onClick={() => runPrintAction(visit.id, 'preview')}
-            >
-              <Eye className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Preview</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label="PDF"
-              onClick={() => runPrintAction(visit.id, 'pdf')}
-            >
-              <FileDown className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Export PDF</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label="Print"
-              onClick={() => runPrintAction(visit.id, 'print')}
-            >
-              <Printer className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Print</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label="Duplicate"
-              onClick={() => duplicatePrescription(visit.id)}
-            >
-              <Copy className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Duplicate</TooltipContent>
-        </Tooltip>
-      </div>
-    )
-  }
-
   function renderVisits(patient: PatientListItem, compact = false): React.JSX.Element {
-    const state = visitsByPatient[patient.id]
-
-    if (!state || state.loading) {
-      return <p className="text-muted-foreground px-3 py-4 text-sm">Loading prescriptions...</p>
-    }
-
-    if (state.error) {
-      return <p className="text-destructive px-3 py-4 text-sm">{state.error}</p>
-    }
-
-    if (!state.visits || state.visits.length === 0) {
-      return <p className="text-muted-foreground px-3 py-4 text-sm">No prescriptions yet.</p>
-    }
-
     return (
-      <div className={cn('overflow-hidden rounded-lg border bg-background', compact && 'mt-3')}>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Pres. ID</TableHead>
-              <TableHead>Visit</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>C/C</TableHead>
-              <TableHead>Diagnosis</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {state.visits.map((visit) => (
-              <TableRow key={visit.id}>
-                <TableCell className="font-medium">{visit.id}</TableCell>
-                <TableCell>#{visit.visitNo}</TableCell>
-                <TableCell>{formatDate(visit.createdAt)}</TableCell>
-                <TableCell className="max-w-[12rem] truncate" title={visit.complaint ?? ''}>
-                  {visit.complaint || '-'}
-                </TableCell>
-                <TableCell className="max-w-[12rem] truncate" title={visit.diagnosis ?? ''}>
-                  {visit.diagnosis || '-'}
-                </TableCell>
-                <TableCell>{renderVisitActions(visit)}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      <PatientVisitsTable
+        state={visitsByPatient[patient.id]}
+        compact={compact}
+        onEdit={onEdit}
+        onPrintAction={(id, action) => void runPrintAction(id, action)}
+        onDuplicate={(id) => void duplicatePrescription(id)}
+      />
     )
   }
 

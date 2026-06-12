@@ -50,17 +50,18 @@ Potential Challenges & Mitigation:
 
 Estimated Effort: high
 
-### Large `Prescriptions` Page
+### Continue Decomposing Large `Prescriptions` Page
 
 - Where: `src/renderer/src/pages/Prescriptions.tsx`
-- Risk: Patient and prescription list behavior is fragile because filters, patient CRUD dialog state, expandable visit loading, print actions, and list/grid UI are combined.
+- Risk: Patient and prescription list behavior remains fragile because filters, patient CRUD dialog state, expandable visit loading, and list/grid UI are still combined.
+- Progress: Prescription visit table rendering and visit-level edit, preview, PDF, print, and duplicate buttons were extracted to `src/renderer/src/components/prescriptions/PatientVisitsTable.tsx` while keeping data loading and side effects in the page.
 
 Actionable Steps:
 
 1. Preserve current behavior unless changing the page for a specific feature or bug fix.
-2. Extract visit-loading or action logic when related behavior is touched.
-3. Consider separating patient CRUD dialog state from list rendering.
-4. Move stable view sections into focused components when they can be extracted without changing data flow.
+2. Consider separating patient CRUD dialog state from list rendering.
+3. Move the patient grid card into a focused component when it can be extracted without changing data flow.
+4. Move the patient table row into a focused component after preserving row click and action button propagation behavior.
 5. Verify filtering, patient CRUD, expandable visits, print actions, and list/grid display after changes.
 
 Potential Challenges & Mitigation:
