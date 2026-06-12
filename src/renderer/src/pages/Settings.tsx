@@ -1,14 +1,5 @@
-import {
-  AlertCircleIcon,
-  Download,
-  FileJson,
-  InfoIcon,
-  RotateCcw,
-  Save,
-  Upload
-} from 'lucide-react'
+import { Download, FileJson, RotateCcw, Save, Upload } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -213,74 +204,94 @@ export function Settings(): React.JSX.Element {
       {status && <p className="text-muted-foreground text-sm">{status}</p>}
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Doctor Profile</CardTitle>
-            <CardDescription>Used by the print renderer header and footer.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3">
-            <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Doctor Profile</CardTitle>
+              <CardDescription>Used by the print renderer header and footer.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field
+                  label="Name"
+                  value={doctor.name ?? ''}
+                  onChange={(value) => setDoctor((current) => ({ ...current, name: value }))}
+                />
+                <Field
+                  label="Degrees"
+                  value={doctor.degrees ?? ''}
+                  onChange={(value) => setDoctor((current) => ({ ...current, degrees: value }))}
+                />
+                <Field
+                  label="Speciality"
+                  value={doctor.speciality ?? ''}
+                  onChange={(value) => setDoctor((current) => ({ ...current, speciality: value }))}
+                />
+                <Field
+                  label="Phone"
+                  value={doctor.phone ?? ''}
+                  onChange={(value) => setDoctor((current) => ({ ...current, phone: value }))}
+                />
+                <Field
+                  label="Email"
+                  value={doctor.email ?? ''}
+                  onChange={(value) => setDoctor((current) => ({ ...current, email: value }))}
+                />
+                <Field
+                  label="Logo path"
+                  value={doctor.logoPath ?? ''}
+                  onChange={(value) => setDoctor((current) => ({ ...current, logoPath: value }))}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Address</Label>
+                <Textarea
+                  value={doctor.address ?? ''}
+                  onChange={(event) =>
+                    setDoctor((current) => ({ ...current, address: event.target.value }))
+                  }
+                  rows={3}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Chamber</Label>
+                <Textarea
+                  value={doctor.chamber ?? ''}
+                  onChange={(event) =>
+                    setDoctor((current) => ({ ...current, chamber: event.target.value }))
+                  }
+                  rows={3}
+                />
+              </div>
               <Field
-                label="Name"
-                value={doctor.name ?? ''}
-                onChange={(value) => setDoctor((current) => ({ ...current, name: value }))}
+                label="Signature path"
+                value={doctor.signaturePath ?? ''}
+                onChange={(value) => setDoctor((current) => ({ ...current, signaturePath: value }))}
               />
-              <Field
-                label="Degrees"
-                value={doctor.degrees ?? ''}
-                onChange={(value) => setDoctor((current) => ({ ...current, degrees: value }))}
-              />
-              <Field
-                label="Speciality"
-                value={doctor.speciality ?? ''}
-                onChange={(value) => setDoctor((current) => ({ ...current, speciality: value }))}
-              />
-              <Field
-                label="Phone"
-                value={doctor.phone ?? ''}
-                onChange={(value) => setDoctor((current) => ({ ...current, phone: value }))}
-              />
-              <Field
-                label="Email"
-                value={doctor.email ?? ''}
-                onChange={(value) => setDoctor((current) => ({ ...current, email: value }))}
-              />
-              <Field
-                label="Logo path"
-                value={doctor.logoPath ?? ''}
-                onChange={(value) => setDoctor((current) => ({ ...current, logoPath: value }))}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label>Address</Label>
-              <Textarea
-                value={doctor.address ?? ''}
-                onChange={(event) =>
-                  setDoctor((current) => ({ ...current, address: event.target.value }))
-                }
-                rows={3}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label>Chamber</Label>
-              <Textarea
-                value={doctor.chamber ?? ''}
-                onChange={(event) =>
-                  setDoctor((current) => ({ ...current, chamber: event.target.value }))
-                }
-                rows={3}
-              />
-            </div>
-            <Field
-              label="Signature path"
-              value={doctor.signaturePath ?? ''}
-              onChange={(value) => setDoctor((current) => ({ ...current, signaturePath: value }))}
-            />
-            <Button onClick={saveDoctor}>
-              <Save className="size-4" /> Save Doctor Profile
-            </Button>
-          </CardContent>
-        </Card>
+              <Button onClick={saveDoctor}>
+                <Save className="size-4" /> Save Doctor Profile
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Theme</CardTitle>
+              <CardDescription>Stored locally on this computer.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-2">
+              {['system', 'light', 'dark'].map((mode) => (
+                <Button
+                  key={mode}
+                  variant={theme === mode ? 'default' : 'outline'}
+                  onClick={() => setTheme(mode)}
+                >
+                  {mode[0].toUpperCase() + mode.slice(1)}
+                </Button>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
 
         <div className="space-y-4">
           <Card>
@@ -314,24 +325,6 @@ export function Settings(): React.JSX.Element {
 
           <Card>
             <CardHeader>
-              <CardTitle>Theme</CardTitle>
-              <CardDescription>Stored locally on this computer.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
-              {['system', 'light', 'dark'].map((mode) => (
-                <Button
-                  key={mode}
-                  variant={theme === mode ? 'default' : 'outline'}
-                  onClick={() => setTheme(mode)}
-                >
-                  {mode[0].toUpperCase() + mode.slice(1)}
-                </Button>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
               <CardTitle>Backup</CardTitle>
               <CardDescription>
                 Backup (<code className="font-mono">.db</code>) is a full snapshot you can use to
@@ -340,23 +333,6 @@ export function Settings(): React.JSX.Element {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
-              <Alert variant="destructive">
-                <AlertCircleIcon />
-                <AlertTitle>Importing a backup replaces the entire database</AlertTitle>
-                <AlertDescription>
-                  Doctor profile and paper settings are overwritten with the values from the backup
-                  file. A pre-import snapshot of the current database is taken automatically and is
-                  restored if the import fails.
-                </AlertDescription>
-              </Alert>
-              <Alert>
-                <InfoIcon />
-                <AlertTitle>Importing JSON merges into existing data</AlertTitle>
-                <AlertDescription>
-                  New patients, prescriptions, and presets from the file are added; existing records
-                  are updated in place. Doctor profile and paper settings are ignored.
-                </AlertDescription>
-              </Alert>
               <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1">
                   <div className="flex flex-wrap gap-2">
@@ -415,20 +391,20 @@ export function Settings(): React.JSX.Element {
             </CardContent>
           </Card>
         </div>
-        <div className="text-center">
-          <p className="text-muted-foreground text-xs">
-            Facing issues?{' '}
-            <a
-              href="https://t.me/nafiur_rahman_shafi"
-              target="_blank"
-              rel="noreferrer noopener"
-              className="text-primary hover:underline"
-            >
-              Contact the developer on Telegram
-            </a>
-            .
-          </p>
-        </div>
+      </div>
+
+      <div className="text-center">
+        <p className="text-sm">
+          Facing issues?{' '}
+          <a
+            href="https://t.me/nafiur_rahman_shafi"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="text-blue-300 font-medium underline-offset-4 hover:underline"
+          >
+            Contact the developer on Telegram
+          </a>
+        </p>
       </div>
     </div>
   )
