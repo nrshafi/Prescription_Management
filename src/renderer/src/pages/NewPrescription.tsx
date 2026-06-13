@@ -71,6 +71,12 @@ interface MedicineRow {
   notes: string
 }
 
+interface ApplicableBundle {
+  key: string
+  label: string
+  bundle: PresetRecord
+}
+
 let medKey = 0
 
 function formatDate(date: Date): string {
@@ -379,6 +385,26 @@ export function NewPrescription({
     return map
   }, [presets])
 
+  const applicableBundles = useMemo<ApplicableBundle[]>(() => {
+    const seenPresetIds = new Set<number>()
+    const bundles: ApplicableBundle[] = []
+
+    const addBundle = (label: string, bundle: PresetRecord | undefined): void => {
+      if (!bundle || (bundle.links ?? []).length === 0 || seenPresetIds.has(bundle.id)) return
+      seenPresetIds.add(bundle.id)
+      bundles.push({ key: `${bundle.id}-${label}`, label, bundle })
+    }
+
+    for (const complaint of ui.chiefComplaints) {
+      addBundle(complaint, complaintPresetByTitle.get(complaint))
+    }
+    for (const diagnosis of ui.diagnoses) {
+      addBundle(diagnosis, diagnosisPresetByTitle.get(diagnosis))
+    }
+
+    return bundles
+  }, [ui.chiefComplaints, ui.diagnoses, complaintPresetByTitle, diagnosisPresetByTitle])
+
   const loadMeta = useCallback(async () => {
     const [presetRows, settings] = await Promise.all([api.presets.list(), api.settings.get()])
     setPresets(presetRows)
@@ -521,21 +547,23 @@ export function NewPrescription({
   }
 
   const handleComplaintChange = (chiefComplaints: string[]): void => {
-    const added = chiefComplaints.filter((item) => !ui.chiefComplaints.includes(item))
     patchUi({ chiefComplaints })
-    for (const item of added) {
-      const bundle = complaintPresetByTitle.get(item)
-      if (bundle) applyBundle(bundle)
-    }
   }
 
   const handleDiagnosisChange = (diagnoses: string[]): void => {
-    const added = diagnoses.filter((item) => !ui.diagnoses.includes(item))
     patchUi({ diagnoses })
-    for (const item of added) {
-      const bundle = diagnosisPresetByTitle.get(item)
-      if (bundle) applyBundle(bundle)
+  }
+
+  const handleApplyBundle = (bundle: PresetRecord): void => {
+    applyBundle(bundle)
+    onStatus?.(`Applied preset "${bundle.title}".`)
+  }
+
+  const handleApplyAllBundles = (): void => {
+    for (const { bundle } of applicableBundles) {
+      applyBundle(bundle)
     }
+    onStatus?.(`Applied ${applicableBundles.length} presets.`)
   }
 
   const handleAdviceChange = (advice: string[]): void => {
@@ -907,6 +935,41 @@ export function NewPrescription({
               placeholder="Search diagnoses..."
             />
           </SectionCard>
+          {applicableBundles.length > 0 && (
+            <SectionCard accent="bg-primary" title="Linked Presets">
+              <div className="flex flex-col gap-2">
+                <div className="text-muted-foreground text-xs">
+                  Apply linked medicines, investigations, advice, or diagnoses when needed.
+                </div>
+                {applicableBundles.map(({ key, label, bundle }) => (
+                  <div
+                    key={key}
+                    className="border-border bg-muted/30 flex items-center gap-2 rounded-lg border p-2"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">{label}</div>
+                      {bundle.title !== label && (
+                        <div className="text-muted-foreground truncate text-xs">{bundle.title}</div>
+                      )}
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleApplyBundle(bundle)}
+                    >
+                      Apply
+                    </Button>
+                  </div>
+                ))}
+                {applicableBundles.length > 1 && (
+                  <Button type="button" size="sm" onClick={handleApplyAllBundles}>
+                    Apply all
+                  </Button>
+                )}
+              </div>
+            </SectionCard>
+          )}
         </div>
 
         <div className="min-w-0 flex-1 overflow-y-auto print:w-full">
