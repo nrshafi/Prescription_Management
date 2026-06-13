@@ -338,6 +338,10 @@ export function NewPrescription({
   const [foundPatient, setFoundPatient] = useState<PatientListItem | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const editingIdRef = useRef(editId)
+  const adviceSectionRef = useRef<HTMLDivElement>(null)
+  // Only user-driven advice additions (via the advice selector) trigger auto-scroll.
+  // Programmatic growth from loadEdit/applyBundle is intentionally ignored.
+  const shouldScrollAdviceRef = useRef(false)
   editingIdRef.current = editId
 
   const complaintItems = useMemo(
@@ -534,6 +538,11 @@ export function NewPrescription({
     }
   }
 
+  const handleAdviceChange = (advice: string[]): void => {
+    shouldScrollAdviceRef.current = advice.length > ui.advice.length
+    patchUi({ advice })
+  }
+
   const updateMedicine = (key: string, field: keyof MedicineRow, val: string): void => {
     setMedicines((prev) => prev.map((m) => (m.key === key ? { ...m, [field]: val } : m)))
   }
@@ -684,6 +693,15 @@ export function NewPrescription({
     })
     return () => onBindActions(null)
   }, [onBindActions])
+
+  useEffect(() => {
+    // ui.advice is read so the effect re-runs whenever the advice list changes.
+    void ui.advice
+    if (shouldScrollAdviceRef.current) {
+      adviceSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      shouldScrollAdviceRef.current = false
+    }
+  }, [ui.advice])
 
   const doc = doctor
 
@@ -1007,7 +1025,7 @@ export function NewPrescription({
               </div>
             </div>
 
-            <div className="border-t px-8 py-4">
+            <div ref={adviceSectionRef} className="border-t px-8 py-4">
               <div className="flex items-start gap-6">
                 <div className="flex-1">
                   <p className="text-muted-foreground mb-2 text-xs font-bold tracking-wider uppercase">
@@ -1017,7 +1035,7 @@ export function NewPrescription({
                     <SearchMultiSelect
                       items={adviceItems}
                       selected={ui.advice}
-                      onChange={(advice) => patchUi({ advice })}
+                      onChange={handleAdviceChange}
                       placeholder="Search or add advice..."
                     />
                   </div>
