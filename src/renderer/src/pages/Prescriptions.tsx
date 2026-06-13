@@ -6,8 +6,6 @@ import {
   ChevronsUpDown,
   FilePlus,
   FileText,
-  LayoutGrid,
-  List,
   Pencil,
   Plus,
   Search,
@@ -19,7 +17,6 @@ import { PatientFormDialog } from '@/components/patients/PatientFormDialog'
 import { PatientVisitsTable, type VisitState } from '@/components/prescriptions/PatientVisitsTable'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -48,7 +45,6 @@ import type {
 import { GENDERS } from '../../../shared/patient'
 
 const ALL_GENDERS = '__all__'
-type ViewMode = 'list' | 'grid'
 
 interface SortableHeaderProps {
   label: string
@@ -114,7 +110,6 @@ export function Prescriptions({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [expandedPatients, setExpandedPatients] = useState<Set<number>>(() => new Set())
   const [visitsByPatient, setVisitsByPatient] = useState<Record<number, VisitState>>({})
 
@@ -267,11 +262,10 @@ export function Prescriptions({
     await load()
   }
 
-  function renderVisits(patient: PatientListItem, compact = false): React.JSX.Element {
+  function renderVisits(patient: PatientListItem): React.JSX.Element {
     return (
       <PatientVisitsTable
         state={visitsByPatient[patient.id]}
-        compact={compact}
         onEdit={onEdit}
         onPrintAction={(id, action) => void runPrintAction(id, action)}
         onDuplicate={(id) => void duplicatePrescription(id)}
@@ -292,29 +286,6 @@ export function Prescriptions({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <fieldset
-            className="flex rounded-md border bg-background p-1"
-            aria-label="Prescription view mode"
-          >
-            <Button
-              type="button"
-              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-              size="sm"
-              aria-pressed={viewMode === 'list'}
-              onClick={() => setViewMode('list')}
-            >
-              <List data-icon="inline-start" /> List
-            </Button>
-            <Button
-              type="button"
-              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-              size="sm"
-              aria-pressed={viewMode === 'grid'}
-              onClick={() => setViewMode('grid')}
-            >
-              <LayoutGrid data-icon="inline-start" /> Grid
-            </Button>
-          </fieldset>
           <Button type="button" variant="outline" onClick={openCreatePatient}>
             <Plus data-icon="inline-start" /> New Patient
           </Button>
@@ -364,281 +335,179 @@ export function Prescriptions({
       {status ? <p className="text-muted-foreground text-sm">{status}</p> : null}
       {error ? <p className="text-destructive text-sm">{error}</p> : null}
 
-      {viewMode === 'list' ? (
-        <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-          <Table>
-            <TableHeader>
+      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-10" />
+              <SortableHeader
+                label="ID"
+                field="id"
+                active={sortBy === 'id'}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableHeader
+                label="Name"
+                field="name"
+                active={sortBy === 'name'}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <TableHead>Phone</TableHead>
+              <SortableHeader
+                label="Age"
+                field="age"
+                active={sortBy === 'age'}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortableHeader
+                label="Gender"
+                field="gender"
+                active={sortBy === 'gender'}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <TableHead>Visits</TableHead>
+              <TableHead className="text-right">Patient Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
               <TableRow>
-                <TableHead className="w-10" />
-                <SortableHeader
-                  label="ID"
-                  field="id"
-                  active={sortBy === 'id'}
-                  dir={sortDir}
-                  onSort={handleSort}
-                />
-                <SortableHeader
-                  label="Name"
-                  field="name"
-                  active={sortBy === 'name'}
-                  dir={sortDir}
-                  onSort={handleSort}
-                />
-                <TableHead>Phone</TableHead>
-                <SortableHeader
-                  label="Age"
-                  field="age"
-                  active={sortBy === 'age'}
-                  dir={sortDir}
-                  onSort={handleSort}
-                />
-                <SortableHeader
-                  label="Gender"
-                  field="gender"
-                  active={sortBy === 'gender'}
-                  dir={sortDir}
-                  onSort={handleSort}
-                />
-                <TableHead>Visits</TableHead>
-                <TableHead className="text-right">Patient Actions</TableHead>
+                <TableCell colSpan={8} className="text-muted-foreground py-10 text-center">
+                  Loading...
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-muted-foreground py-10 text-center">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : patients.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-muted-foreground py-10 text-center">
-                    No prescriptions yet.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                patients.map((patient) => {
-                  const expanded = expandedPatients.has(patient.id)
-                  return (
-                    <Fragment key={patient.id}>
-                      <TableRow
-                        className="cursor-pointer"
-                        onClick={() => togglePatient(patient.id)}
-                      >
-                        <TableCell>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Toggle prescriptions"
-                          >
-                            {expanded ? (
-                              <ChevronDown className="size-4" />
-                            ) : (
-                              <ChevronRight className="size-4" />
-                            )}
-                          </Button>
-                        </TableCell>
-                        <TableCell className="font-mono text-xs">{patient.patientCode}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="bg-muted flex size-8 items-center justify-center rounded-full text-xs font-medium">
-                              {patient.name.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <p className="font-medium">{patient.name}</p>
-                              {patient.address ? (
-                                <p
-                                  className="text-muted-foreground max-w-[12rem] truncate text-xs"
-                                  title={patient.address}
-                                >
-                                  {patient.address}
-                                </p>
-                              ) : null}
-                            </div>
+            ) : patients.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-muted-foreground py-10 text-center">
+                  No prescriptions yet.
+                </TableCell>
+              </TableRow>
+            ) : (
+              patients.map((patient) => {
+                const expanded = expandedPatients.has(patient.id)
+                return (
+                  <Fragment key={patient.id}>
+                    <TableRow
+                      className="cursor-pointer"
+                      onClick={() => togglePatient(patient.id)}
+                    >
+                      <TableCell>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Toggle prescriptions"
+                        >
+                          {expanded ? (
+                            <ChevronDown className="size-4" />
+                          ) : (
+                            <ChevronRight className="size-4" />
+                          )}
+                        </Button>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">{patient.patientCode}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="bg-muted flex size-8 items-center justify-center rounded-full text-xs font-medium">
+                            {patient.name.charAt(0).toUpperCase()}
                           </div>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {patient.phone || '-'}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {patient.age || '-'}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {patient.gender || '-'}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">{patient.visitCount}</Badge>
-                        </TableCell>
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <div className="flex justify-end gap-1">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  aria-label="New prescription"
-                                  onClick={() => onNewForPatient(patient)}
-                                >
-                                  <FilePlus className="size-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>New prescription</TooltipContent>
-                            </Tooltip>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  aria-label="Edit patient"
-                                  onClick={() => openEditPatient(patient)}
-                                >
-                                  <Pencil className="size-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Edit patient</TooltipContent>
-                            </Tooltip>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  aria-label="Delete patient"
-                                  onClick={() => setDeletingPatient(patient)}
-                                >
-                                  <Trash2 className="size-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Delete patient</TooltipContent>
-                            </Tooltip>
+                          <div>
+                            <p className="font-medium">{patient.name}</p>
+                            {patient.address ? (
+                              <p
+                                className="text-muted-foreground max-w-[12rem] truncate text-xs"
+                                title={patient.address}
+                              >
+                                {patient.address}
+                              </p>
+                            ) : null}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {patient.phone || '-'}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{patient.age || '-'}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {patient.gender || '-'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{patient.visitCount}</Badge>
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-end gap-1">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                aria-label="New prescription"
+                                onClick={() => onNewForPatient(patient)}
+                              >
+                                <FilePlus className="size-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>New prescription</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                aria-label="Edit patient"
+                                onClick={() => openEditPatient(patient)}
+                              >
+                                <Pencil className="size-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Edit patient</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                aria-label="Delete patient"
+                                onClick={() => setDeletingPatient(patient)}
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Delete patient</TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                    {expanded ? (
+                      <TableRow key={`${patient.id}-visits`}>
+                        <TableCell colSpan={8} className="bg-muted/30 p-4">
+                          <div className="flex flex-col gap-3">
+                            {patient.address || patientSummary(patient) ? (
+                              <div className="text-muted-foreground text-sm">
+                                {[patientSummary(patient), patient.address]
+                                  .filter(Boolean)
+                                  .join(' · ')}
+                              </div>
+                            ) : null}
+                            {renderVisits(patient)}
                           </div>
                         </TableCell>
                       </TableRow>
-                      {expanded ? (
-                        <TableRow key={`${patient.id}-visits`}>
-                          <TableCell colSpan={8} className="bg-muted/30 p-4">
-                            <div className="flex flex-col gap-3">
-                              {patient.address || patientSummary(patient) ? (
-                                <div className="text-muted-foreground text-sm">
-                                  {[patientSummary(patient), patient.address]
-                                    .filter(Boolean)
-                                    .join(' · ')}
-                                </div>
-                              ) : null}
-                              {renderVisits(patient)}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ) : null}
-                    </Fragment>
-                  )
-                })
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      ) : loading ? (
-        <div className="text-muted-foreground rounded-xl border bg-card py-10 text-center shadow-sm">
-          Loading...
-        </div>
-      ) : patients.length === 0 ? (
-        <div className="text-muted-foreground rounded-xl border bg-card py-10 text-center shadow-sm">
-          No prescriptions yet.
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {patients.map((patient) => {
-            const expanded = expandedPatients.has(patient.id)
-            return (
-              <Card key={patient.id} className="gap-4 transition-colors hover:bg-accent/40">
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-3">
-                    <button
-                      type="button"
-                      className="min-w-0 flex-1 text-left"
-                      onClick={() => togglePatient(patient.id)}
-                    >
-                      <CardTitle className="flex items-center gap-2">
-                        {expanded ? (
-                          <ChevronDown className="size-4" />
-                        ) : (
-                          <ChevronRight className="size-4" />
-                        )}
-                        <span className="truncate">{patient.name}</span>
-                      </CardTitle>
-                      <p className="text-muted-foreground text-xs">
-                        {patient.patientCode} · {patient.visitCount} visit
-                        {patient.visitCount === 1 ? '' : 's'}
-                      </p>
-                    </button>
-                    <div className="bg-muted flex size-10 items-center justify-center rounded-full text-sm font-medium">
-                      {patient.name.charAt(0).toUpperCase()}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <p className="text-muted-foreground text-xs">Phone</p>
-                    <p>{patient.phone || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground text-xs">Age</p>
-                    <p>{patient.age || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground text-xs">Gender</p>
-                    <p>{patient.gender || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground text-xs">Visits</p>
-                    <Badge variant="secondary">{patient.visitCount}</Badge>
-                  </div>
-                  {patient.address ? (
-                    <div className="col-span-2">
-                      <p className="text-muted-foreground text-xs">Address</p>
-                      <p className="truncate" title={patient.address}>
-                        {patient.address}
-                      </p>
-                    </div>
-                  ) : null}
-                  {expanded ? (
-                    <div className="col-span-2">{renderVisits(patient, true)}</div>
-                  ) : null}
-                </CardContent>
-                <CardFooter className="justify-end gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="New prescription"
-                    onClick={() => onNewForPatient(patient)}
-                  >
-                    <FilePlus className="size-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Edit patient"
-                    onClick={() => openEditPatient(patient)}
-                  >
-                    <Pencil className="size-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Delete patient"
-                    onClick={() => setDeletingPatient(patient)}
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                </CardFooter>
-              </Card>
-            )
-          })}
-        </div>
-      )}
+                    ) : null}
+                  </Fragment>
+                )
+              })
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
       <PatientFormDialog
         open={formOpen}

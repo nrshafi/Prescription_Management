@@ -9,7 +9,6 @@ import {
   TableRow
 } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { cn } from '@/lib/utils'
 import type { PatientVisit } from '../../../../shared/patient'
 
 export interface VisitState {
@@ -27,7 +26,6 @@ interface PrescriptionVisitActionsProps {
 
 interface PatientVisitsTableProps {
   state: VisitState | undefined
-  compact?: boolean
   onEdit: (id: number) => void
   onPrintAction: (id: number, action: 'preview' | 'print' | 'pdf') => void
   onDuplicate: (id: number) => void
@@ -123,7 +121,6 @@ function PrescriptionVisitActions({
 
 export function PatientVisitsTable({
   state,
-  compact = false,
   onEdit,
   onPrintAction,
   onDuplicate
@@ -141,7 +138,7 @@ export function PatientVisitsTable({
   }
 
   return (
-    <div className={cn('overflow-hidden rounded-lg border bg-background', compact && 'mt-3')}>
+    <div className="overflow-hidden rounded-lg border bg-background">
       <Table>
         <TableHeader>
           <TableRow>
