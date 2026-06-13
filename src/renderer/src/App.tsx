@@ -9,11 +9,13 @@ import { Prescriptions } from '@/pages/Prescriptions'
 import { PresetsManager } from '@/pages/PresetsManager'
 import { PrintRenderer } from '@/pages/PrintRenderer'
 import { Settings } from '@/pages/Settings'
+import type { PatientListItem } from '../../shared/patient'
 
 function App(): React.JSX.Element {
   const [page, setPage] = useState<AppPage>('new-prescription')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [rxEditId, setRxEditId] = useState<number | null>(null)
+  const [rxSeedPatient, setRxSeedPatient] = useState<PatientListItem | null>(null)
   const [rxStatus, setRxStatus] = useState<string | null>(null)
   const rxActionsRef = useRef<PrescriptionPageActions | null>(null)
 
@@ -33,6 +35,7 @@ function App(): React.JSX.Element {
   }, [])
 
   const openEditPrescription = useCallback((id: number) => {
+    setRxSeedPatient(null)
     setRxEditId(id)
     setPage('new-prescription')
   }, [])
@@ -52,6 +55,7 @@ function App(): React.JSX.Element {
         return (
           <NewPrescription
             editId={rxEditId}
+            seedPatient={rxSeedPatient}
             onEditIdChange={setRxEditId}
             onBindActions={bindRxActions}
             onStatus={setRxStatus}
@@ -62,6 +66,12 @@ function App(): React.JSX.Element {
           <Prescriptions
             onEdit={openEditPrescription}
             onNew={() => {
+              setRxSeedPatient(null)
+              setRxEditId(null)
+              setPage('new-prescription')
+            }}
+            onNewForPatient={(patient) => {
+              setRxSeedPatient(patient)
               setRxEditId(null)
               setPage('new-prescription')
             }}
@@ -83,7 +93,13 @@ function App(): React.JSX.Element {
       <Sidebar
         currentPage={page}
         onNavigate={(p) => {
-          if (p !== 'new-prescription') setRxEditId(null)
+          if (p === 'new-prescription') {
+            setRxSeedPatient(null)
+            setRxEditId(null)
+          } else {
+            setRxSeedPatient(null)
+            setRxEditId(null)
+          }
           setPage(p)
         }}
         collapsed={sidebarCollapsed}

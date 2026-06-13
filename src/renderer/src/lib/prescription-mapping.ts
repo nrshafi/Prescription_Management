@@ -1,3 +1,4 @@
+import type { PatientRecord } from '../../../shared/patient'
 import {
   PRESCRIPTION_SECTION_TYPES,
   type PrescriptionDetail,
@@ -245,6 +246,18 @@ export function emptyUiState(): PrescriptionUiState {
     followUpValue: '0',
     followUpUnit: 'Days',
     medicines: []
+  }
+}
+
+export function uiStateFromPatient(patient: PatientRecord): PrescriptionUiState {
+  return {
+    ...emptyUiState(),
+    patientId: patient.id,
+    patientName: patient.name,
+    patientPhone: patient.phone ?? '',
+    patientAge: patient.age ?? '',
+    patientGender: patient.gender ?? 'Male',
+    patientAddress: patient.address ?? ''
   }
 }
 

@@ -16,6 +16,7 @@ import {
   mergeChips,
   type PrescriptionUiState,
   presetTitlesByCategory,
+  uiStateFromPatient,
   uiToFormValues
 } from '@/lib/prescription-mapping'
 import type { PatientFormValues, PatientListItem } from '../../../shared/patient'
@@ -55,6 +56,7 @@ export interface PrescriptionPageActions {
 
 interface NewPrescriptionProps {
   editId: number | null
+  seedPatient?: PatientListItem | null
   onEditIdChange: (id: number | null) => void
   onBindActions: (actions: PrescriptionPageActions | null) => void
   onStatus?: (message: string | null) => void
@@ -323,6 +325,7 @@ function MedSearch({
 
 export function NewPrescription({
   editId,
+  seedPatient,
   onEditIdChange,
   onBindActions,
   onStatus
@@ -410,11 +413,14 @@ export function NewPrescription({
 
   useEffect(() => {
     if (editId) loadEdit(editId)
-    else {
+    else if (seedPatient) {
+      setUi(uiStateFromPatient(seedPatient))
+      setMedicines([])
+    } else {
       setUi(emptyUiState())
       setMedicines([])
     }
-  }, [editId, loadEdit])
+  }, [editId, loadEdit, seedPatient])
 
   useEffect(() => {
     const phone = ui.patientPhone.trim()
@@ -697,7 +703,7 @@ export function NewPrescription({
           </button>
         </div>
 
-        {foundPatient && !editId && (
+        {foundPatient && !editId && seedPatient?.id !== foundPatient.id && (
           <div className="mb-3 flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-2.5 text-sm dark:border-green-900 dark:bg-green-950/40">
             <UserCheck className="size-4 shrink-0 text-green-600" />
             <div className="min-w-0 flex-1">

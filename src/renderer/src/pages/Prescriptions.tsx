@@ -4,6 +4,7 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronsUpDown,
+  FilePlus,
   FileText,
   LayoutGrid,
   List,
@@ -60,6 +61,7 @@ interface SortableHeaderProps {
 interface PrescriptionsProps {
   onEdit: (id: number) => void
   onNew: () => void
+  onNewForPatient: (patient: PatientListItem) => void
 }
 
 function SortableHeader({
@@ -97,7 +99,11 @@ function patientSummary(patient: PatientListItem): string {
     .join(' · ')
 }
 
-export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.Element {
+export function Prescriptions({
+  onEdit,
+  onNew,
+  onNewForPatient
+}: PrescriptionsProps): React.JSX.Element {
   const [patients, setPatients] = useState<PatientListItem[]>([])
   const [search, setSearch] = useState('')
   const [gender, setGender] = useState<string>(ALL_GENDERS)
@@ -472,6 +478,20 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
                                   type="button"
                                   variant="ghost"
                                   size="icon"
+                                  aria-label="New prescription"
+                                  onClick={() => onNewForPatient(patient)}
+                                >
+                                  <FilePlus className="size-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>New prescription</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
                                   aria-label="Edit patient"
                                   onClick={() => openEditPatient(patient)}
                                 >
@@ -589,6 +609,14 @@ export function Prescriptions({ onEdit, onNew }: PrescriptionsProps): React.JSX.
                   ) : null}
                 </CardContent>
                 <CardFooter className="justify-end gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="New prescription"
+                    onClick={() => onNewForPatient(patient)}
+                  >
+                    <FilePlus className="size-4" />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="icon"
