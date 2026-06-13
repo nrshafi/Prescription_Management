@@ -93,13 +93,8 @@ function App(): React.JSX.Element {
       <Sidebar
         currentPage={page}
         onNavigate={(p) => {
-          if (p === 'new-prescription') {
-            setRxSeedPatient(null)
-            setRxEditId(null)
-          } else {
-            setRxSeedPatient(null)
-            setRxEditId(null)
-          }
+          setRxSeedPatient(null)
+          setRxEditId(null)
           setPage(p)
         }}
         collapsed={sidebarCollapsed}

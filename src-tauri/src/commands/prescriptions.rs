@@ -414,15 +414,24 @@ pub fn prescriptions_list(
 
     if !search.is_empty() {
         let term = format!("%{search}%");
-        filters.push(
-            "(patients.patient_code LIKE ? OR patients.name LIKE ? OR patients.phone LIKE ? OR CAST(patients.patient_id AS TEXT) = ? OR CAST(prescriptions.prescription_id AS TEXT) = ?)"
-                .to_string(),
-        );
-        bind_values.push(Value::Text(term.clone()));
-        bind_values.push(Value::Text(term.clone()));
-        bind_values.push(Value::Text(term));
-        bind_values.push(Value::Text(search.clone()));
-        bind_values.push(Value::Text(search.clone()));
+        let mut or_clauses = vec![
+            "patients.patient_code LIKE ?".to_string(),
+            "patients.name LIKE ?".to_string(),
+        ];
+        bind_values.push(Value::Text(term.clone())); // patient_code
+        bind_values.push(Value::Text(term.clone())); // name
+
+        if super::phone_search_enabled(&search) {
+            or_clauses.push("patients.phone LIKE ?".to_string());
+            bind_values.push(Value::Text(term.clone())); // phone
+        }
+
+        or_clauses.push("CAST(patients.patient_id AS TEXT) = ?".to_string());
+        or_clauses.push("CAST(prescriptions.prescription_id AS TEXT) = ?".to_string());
+        bind_values.push(Value::Text(search.clone())); // patient_id exact
+        bind_values.push(Value::Text(search.clone())); // prescription_id exact
+
+        filters.push(format!("({})", or_clauses.join(" OR ")));
     }
     if let Some(value) = gender {
         filters.push("patients.gender = ?".to_string());
