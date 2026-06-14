@@ -732,6 +732,7 @@ export function NewPrescription({
   }, [ui.advice])
 
   const doc = doctor
+  const customOePreviewRows = ui.oe.custom.filter((row) => row.label.trim() && row.value.trim())
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
@@ -918,6 +919,66 @@ export function NewPrescription({
                 )
               })}
             </div>
+            <div className="mt-3 flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground text-xs font-medium">Custom O/E</span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    patchUi({
+                      oe: { ...ui.oe, custom: [...ui.oe.custom, { label: '', value: '' }] }
+                    })
+                  }
+                >
+                  <Plus className="size-3.5" /> Add row
+                </Button>
+              </div>
+              {ui.oe.custom.map((row, index) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: rows are simple editable pairs without persisted ids
+                <div key={index} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={row.label}
+                    onChange={(e) => {
+                      const custom = ui.oe.custom.map((item, itemIndex) =>
+                        itemIndex === index ? { ...item, label: e.target.value } : item
+                      )
+                      patchUi({ oe: { ...ui.oe, custom } })
+                    }}
+                    placeholder="Label"
+                    aria-label={`Custom O/E label ${index + 1}`}
+                    className="border-input bg-background w-1/3 rounded-lg border px-3 py-2 text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={row.value}
+                    onChange={(e) => {
+                      const custom = ui.oe.custom.map((item, itemIndex) =>
+                        itemIndex === index ? { ...item, value: e.target.value } : item
+                      )
+                      patchUi({ oe: { ...ui.oe, custom } })
+                    }}
+                    placeholder="Value"
+                    aria-label={`Custom O/E value ${index + 1}`}
+                    className="border-input bg-background min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-9 shrink-0"
+                    onClick={() => {
+                      const custom = ui.oe.custom.filter((_, itemIndex) => itemIndex !== index)
+                      patchUi({ oe: { ...ui.oe, custom } })
+                    }}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
           </SectionCard>
           <SectionCard accent="bg-purple-400" title="Investigation">
             <SearchMultiSelect
@@ -1031,7 +1092,11 @@ export function NewPrescription({
                   items={ui.chiefComplaints}
                   empty="No complaints entered"
                 />
-                {(ui.oe.bp || ui.oe.pulse || ui.oe.temp || ui.oe.rr) && (
+                {(ui.oe.bp ||
+                  ui.oe.pulse ||
+                  ui.oe.temp ||
+                  ui.oe.rr ||
+                  customOePreviewRows.length > 0) && (
                   <div>
                     <p className="text-muted-foreground mb-1.5 text-xs font-bold tracking-wider uppercase">
                       O/E
@@ -1057,6 +1122,11 @@ export function NewPrescription({
                           R/R: <strong>{ui.oe.rr}/min</strong>
                         </span>
                       )}
+                      {customOePreviewRows.map((row, index) => (
+                        <span key={`${row.label}-${index}`}>
+                          {row.label.trim()}: <strong>{row.value.trim()}</strong>
+                        </span>
+                      ))}
                     </div>
                   </div>
                 )}

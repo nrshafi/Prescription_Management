@@ -19,7 +19,8 @@ export const PRESCRIPTION_SECTION_TYPES = [
   'Investigations',
   'Provisional Diagnosis',
   'Advice',
-  'Follow Up'
+  'Follow Up',
+  'Weight'
 ] as const
 
 export type PrescriptionSectionType = (typeof PRESCRIPTION_SECTION_TYPES)[number]

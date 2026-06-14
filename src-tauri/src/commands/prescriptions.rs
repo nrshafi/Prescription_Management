@@ -5,13 +5,14 @@ use tauri::State;
 
 use crate::db::Db;
 
-pub const PRESCRIPTION_SECTION_TYPES: [&str; 6] = [
+pub const PRESCRIPTION_SECTION_TYPES: [&str; 7] = [
     "Chief Complaint",
     "Examination",
     "Investigations",
     "Provisional Diagnosis",
     "Advice",
     "Follow Up",
+    "Weight",
 ];
 
 // The section type is bound as a `?` parameter by the caller (in SELECT-list

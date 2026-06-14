@@ -8,11 +8,17 @@ import {
   type PrescriptionSectionType
 } from '../../../shared/prescription'
 
-interface OeValues {
+export interface OeValues {
   bp: string
   pulse: string
   temp: string
   rr: string
+  custom: OeCustomEntry[]
+}
+
+export interface OeCustomEntry {
+  label: string
+  value: string
 }
 
 export interface PrescriptionUiState {
@@ -70,37 +76,62 @@ export function mergeChips(existing: string[], incoming: string[]): string[] {
 }
 
 function parseOe(content: string): { oe: OeValues; weight: string } {
-  const oe: OeValues = { bp: '', pulse: '', temp: '', rr: '' }
+  const oe: OeValues = { bp: '', pulse: '', temp: '', rr: '', custom: [] }
   let weight = ''
   for (const line of content.split('\n')) {
     const trimmed = line.trim()
     if (!trimmed) continue
     const wtMatch = /^Wt:\s*(.+)$/i.exec(trimmed)
     if (wtMatch) {
-      weight = wtMatch[1].replace(/\s*kg$/i, '').trim()
+      weight = wtMatch[1].replace(/\s*kgs?$/i, '').trim()
       continue
     }
+    let matchedKnownKey = false
     for (const key of OE_KEYS) {
       const label = OE_LABELS[key]
       const re = new RegExp(`^${label}:\\s*(.+)$`, 'i')
       const m = re.exec(trimmed)
       if (m) {
         oe[key] = m[1].trim()
+        matchedKnownKey = true
         break
       }
+    }
+    if (matchedKnownKey) continue
+
+    const customMatch = /^([^:]+):\s*(.+)$/.exec(trimmed)
+    if (customMatch) {
+      oe.custom.push({ label: customMatch[1].trim(), value: customMatch[2].trim() })
     }
   }
   return { oe, weight }
 }
 
-function serializeOe(oe: OeValues, weight: string): string {
+function serializeOe(oe: OeValues): string {
   const lines: string[] = []
-  if (oe.bp) lines.push(`BP: ${oe.bp}`)
-  if (oe.pulse) lines.push(`Pulse: ${oe.pulse}`)
-  if (oe.temp) lines.push(`Temp: ${oe.temp}`)
-  if (oe.rr) lines.push(`R/R: ${oe.rr}`)
-  if (weight.trim()) lines.push(`Wt: ${weight.trim()} kg`)
+  if (oe.bp.trim()) lines.push(`BP: ${oe.bp.trim()}`)
+  if (oe.pulse.trim()) lines.push(`Pulse: ${oe.pulse.trim()}`)
+  if (oe.temp.trim()) lines.push(`Temp: ${oe.temp.trim()}`)
+  if (oe.rr.trim()) lines.push(`R/R: ${oe.rr.trim()}`)
+  const knownLabels = new Set(OE_KEYS.map((key) => OE_LABELS[key].toLowerCase()))
+  for (const row of oe.custom) {
+    const label = row.label.trim()
+    const value = row.value.trim()
+    if (!label || !value) continue
+    // A custom label that collides with a known O/E key would be re-parsed as
+    // that structured field on reload, so skip it to avoid silent mutation.
+    if (knownLabels.has(label.toLowerCase())) continue
+    lines.push(`${label}: ${value}`)
+  }
   return lines.join('\n')
+}
+
+function parseWeight(content: string | null | undefined): string {
+  return (content ?? '').replace(/\s*kgs?$/i, '').trim()
+}
+
+function serializeWeight(weight: string): string {
+  return weight.trim().replace(/\s*kgs?$/i, '').trim()
 }
 
 function parseFollowUp(content: string): { value: string; unit: string } {
@@ -154,7 +185,8 @@ export function detailToUi(detail: PrescriptionDetail): PrescriptionUiState {
       : emptySections()
   )
   const examContent = map.get('Examination') ?? ''
-  const { oe, weight } = parseOe(examContent)
+  const { oe, weight: legacyWeight } = parseOe(examContent)
+  const weight = parseWeight(map.get('Weight')) || legacyWeight
   const follow = parseFollowUp(map.get('Follow Up') ?? '')
 
   return {
@@ -190,7 +222,7 @@ export function uiToFormValues(ui: PrescriptionUiState): PrescriptionFormValues 
         content = contentFromChips(ui.chiefComplaints)
         break
       case 'Examination':
-        content = serializeOe(ui.oe, ui.patientWeight)
+        content = serializeOe(ui.oe)
         break
       case 'Investigations':
         content = contentFromChips(ui.investigations)
@@ -203,6 +235,9 @@ export function uiToFormValues(ui: PrescriptionUiState): PrescriptionFormValues 
         break
       case 'Follow Up':
         content = serializeFollowUp(ui.followUpValue, ui.followUpUnit)
+        break
+      case 'Weight':
+        content = serializeWeight(ui.patientWeight)
         break
       default:
         break
@@ -239,7 +274,7 @@ export function emptyUiState(): PrescriptionUiState {
     patientWeight: '',
     patientAddress: '',
     chiefComplaints: [],
-    oe: { bp: '', pulse: '', temp: '', rr: '' },
+    oe: { bp: '', pulse: '', temp: '', rr: '', custom: [] },
     investigations: [],
     diagnoses: [],
     advice: [],
