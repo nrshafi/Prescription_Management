@@ -17,8 +17,16 @@ export interface OeValues {
 }
 
 export interface OeCustomEntry {
+  id: string
   label: string
   value: string
+}
+
+let oeCustomIdCounter = 0
+
+export function createOeCustomEntry(label = '', value = ''): OeCustomEntry {
+  oeCustomIdCounter += 1
+  return { id: `oe-custom-${oeCustomIdCounter}`, label, value }
 }
 
 export interface PrescriptionUiState {
@@ -101,7 +109,7 @@ function parseOe(content: string): { oe: OeValues; weight: string } {
 
     const customMatch = /^([^:]+):\s*(.+)$/.exec(trimmed)
     if (customMatch) {
-      oe.custom.push({ label: customMatch[1].trim(), value: customMatch[2].trim() })
+      oe.custom.push(createOeCustomEntry(customMatch[1].trim(), customMatch[2].trim()))
     }
   }
   return { oe, weight }

@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select'
 import { api } from '@/lib/api'
 import {
+  createOeCustomEntry,
   detailToUi,
   emptyUiState,
   mergeChips,
@@ -928,7 +929,7 @@ export function NewPrescription({
                   variant="outline"
                   onClick={() =>
                     patchUi({
-                      oe: { ...ui.oe, custom: [...ui.oe.custom, { label: '', value: '' }] }
+                      oe: { ...ui.oe, custom: [...ui.oe.custom, createOeCustomEntry()] }
                     })
                   }
                 >
@@ -936,14 +937,13 @@ export function NewPrescription({
                 </Button>
               </div>
               {ui.oe.custom.map((row, index) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: rows are simple editable pairs without persisted ids
-                <div key={index} className="flex items-center gap-2">
+                <div key={row.id} className="flex items-center gap-2">
                   <input
                     type="text"
                     value={row.label}
                     onChange={(e) => {
-                      const custom = ui.oe.custom.map((item, itemIndex) =>
-                        itemIndex === index ? { ...item, label: e.target.value } : item
+                      const custom = ui.oe.custom.map((item) =>
+                        item.id === row.id ? { ...item, label: e.target.value } : item
                       )
                       patchUi({ oe: { ...ui.oe, custom } })
                     }}
@@ -955,8 +955,8 @@ export function NewPrescription({
                     type="text"
                     value={row.value}
                     onChange={(e) => {
-                      const custom = ui.oe.custom.map((item, itemIndex) =>
-                        itemIndex === index ? { ...item, value: e.target.value } : item
+                      const custom = ui.oe.custom.map((item) =>
+                        item.id === row.id ? { ...item, value: e.target.value } : item
                       )
                       patchUi({ oe: { ...ui.oe, custom } })
                     }}
@@ -970,7 +970,7 @@ export function NewPrescription({
                     size="icon"
                     className="size-9 shrink-0"
                     onClick={() => {
-                      const custom = ui.oe.custom.filter((_, itemIndex) => itemIndex !== index)
+                      const custom = ui.oe.custom.filter((item) => item.id !== row.id)
                       patchUi({ oe: { ...ui.oe, custom } })
                     }}
                   >
@@ -1122,8 +1122,8 @@ export function NewPrescription({
                           R/R: <strong>{ui.oe.rr}/min</strong>
                         </span>
                       )}
-                      {customOePreviewRows.map((row, index) => (
-                        <span key={`${row.label}-${index}`}>
+                      {customOePreviewRows.map((row) => (
+                        <span key={row.id}>
                           {row.label.trim()}: <strong>{row.value.trim()}</strong>
                         </span>
                       ))}
