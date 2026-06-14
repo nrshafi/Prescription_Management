@@ -16,7 +16,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { api } from '@/lib/api'
-import type { DoctorProfileRecord, PaperSettingsRecord } from '../../../shared/print'
+import {
+  PRINT_FONTS,
+  PRINT_FONT_STORAGE_KEY,
+  getPrintFontKey,
+  type DoctorProfileRecord,
+  type PaperSettingsRecord
+} from '../../../shared/print'
 import {
   type DoctorProfileFormValues,
   JSON_EXPORT_EXAMPLE,
@@ -73,6 +79,9 @@ export function Settings(): React.JSX.Element {
   const [doctor, setDoctor] = useState<DoctorProfileFormValues>(defaultDoctor)
   const [paper, setPaper] = useState<PaperSettingsFormValues>(defaultPaper)
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') ?? 'system')
+  const [printFont, setPrintFont] = useState(
+    () => getPrintFontKey(localStorage.getItem(PRINT_FONT_STORAGE_KEY))
+  )
   const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [jsonHelpOpen, setJsonHelpOpen] = useState(false)
@@ -95,6 +104,10 @@ export function Settings(): React.JSX.Element {
       theme === 'dark' || (theme === 'system' && prefersDark)
     )
   }, [theme])
+
+  useEffect(() => {
+    localStorage.setItem(PRINT_FONT_STORAGE_KEY, printFont)
+  }, [printFont])
 
   async function saveDoctor(): Promise<void> {
     setError(null)
@@ -321,6 +334,27 @@ export function Settings(): React.JSX.Element {
                   <Save className="size-4" /> Save Paper Settings
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Print Font</CardTitle>
+              <CardDescription>
+                Font used for printed prescriptions. Stored locally on this computer.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-2">
+              {PRINT_FONTS.map((font) => (
+                <Button
+                  key={font.key}
+                  variant={printFont === font.key ? 'default' : 'outline'}
+                  onClick={() => setPrintFont(font.key)}
+                  style={{ fontFamily: font.stack }}
+                >
+                  {font.label}
+                </Button>
+              ))}
             </CardContent>
           </Card>
 

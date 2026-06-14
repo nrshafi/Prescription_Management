@@ -1,7 +1,11 @@
 import { useEffect, useLayoutEffect, useState } from 'react'
 import { api } from '@/lib/api'
 import type { PrescriptionSectionType } from '../../../shared/prescription'
-import type { PrescriptionPrintData } from '../../../shared/print'
+import {
+  getPrintFontStack,
+  PRINT_FONT_STORAGE_KEY,
+  type PrescriptionPrintData
+} from '../../../shared/print'
 
 const SECTION_LABELS: Record<PrescriptionSectionType, string> = {
   'Chief Complaint': 'C/C',
@@ -172,19 +176,21 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
   const { doctorProfile, prescription } = data
   const contact = [doctorProfile.phone, doctorProfile.email].filter(Boolean).join(' | ')
   const sections = prescription.sections.filter((section) => lines(section.content).length > 0)
+  const printFontStack = getPrintFontStack(localStorage.getItem(PRINT_FONT_STORAGE_KEY))
 
   return (
-    <div className="print-shell min-h-screen bg-neutral-100 p-6 font-serif text-neutral-950 print:bg-white">
+    <div className="print-shell min-h-screen bg-neutral-100 p-6 text-neutral-950 print:bg-white">
       <style>{pageStyle}</style>
       <article
         data-print-content
         className="print-sheet mx-auto bg-white text-neutral-950 shadow-xl print:shadow-none"
+        style={{ fontFamily: printFontStack }}
       >
         <header className="border-b-2 border-neutral-900 pb-4">
           <div className="flex items-start justify-between gap-6">
             <div>
               <p className="text-xs font-semibold tracking-[0.3em] uppercase">Prescription</p>
-              <h1 className="mt-2 font-sans text-3xl font-bold tracking-tight">
+              <h1 className="mt-2 text-3xl font-bold tracking-tight">
                 {doctorProfile.name || 'Doctor Profile'}
               </h1>
               {doctorProfile.degrees && (
@@ -236,7 +242,7 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
               )
               .map((section) => (
                 <section key={section.id}>
-                  <h2 className="font-sans text-xs font-bold tracking-[0.18em] uppercase">
+                  <h2 className="text-xs font-bold tracking-[0.18em] uppercase">
                     {SECTION_LABELS[section.sectionType]}
                   </h2>
                   <SectionLines sectionId={section.id} content={section.content} />
@@ -245,10 +251,10 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
           </aside>
 
           <section>
-            <h2 className="font-sans text-4xl font-light">Rx</h2>
+            <h2 className="text-4xl font-light">Rx</h2>
             <table className="mt-3 w-full border-collapse text-sm">
               <thead>
-                <tr className="border-b border-neutral-400 text-left font-sans text-xs uppercase tracking-wide">
+                <tr className="border-b border-neutral-400 text-left text-xs uppercase tracking-wide">
                   <th className="py-2 pr-3">Medicine</th>
                   <th className="py-2 pr-3">Dose</th>
                   <th className="py-2 pr-3">Frequency</th>
@@ -280,7 +286,7 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
               .map((section) => (
                 <section key={section.id} className="mt-6 text-sm">
                   {section.sectionType !== 'Follow Up' && (
-                    <h2 className="font-sans text-xs font-bold tracking-[0.18em] uppercase">
+                    <h2 className="text-xs font-bold tracking-[0.18em] uppercase">
                       {SECTION_LABELS[section.sectionType]}
                     </h2>
                   )}
