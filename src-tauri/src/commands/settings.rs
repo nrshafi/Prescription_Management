@@ -265,6 +265,7 @@ struct JsonPresetLink {
     position: Option<i64>,
 }
 
+#[cfg_attr(test, derive(Debug))]
 struct ImportPatient {
     patient_code: Option<String>,
     name: String,
@@ -275,6 +276,7 @@ struct ImportPatient {
     prescriptions: Vec<ImportPrescription>,
 }
 
+#[cfg_attr(test, derive(Debug))]
 struct ImportPrescription {
     visit_no: Option<i64>,
     created_at: Option<String>,
@@ -282,6 +284,7 @@ struct ImportPrescription {
     medicines: Vec<super::prescriptions::PrescriptionMedicineInput>,
 }
 
+#[cfg_attr(test, derive(Debug))]
 struct ImportPreset {
     category: String,
     title: String,
@@ -289,6 +292,7 @@ struct ImportPreset {
     links: Vec<super::presets::PresetLinkInput>,
 }
 
+#[cfg_attr(test, derive(Debug))]
 struct ValidatedJsonImport {
     patients: Vec<ImportPatient>,
     presets: Vec<ImportPreset>,
@@ -416,6 +420,17 @@ fn is_sqlite_database(path: &Path) -> bool {
 
 fn reopen_database(db_path: &Path) -> Result<Connection, String> {
     let conn = db::open_connection(db_path)?;
+    migrations::run_migrations(&conn)?;
+    migrations::ensure_singleton_rows(&conn)?;
+    Ok(conn)
+}
+
+/// Opens a database that originated from an untrusted import and verifies it is
+/// structurally sound before migrations run, so a corrupt-but-openable file
+/// cannot replace good data.
+fn reopen_imported_database(db_path: &Path) -> Result<Connection, String> {
+    let conn = db::open_connection(db_path)?;
+    db::check_integrity(&conn)?;
     migrations::run_migrations(&conn)?;
     migrations::ensure_singleton_rows(&conn)?;
     Ok(conn)
@@ -1108,9 +1123,11 @@ pub async fn settings_import_backup(
 
     db::remove_wal_artifacts(&db_path);
 
-    let replaced = fs::copy(&source, &db_path)
-        .map_err(|e| e.to_string())
-        .and_then(|_| reopen_database(&db_path));
+    // Copy through the SQLite backup API (never a raw byte copy) so a partial
+    // or WAL-inconsistent source can't corrupt the live database, then verify
+    // integrity before accepting it.
+    let replaced = db::copy_database(&source, &db_path)
+        .and_then(|_| reopen_imported_database(&db_path));
 
     match replaced {
         Ok(conn) => {
@@ -1129,7 +1146,7 @@ pub async fn settings_import_backup(
         Err(reason) => {
             // Restore the snapshot so the app never ends up without a database.
             db::remove_wal_artifacts(&db_path);
-            fs::copy(&snapshot_path, &db_path).map_err(|e| {
+            db::copy_database(&snapshot_path, &db_path).map_err(|e| {
                 format!("Backup import failed and the previous database could not be restored: {e}")
             })?;
             let conn = reopen_database(&db_path)?;
@@ -1229,5 +1246,157 @@ pub async fn settings_import_json(
                 message: Some(format!("JSON import failed. No changes were saved. ({reason})")),
             })
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(json: &str) -> JsonExport {
+        serde_json::from_str(json).expect("valid JSON")
+    }
+
+    #[test]
+    fn rejects_missing_format_version() {
+        let export = parse(r#"{ "patients": [], "presets": [] }"#);
+        let err = validate_json_import(export).unwrap_err();
+        assert!(err.contains("formatVersion"), "{err}");
+    }
+
+    #[test]
+    fn rejects_unsupported_format_version() {
+        let export = parse(r#"{ "formatVersion": 999, "patients": [], "presets": [] }"#);
+        let err = validate_json_import(export).unwrap_err();
+        assert!(err.contains("Unsupported"), "{err}");
+    }
+
+    #[test]
+    fn rejects_duplicate_patient_codes() {
+        let export = parse(
+            r#"{
+                "formatVersion": 1,
+                "patients": [
+                    { "patientCode": "PAT-000001", "name": "A" },
+                    { "patientCode": "PAT-000001", "name": "B" }
+                ],
+                "presets": []
+            }"#,
+        );
+        let err = validate_json_import(export).unwrap_err();
+        assert!(err.contains("Duplicate patientCode"), "{err}");
+    }
+
+    #[test]
+    fn rejects_blank_patient_name() {
+        let export = parse(
+            r#"{ "formatVersion": 1, "patients": [ { "name": "   " } ], "presets": [] }"#,
+        );
+        let err = validate_json_import(export).unwrap_err();
+        assert!(err.contains("name is required"), "{err}");
+    }
+
+    #[test]
+    fn rejects_invalid_section_type() {
+        let export = parse(
+            r#"{
+                "formatVersion": 1,
+                "patients": [ {
+                    "name": "A",
+                    "prescriptions": [ {
+                        "sections": [ { "sectionType": "Bogus", "content": "x" } ]
+                    } ]
+                } ],
+                "presets": []
+            }"#,
+        );
+        let err = validate_json_import(export).unwrap_err();
+        assert!(err.contains("sectionType is invalid"), "{err}");
+    }
+
+    #[test]
+    fn rejects_invalid_preset_category() {
+        let export = parse(
+            r#"{
+                "formatVersion": 1,
+                "patients": [],
+                "presets": [ { "category": "Bogus", "title": "x" } ]
+            }"#,
+        );
+        let err = validate_json_import(export).unwrap_err();
+        assert!(err.contains("category is invalid"), "{err}");
+    }
+
+    #[test]
+    fn accepts_and_imports_minimal_export() {
+        let export = parse(
+            r#"{
+                "formatVersion": 1,
+                "patients": [ {
+                    "name": "Rahim",
+                    "phone": "01912345678",
+                    "prescriptions": [ {
+                        "visitNo": 1,
+                        "sections": [ { "sectionType": "Chief Complaint", "content": "Fever" } ],
+                        "medicines": [ { "medicineName": "Napa", "dosage": "500mg" } ]
+                    } ]
+                } ],
+                "presets": [ { "category": "Advice", "title": "Rest", "content": "Drink water" } ]
+            }"#,
+        );
+        let validated = validate_json_import(export).expect("valid import");
+
+        let conn = Connection::open_in_memory().unwrap();
+        crate::migrations::run_migrations(&conn).unwrap();
+        crate::migrations::ensure_singleton_rows(&conn).unwrap();
+
+        let stats = import_json_into_db(&conn, validated).expect("import succeeds");
+        assert_eq!(stats.patients_created, 1);
+        assert_eq!(stats.prescriptions_imported, 1);
+        assert_eq!(stats.presets_created, 1);
+
+        let patient_count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM patients", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(patient_count, 1);
+        let medicine: String = conn
+            .query_row("SELECT medicine_name FROM prescription_medicines", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(medicine, "Napa");
+
+        // Importing the same export again must not duplicate the patient or
+        // its visit (idempotent merge on patient identity + visit_no).
+        let export2 = parse(
+            r#"{
+                "formatVersion": 1,
+                "patients": [ {
+                    "name": "Rahim",
+                    "phone": "01912345678",
+                    "prescriptions": [ {
+                        "visitNo": 1,
+                        "sections": [ { "sectionType": "Chief Complaint", "content": "Fever" } ],
+                        "medicines": []
+                    } ]
+                } ],
+                "presets": []
+            }"#,
+        );
+        let validated2 = validate_json_import(export2).unwrap();
+        let stats2 = import_json_into_db(&conn, validated2).unwrap();
+        assert_eq!(stats2.patients_matched, 1);
+        assert_eq!(stats2.prescriptions_skipped, 1);
+
+        let patient_count_after: i64 = conn
+            .query_row("SELECT COUNT(*) FROM patients", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(patient_count_after, 1);
+    }
+
+    #[test]
+    fn integrity_check_passes_for_fresh_database() {
+        let conn = Connection::open_in_memory().unwrap();
+        crate::migrations::run_migrations(&conn).unwrap();
+        crate::migrations::ensure_singleton_rows(&conn).unwrap();
+        assert!(db::check_integrity(&conn).is_ok());
     }
 }

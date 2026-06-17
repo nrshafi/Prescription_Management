@@ -3,5 +3,5 @@
   "identifier": "default",
   "description": "Default capability for the main window and print windows",
   "windows": ["main", "print-*"],
-    "permissions": ["core:default", "dialog:default", "shell:default"]
+  "permissions": ["core:default", "dialog:default", "shell:allow-open"]
 }

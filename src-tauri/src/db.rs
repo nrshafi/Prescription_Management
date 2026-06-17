@@ -58,6 +58,29 @@ pub fn copy_database(source: &Path, destination: &Path) -> Result<(), String> {
         .map_err(|e| e.to_string())
 }
 
+/// Verifies a database is structurally sound and free of dangling foreign keys.
+/// Used before accepting an imported backup as the live database so a file that
+/// merely *looks* like SQLite (valid header) cannot replace good data with a
+/// corrupt or inconsistent database.
+pub fn check_integrity(conn: &Connection) -> Result<(), String> {
+    let result: String = conn
+        .query_row("PRAGMA integrity_check", [], |row| row.get(0))
+        .map_err(|e| format!("Could not run integrity check: {e}"))?;
+    if result != "ok" {
+        return Err(format!("Database failed integrity check: {result}"));
+    }
+
+    let violations: i64 = conn
+        .query_row("SELECT COUNT(*) FROM pragma_foreign_key_check", [], |row| row.get(0))
+        .map_err(|e| format!("Could not run foreign key check: {e}"))?;
+    if violations > 0 {
+        return Err(format!(
+            "Database failed foreign key check: {violations} violation(s)"
+        ));
+    }
+    Ok(())
+}
+
 pub fn remove_wal_artifacts(db_path: &Path) {
     for suffix in ["-wal", "-shm"] {
         let mut artifact = db_path.as_os_str().to_os_string();

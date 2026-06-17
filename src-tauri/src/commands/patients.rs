@@ -227,28 +227,12 @@ pub fn patients_list(
     let mut filters: Vec<String> = Vec::new();
     let mut bind_values: Vec<Value> = Vec::new();
 
-    if !search.is_empty() {
-        let term = format!("%{search}%");
-        let mut or_clauses = vec![
-            "patients.patient_code LIKE ?".to_string(),
-            "patients.name LIKE ?".to_string(),
-        ];
-        bind_values.push(Value::Text(term.clone())); // patient_code
-        bind_values.push(Value::Text(term.clone())); // name
-
-        if super::phone_search_enabled(&search) {
-            or_clauses.push("patients.phone LIKE ?".to_string());
-            bind_values.push(Value::Text(term.clone())); // phone
-        }
-
-        or_clauses.push("CAST(patients.patient_id AS TEXT) = ?".to_string());
-        or_clauses.push(
-            "EXISTS (SELECT 1 FROM prescriptions p WHERE p.patient_id = patients.patient_id AND CAST(p.prescription_id AS TEXT) = ?)".to_string(),
-        );
-        bind_values.push(Value::Text(search.clone())); // patient_id exact
-        bind_values.push(Value::Text(search.clone())); // prescription_id exact
-
-        filters.push(format!("({})", or_clauses.join(" OR ")));
+    if let Some(clause) = super::patient_search_clause(
+        &search,
+        "EXISTS (SELECT 1 FROM prescriptions p WHERE p.patient_id = patients.patient_id AND CAST(p.prescription_id AS TEXT) = ?)",
+        &mut bind_values,
+    ) {
+        filters.push(clause);
     }
     if let Some(value) = gender {
         filters.push("patients.gender = ?".to_string());
