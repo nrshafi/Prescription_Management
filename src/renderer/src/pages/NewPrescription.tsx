@@ -649,19 +649,18 @@ export function NewPrescription({
     }))
   })
 
-  const persist = async (mode: 'draft' | 'save') => {
+  const persist = async () => {
     setSaveError(null)
     const patientId = await resolvePatientId()
     const formValues = uiToFormValues(buildUiForSave(patientId))
     const currentId = editingIdRef.current
     if (currentId) return api.prescriptions.update(currentId, formValues)
-    if (mode === 'draft') return api.prescriptions.saveDraft(formValues)
     return api.prescriptions.create(formValues)
   }
 
   const saveAndGetId = async (): Promise<number | null> => {
     try {
-      const saved = await persist('save')
+      const saved = await persist()
       onEditIdChange(saved.id)
       editingIdRef.current = saved.id
       onStatus?.(`Saved as Pres_ID ${saved.id}.`)
@@ -674,7 +673,7 @@ export function NewPrescription({
 
   const savePrescription = async (): Promise<void> => {
     try {
-      const saved = await persist('draft')
+      const saved = await persist()
       onEditIdChange(saved.id)
       editingIdRef.current = saved.id
       onStatus?.(`Saved as Pres_ID ${saved.id}.`)

@@ -78,9 +78,7 @@ layer can safely use `unchecked_transaction`.
 ## Data Model
 
 Application data lives in a local SQLite database at
-`{appDataDir}/prescription.db` (WAL mode, foreign keys enabled). On first launch
-a legacy Electron database at `{dataDir}/prescriptx/prescription.db` is imported
-if present and no Tauri database exists yet.
+`{appDataDir}/prescription.db` (WAL mode, foreign keys enabled).
 
 Core tables (see `src-tauri/src/migrations.rs` for the authoritative schema):
 
@@ -102,9 +100,7 @@ Core tables (see `src-tauri/src/migrations.rs` for the authoritative schema):
 The schema is versioned with SQLite's `PRAGMA user_version`. Migrations in
 `MIGRATIONS` (in `migrations.rs`) are an ordered, append-only list applied inside
 a transaction on startup; only migrations newer than the current `user_version`
-run. A database created by the old Drizzle/Electron build is detected and marked
-as having the baseline migration applied so later migrations still run. **Never
-edit or reorder an existing migration — only append new ones.**
+run. **Never edit or reorder an existing migration — only append new ones.**
 
 ## Backup & Data Portability
 

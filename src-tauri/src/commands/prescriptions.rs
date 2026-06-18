@@ -498,14 +498,6 @@ pub fn prescriptions_create(
 }
 
 #[tauri::command]
-pub fn prescriptions_save_draft(
-    state: State<'_, Db>,
-    input: PrescriptionFormValues,
-) -> Result<PrescriptionDetail, String> {
-    prescriptions_create(state, input)
-}
-
-#[tauri::command]
 pub fn prescriptions_update(
     state: State<'_, Db>,
     id: i64,

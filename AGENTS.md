@@ -7,7 +7,7 @@ Offline desktop app for single-doctor prescription management. Tauri v2 + React 
 ## Architecture
 
 - **Backend (Rust)**: `src-tauri/src/` - Tauri commands, SQLite database (rusqlite), migrations, print windows
-- **API adapter**: `src/renderer/src/lib/api.ts` - typed `api` module backed by Tauri `invoke`; also installed on `window.api` as a transition shim for existing pages
+- **API adapter**: `src/renderer/src/lib/api.ts` - typed `api` module backed by Tauri `invoke`
 - **Renderer**: `src/renderer/` - React UI with Tailwind CSS + shadcn/ui components
 - **Shared**: `src/shared/` - TypeScript types/Zod schemas used by the renderer
 
@@ -40,7 +40,6 @@ bun run build        # Bundles installers for the current OS via tauri build
 ## Database
 
 - **Location**: Tauri app data dir (`{appData}/com.prescriptx.app/prescription.db`)
-- **Legacy import**: on first launch, an existing Electron database at `{appData}/prescriptx/prescription.db` is copied in automatically (never overwrites an existing Tauri DB)
 - **Schema + migrations**: `src-tauri/src/migrations.rs` (PRAGMA user_version), auto-run on app start
 - **Singleton rows**: `doctor_profile` and `paper_settings` rows ensured by `ensure_singleton_rows()`
 
@@ -63,7 +62,7 @@ All renderer<->backend communication uses Tauri commands:
 1. Add a `#[tauri::command]` fn in `src-tauri/src/commands/`
 2. Register it in `tauri::generate_handler![...]` in `src-tauri/src/lib.rs`
 3. Add a method to the `api` object in `src/renderer/src/lib/api.ts`
-4. Call via `api.method()` (or the legacy `window.api.method()`) in the renderer
+4. Call via `api.method()` in the renderer
 
 ## shadcn/ui Components
 

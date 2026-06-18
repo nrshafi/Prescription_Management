@@ -27,7 +27,6 @@ pub fn run() {
             commands::prescriptions::prescriptions_get,
             commands::prescriptions::prescriptions_create,
             commands::prescriptions::prescriptions_update,
-            commands::prescriptions::prescriptions_save_draft,
             commands::prescriptions::prescriptions_duplicate,
             commands::prescriptions::prescriptions_medicine_suggestions,
             commands::presets::presets_list,

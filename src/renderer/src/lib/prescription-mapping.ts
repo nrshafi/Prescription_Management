@@ -83,17 +83,11 @@ export function mergeChips(existing: string[], incoming: string[]): string[] {
   return merged
 }
 
-function parseOe(content: string): { oe: OeValues; weight: string } {
+function parseOe(content: string): OeValues {
   const oe: OeValues = { bp: '', pulse: '', temp: '', rr: '', custom: [] }
-  let weight = ''
   for (const line of content.split('\n')) {
     const trimmed = line.trim()
     if (!trimmed) continue
-    const wtMatch = /^Wt:\s*(.+)$/i.exec(trimmed)
-    if (wtMatch) {
-      weight = wtMatch[1].replace(/\s*kgs?$/i, '').trim()
-      continue
-    }
     let matchedKnownKey = false
     for (const key of OE_KEYS) {
       const label = OE_LABELS[key]
@@ -112,7 +106,7 @@ function parseOe(content: string): { oe: OeValues; weight: string } {
       oe.custom.push(createOeCustomEntry(customMatch[1].trim(), customMatch[2].trim()))
     }
   }
-  return { oe, weight }
+  return oe
 }
 
 function serializeOe(oe: OeValues): string {
@@ -139,7 +133,10 @@ function parseWeight(content: string | null | undefined): string {
 }
 
 function serializeWeight(weight: string): string {
-  return weight.trim().replace(/\s*kgs?$/i, '').trim()
+  return weight
+    .trim()
+    .replace(/\s*kgs?$/i, '')
+    .trim()
 }
 
 function parseFollowUp(content: string): { value: string; unit: string } {
@@ -152,11 +149,6 @@ function parseFollowUp(content: string): { value: string; unit: string } {
   if (!trimmed) return { value: '', unit: 'Days' }
   const after = /^Follow up:\s*After\s+(\d+)\s+(\w+)/i.exec(trimmed)
   if (after) return { value: after[1], unit: after[2] }
-  // Legacy formats from previous versions.
-  const legacyAfter = /^After:\s*(\d+)\s+(\w+)/i.exec(trimmed)
-  if (legacyAfter) return { value: legacyAfter[1], unit: legacyAfter[2] }
-  const legacyFollow = /Follow-up after\s+(\d+)\s+(\w+)/i.exec(trimmed)
-  if (legacyFollow) return { value: legacyFollow[1], unit: legacyFollow[2] }
   return { value: '', unit: 'Days' }
 }
 
@@ -193,8 +185,8 @@ export function detailToUi(detail: PrescriptionDetail): PrescriptionUiState {
       : emptySections()
   )
   const examContent = map.get('Examination') ?? ''
-  const { oe, weight: legacyWeight } = parseOe(examContent)
-  const weight = parseWeight(map.get('Weight')) || legacyWeight
+  const oe = parseOe(examContent)
+  const weight = parseWeight(map.get('Weight'))
   const follow = parseFollowUp(map.get('Follow Up') ?? '')
 
   return {

@@ -1,8 +1,7 @@
 use rusqlite::Connection;
 
 /// Ordered, append-only migration scripts. The current schema version is
-/// tracked with `PRAGMA user_version`, mirroring the previous Electron
-/// implementation so existing databases continue to migrate cleanly.
+/// tracked with `PRAGMA user_version`.
 const MIGRATIONS: [&str; 4] = [
     r#"
 CREATE TABLE IF NOT EXISTS doctor_profile (
@@ -103,30 +102,7 @@ fn user_version(conn: &Connection) -> Result<i64, String> {
         .map_err(|e| e.to_string())
 }
 
-/// A Drizzle-era database already has the baseline schema (migration 1), but
-/// may predate later migrations. Only mark the baseline as applied and let the
-/// remaining (idempotent) migrations run so older databases pick up newer
-/// tables such as preset_links.
-fn bootstrap_user_version_from_drizzle(conn: &Connection) -> Result<(), String> {
-    if user_version(conn)? > 0 {
-        return Ok(());
-    }
-    let has_drizzle: bool = conn
-        .query_row(
-            "SELECT EXISTS (SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = '__drizzle_migrations')",
-            [],
-            |row| row.get(0),
-        )
-        .map_err(|e| e.to_string())?;
-    if has_drizzle {
-        conn.execute_batch("PRAGMA user_version = 1;")
-            .map_err(|e| e.to_string())?;
-    }
-    Ok(())
-}
-
 pub fn run_migrations(conn: &Connection) -> Result<(), String> {
-    bootstrap_user_version_from_drizzle(conn)?;
     let current = user_version(conn)? as usize;
 
     for (index, sql) in MIGRATIONS.iter().enumerate().skip(current) {

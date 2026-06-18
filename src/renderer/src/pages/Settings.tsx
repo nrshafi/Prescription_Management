@@ -79,8 +79,8 @@ export function Settings(): React.JSX.Element {
   const [doctor, setDoctor] = useState<DoctorProfileFormValues>(defaultDoctor)
   const [paper, setPaper] = useState<PaperSettingsFormValues>(defaultPaper)
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') ?? 'system')
-  const [printFont, setPrintFont] = useState(
-    () => getPrintFontKey(localStorage.getItem(PRINT_FONT_STORAGE_KEY))
+  const [printFont, setPrintFont] = useState(() =>
+    getPrintFontKey(localStorage.getItem(PRINT_FONT_STORAGE_KEY))
   )
   const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -437,8 +437,8 @@ export function Settings(): React.JSX.Element {
             className="text-blue-400 font-medium underline-offset-4 hover:underline"
           >
             Telegram
-          </button>
-          {' '}or{' '}
+          </button>{' '}
+          or{' '}
           <button
             type="button"
             onClick={() => open('https://discord.com/users/775961069083951115')}

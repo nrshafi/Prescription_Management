@@ -62,8 +62,6 @@ export const api = {
       invoke('prescriptions_create', { input }),
     update: (id: number, input: PrescriptionFormValues): Promise<PrescriptionDetail> =>
       invoke('prescriptions_update', { id, input }),
-    saveDraft: (input: PrescriptionFormValues): Promise<PrescriptionDetail> =>
-      invoke('prescriptions_save_draft', { input }),
     duplicate: (id: number): Promise<PrescriptionDetail> =>
       invoke('prescriptions_duplicate', { id }),
     medicineSuggestions: (search?: string): Promise<MedicineSuggestion[]> =>

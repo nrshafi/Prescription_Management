@@ -391,10 +391,7 @@ export function Prescriptions({
                 const expanded = expandedPatients.has(patient.id)
                 return (
                   <Fragment key={patient.id}>
-                    <TableRow
-                      className="cursor-pointer"
-                      onClick={() => togglePatient(patient.id)}
-                    >
+                    <TableRow className="cursor-pointer" onClick={() => togglePatient(patient.id)}>
                       <TableCell>
                         <Button
                           type="button"

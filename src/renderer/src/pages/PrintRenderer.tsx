@@ -39,18 +39,6 @@ function parseWeight(value: string | null | undefined): string {
   return (value ?? '').replace(/\s*kgs?$/i, '').trim()
 }
 
-function parseLegacyWeight(value: string | null | undefined): string {
-  for (const line of lines(value)) {
-    const match = /^Wt:\s*(.+)$/i.exec(line)
-    if (match) return parseWeight(match[1])
-  }
-  return ''
-}
-
-function hasNonWeightLines(value: string | null | undefined): boolean {
-  return lines(value).some((line) => !/^Wt:\s*/i.test(line))
-}
-
 function formatWeight(value: string): string {
   const trimmed = value.trim()
   if (!trimmed) return '-'
@@ -59,21 +47,17 @@ function formatWeight(value: string): string {
 
 function SectionLines({
   sectionId,
-  content,
-  omitLegacyWeight = false
+  content
 }: {
   sectionId: number
   content: string | null | undefined
-  omitLegacyWeight?: boolean
 }): React.JSX.Element {
   return (
     <div className="mt-1 space-y-1 leading-5">
-      {lines(content)
-        .filter((line) => !omitLegacyWeight || !/^Wt:\s*/i.test(line))
-        .map((line, index) => {
-          // biome-ignore lint/suspicious/noArrayIndexKey: lines are static print text and may repeat
-          return <p key={`${sectionId}-${index}`}>{line}</p>
-        })}
+      {lines(content).map((line, index) => {
+        // biome-ignore lint/suspicious/noArrayIndexKey: lines are static print text and may repeat
+        return <p key={`${sectionId}-${index}`}>{line}</p>
+      })}
     </div>
   )
 }
@@ -203,10 +187,7 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
   const { doctorProfile, prescription } = data
   const contact = [doctorProfile.phone, doctorProfile.email].filter(Boolean).join(' | ')
   const weightSection = prescription.sections.find((section) => section.sectionType === 'Weight')
-  const examinationSection = prescription.sections.find(
-    (section) => section.sectionType === 'Examination'
-  )
-  const weight = parseWeight(weightSection?.content) || parseLegacyWeight(examinationSection?.content)
+  const weight = parseWeight(weightSection?.content)
   const sections = prescription.sections.filter((section) => lines(section.content).length > 0)
   const printFontStack = getPrintFontStack(localStorage.getItem(PRINT_FONT_STORAGE_KEY))
 
@@ -276,19 +257,14 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
                 (section) =>
                   section.sectionType !== 'Advice' &&
                   section.sectionType !== 'Follow Up' &&
-                  section.sectionType !== 'Weight' &&
-                  (section.sectionType !== 'Examination' || hasNonWeightLines(section.content))
+                  section.sectionType !== 'Weight'
               )
               .map((section) => (
                 <section key={section.id}>
                   <h2 className="text-xs font-bold tracking-[0.18em] uppercase">
                     {SECTION_LABELS[section.sectionType]}
                   </h2>
-                  <SectionLines
-                    sectionId={section.id}
-                    content={section.content}
-                    omitLegacyWeight={section.sectionType === 'Examination'}
-                  />
+                  <SectionLines sectionId={section.id} content={section.content} />
                 </section>
               ))}
           </aside>

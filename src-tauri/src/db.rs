@@ -27,17 +27,6 @@ pub fn database_path(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(dir.join("prescription.db"))
 }
 
-/// Location of the legacy Electron database ({appData}/prescriptx/prescription.db).
-fn electron_database_path(app: &AppHandle) -> Option<PathBuf> {
-    let base = app.path().data_dir().ok()?;
-    let candidate = base.join("prescriptx").join("prescription.db");
-    if candidate.is_file() {
-        Some(candidate)
-    } else {
-        None
-    }
-}
-
 pub fn open_connection(path: &Path) -> Result<Connection, String> {
     let conn = Connection::open(path).map_err(|e| format!("Could not open database: {e}"))?;
     // `journal_mode` returns a row, so it cannot go through execute().
@@ -89,18 +78,9 @@ pub fn remove_wal_artifacts(db_path: &Path) {
     }
 }
 
-/// Opens the application database, importing the legacy Electron database on
-/// first launch (never overwriting an existing Tauri database), then runs
-/// migrations and ensures singleton rows.
+/// Opens the application database, runs migrations, and ensures singleton rows.
 pub fn init_database(app: &AppHandle) -> Result<Connection, String> {
     let db_path = database_path(app)?;
-
-    if !db_path.exists() {
-        if let Some(old_db) = electron_database_path(app) {
-            copy_database(&old_db, &db_path)?;
-        }
-    }
-
     let conn = open_connection(&db_path)?;
     migrations::run_migrations(&conn)?;
     migrations::ensure_singleton_rows(&conn)?;
