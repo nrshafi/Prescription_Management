@@ -83,6 +83,7 @@ pub fn init_database(app: &AppHandle) -> Result<Connection, String> {
     let db_path = database_path(app)?;
     let conn = open_connection(&db_path)?;
     migrations::run_migrations(&conn)?;
+    migrations::ensure_prescriptions_no_templates_fk(&conn)?;
     migrations::ensure_singleton_rows(&conn)?;
     Ok(conn)
 }
