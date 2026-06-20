@@ -163,6 +163,13 @@ function MedRow({
             listId={`duration-options-${med.key}`}
           />
         </div>
+        <input
+          type="text"
+          value={med.notes}
+          onChange={(e) => onChange(med.key, 'notes', e.target.value)}
+          placeholder="Notes (optional)"
+          className="border-input bg-muted text-foreground focus:ring-ring mt-1.5 w-full rounded border px-2 py-0.5 text-xs focus:ring-1 focus:outline-none print:hidden"
+        />
       </div>
       <div className="flex shrink-0 items-center gap-0.5 pt-1 opacity-0 transition-opacity group-hover:opacity-100 print:hidden">
         <Button
@@ -206,7 +213,7 @@ function MedSearch({
   presets: string[]
   onAdd: (
     name: string,
-    defaults?: { dosage?: string; frequency?: string; duration?: string }
+    defaults?: { dosage?: string; frequency?: string; duration?: string; notes?: string }
   ) => void
 }): React.JSX.Element {
   const [query, setQuery] = useState('')
@@ -239,7 +246,7 @@ function MedSearch({
 
   const handleAdd = (
     name: string,
-    defaults?: { dosage?: string; frequency?: string; duration?: string }
+    defaults?: { dosage?: string; frequency?: string; duration?: string; notes?: string }
   ): void => {
     onAdd(name, defaults)
     setQuery('')
@@ -267,7 +274,8 @@ function MedSearch({
                 handleAdd(s.medicineName, {
                   dosage: s.dosage ?? undefined,
                   frequency: s.frequency ?? undefined,
-                  duration: s.duration ?? undefined
+                  duration: s.duration ?? undefined,
+                  notes: s.notes ?? undefined
                 })
               } else if (mergedPresets.length > 0) handleAdd(mergedPresets[0])
               else if (query.trim()) handleAdd(query.trim())
@@ -288,7 +296,8 @@ function MedSearch({
                 handleAdd(s.medicineName, {
                   dosage: s.dosage ?? undefined,
                   frequency: s.frequency ?? undefined,
-                  duration: s.duration ?? undefined
+                  duration: s.duration ?? undefined,
+                  notes: s.notes ?? undefined
                 })
               }
               className="hover:bg-accent w-full px-3 py-2 text-left text-sm"
@@ -485,7 +494,7 @@ export function NewPrescription({
 
   const addMedicine = (
     name: string,
-    defaults?: { dosage?: string; frequency?: string; duration?: string }
+    defaults?: { dosage?: string; frequency?: string; duration?: string; notes?: string }
   ): void => {
     setMedicines((prev) => [
       ...prev,
@@ -495,7 +504,7 @@ export function NewPrescription({
         dosage: defaults?.dosage || MEDICINE_DEFAULTS.dosage,
         frequency: defaults?.frequency || MEDICINE_DEFAULTS.frequency,
         duration: defaults?.duration || MEDICINE_DEFAULTS.duration,
-        notes: ''
+        notes: defaults?.notes || ''
       }
     ])
   }
