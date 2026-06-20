@@ -80,6 +80,12 @@ interface ApplicableBundle {
 
 let medKey = 0
 
+function toErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof Error) return err.message
+  if (typeof err === 'string' && err.trim()) return err
+  return fallback
+}
+
 function formatDate(date: Date): string {
   return date.toLocaleDateString('en-BD', { day: '2-digit', month: 'short', year: 'numeric' })
 }
@@ -354,6 +360,11 @@ export function NewPrescription({
   const [foundPatient, setFoundPatient] = useState<PatientListItem | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const editingIdRef = useRef(editId)
+  // Address as loaded for the current patient, used to detect whether the user
+  // actually changed it before issuing a patient update on save. Without this,
+  // edit mode (where foundPatient is null) always sees a "change" and fires an
+  // unnecessary patients.update that can fail and abort the save.
+  const loadedAddressRef = useRef<string | null>(null)
   const adviceSectionRef = useRef<HTMLDivElement>(null)
   // Only user-driven advice additions (via the advice selector) trigger auto-scroll.
   // Programmatic growth from loadEdit/applyBundle is intentionally ignored.
@@ -429,6 +440,7 @@ export function NewPrescription({
         return
       }
       const parsed = detailToUi(detail)
+      loadedAddressRef.current = parsed.patientAddress
       setUi(parsed)
       setMedicines(
         parsed.medicines
@@ -454,9 +466,11 @@ export function NewPrescription({
   useEffect(() => {
     if (editId) loadEdit(editId)
     else if (seedPatient) {
+      loadedAddressRef.current = seedPatient.address ?? ''
       setUi(uiStateFromPatient(seedPatient))
       setMedicines([])
     } else {
+      loadedAddressRef.current = null
       setUi(emptyUiState())
       setMedicines([])
     }
@@ -483,6 +497,7 @@ export function NewPrescription({
 
   const loadPatientData = (): void => {
     if (!foundPatient) return
+    loadedAddressRef.current = foundPatient.address ?? ''
     patchUi({
       patientId: foundPatient.id,
       patientName: foundPatient.name,
@@ -603,6 +618,7 @@ export function NewPrescription({
   }
 
   const handleClear = (): void => {
+    loadedAddressRef.current = null
     setUi(emptyUiState())
     setMedicines([])
     setFoundPatient(null)
@@ -613,7 +629,11 @@ export function NewPrescription({
 
   const resolvePatientId = async (): Promise<number> => {
     if (ui.patientId > 0) {
-      if (ui.patientAddress.trim() !== (foundPatient?.address ?? '').trim()) {
+      // Only persist a patient update when the address actually changed from
+      // what was loaded. loadedAddressRef is null only when we have no known
+      // baseline; in that case fall back to comparing against an empty string.
+      const baseline = (loadedAddressRef.current ?? '').trim()
+      if (ui.patientAddress.trim() !== baseline) {
         const values: PatientFormValues = {
           name: ui.patientName.trim(),
           age: ui.patientAge,
@@ -622,6 +642,7 @@ export function NewPrescription({
           address: ui.patientAddress
         }
         await api.patients.update(ui.patientId, values)
+        loadedAddressRef.current = ui.patientAddress
       }
       return ui.patientId
     }
@@ -641,6 +662,7 @@ export function NewPrescription({
       address: ui.patientAddress
     }
     const created = await api.patients.create(values)
+    loadedAddressRef.current = ui.patientAddress
     patchUi({ patientId: created.id })
     return created.id
   }
@@ -675,7 +697,7 @@ export function NewPrescription({
       onStatus?.(`Saved as Pres_ID ${saved.id}.`)
       return saved.id
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Could not save prescription.')
+      setSaveError(toErrorMessage(err, 'Could not save prescription.'))
       return null
     }
   }
@@ -687,7 +709,7 @@ export function NewPrescription({
       editingIdRef.current = saved.id
       onStatus?.(`Saved as Pres_ID ${saved.id}.`)
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Could not save prescription.')
+      setSaveError(toErrorMessage(err, 'Could not save prescription.'))
     }
   }
 
@@ -699,7 +721,7 @@ export function NewPrescription({
       const result = await api.printing.pdf(id)
       onStatus?.(result.path ? `Exported PDF: ${result.path}` : 'PDF export cancelled.')
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Could not export PDF.')
+      setSaveError(toErrorMessage(err, 'Could not export PDF.'))
     }
   }
 
@@ -715,7 +737,7 @@ export function NewPrescription({
       }
       onStatus?.(`Sent Pres_ID ${id} to printer.`)
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Print failed.')
+      setSaveError(toErrorMessage(err, 'Print failed.'))
     }
   }
 

@@ -36,6 +36,7 @@ function App(): React.JSX.Element {
 
   const openEditPrescription = useCallback((id: number) => {
     setRxSeedPatient(null)
+    setRxStatus(null)
     setRxEditId(id)
     setPage('new-prescription')
   }, [])
@@ -67,11 +68,13 @@ function App(): React.JSX.Element {
             onEdit={openEditPrescription}
             onNew={() => {
               setRxSeedPatient(null)
+              setRxStatus(null)
               setRxEditId(null)
               setPage('new-prescription')
             }}
             onNewForPatient={(patient) => {
               setRxSeedPatient(patient)
+              setRxStatus(null)
               setRxEditId(null)
               setPage('new-prescription')
             }}
@@ -94,6 +97,7 @@ function App(): React.JSX.Element {
         currentPage={page}
         onNavigate={(p) => {
           setRxSeedPatient(null)
+          setRxStatus(null)
           setRxEditId(null)
           setPage(p)
         }}
