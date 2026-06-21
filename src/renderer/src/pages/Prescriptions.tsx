@@ -295,7 +295,8 @@ export function Prescriptions({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <fieldset className="flex flex-wrap items-center gap-2">
+        <legend className="sr-only">Filter prescriptions</legend>
         <div className="relative flex-1 max-w-xs">
           <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <Input
@@ -332,7 +333,7 @@ export function Prescriptions({
           className="w-full sm:w-36"
           aria-label="To date"
         />
-      </div>
+      </fieldset>
 
       {status ? <p className="text-muted-foreground text-sm">{status}</p> : null}
       {error ? <p className="text-destructive text-sm">{error}</p> : null}

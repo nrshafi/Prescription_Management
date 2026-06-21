@@ -1,3 +1,4 @@
+import type { LucideIcon } from 'lucide-react'
 import {
   ChevronLeft,
   ChevronRight,
@@ -7,8 +8,7 @@ import {
   Pill,
   Settings,
   Sliders,
-  Stethoscope,
-  Users
+  Stethoscope
 } from 'lucide-react'
 import type { AppPage } from '@/lib/navigation'
 import { cn } from '@/lib/utils'
@@ -20,7 +20,7 @@ interface SidebarProps {
   onToggle: () => void
 }
 
-const navItems: { id: AppPage; label: string; icon: typeof Users }[] = [
+const navItems: { id: AppPage; label: string; icon: LucideIcon }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'new-prescription', label: 'New Prescription', icon: FilePlus },
   { id: 'prescriptions', label: 'Prescriptions', icon: FileText },
@@ -38,7 +38,7 @@ export function Sidebar({
   return (
     <div
       className={cn(
-        'bg-card print:hidden flex shrink-0 flex-col border-r transition-all duration-200',
+        'bg-card print:hidden flex shrink-0 flex-col border-r transition-all duration-200 motion-reduce:transition-none',
         collapsed ? 'w-16' : 'w-56'
       )}
     >
@@ -63,10 +63,11 @@ export function Sidebar({
               key={item.id}
               type="button"
               onClick={() => onNavigate(item.id)}
+              aria-current={isActive ? 'page' : undefined}
               className={cn(
-                'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors',
+                'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card',
                 isActive
-                  ? 'bg-accent text-accent-foreground font-medium'
+                  ? 'bg-accent text-foreground font-medium'
                   : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
                 collapsed && 'justify-center'
               )}
@@ -83,7 +84,7 @@ export function Sidebar({
         <button
           type="button"
           onClick={onToggle}
-          className="text-muted-foreground hover:bg-accent flex w-full items-center justify-center rounded-lg p-2 transition-colors"
+          className="text-muted-foreground hover:bg-accent flex w-full items-center justify-center rounded-lg p-2 transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? <ChevronRight className="size-4" /> : <ChevronLeft className="size-4" />}

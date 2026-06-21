@@ -89,6 +89,7 @@ pub struct PrescriptionQuery {
     pub date_to: Option<String>,
     pub sort_by: Option<String>,
     pub sort_dir: Option<String>,
+    pub limit: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -451,8 +452,16 @@ pub fn prescriptions_list(
         format!("WHERE {}", filters.join(" AND "))
     };
 
+    let limit_clause = match q.limit {
+        Some(n) if n > 0 => {
+            bind_values.push(Value::Integer(n));
+            " LIMIT ?"
+        }
+        _ => "",
+    };
+
     let sql = format!(
-        "SELECT prescriptions.prescription_id, patients.patient_id, patients.patient_code, patients.name, patients.phone, patients.age, patients.gender, prescriptions.visit_no, prescriptions.created_at, prescriptions.updated_at, {SECTION_CONTENT_SUBQUERY}, {SECTION_CONTENT_SUBQUERY} FROM prescriptions INNER JOIN patients ON prescriptions.patient_id = patients.patient_id {where_clause} ORDER BY {order_col} {order_dir}"
+        "SELECT prescriptions.prescription_id, patients.patient_id, patients.patient_code, patients.name, patients.phone, patients.age, patients.gender, prescriptions.visit_no, prescriptions.created_at, prescriptions.updated_at, {SECTION_CONTENT_SUBQUERY}, {SECTION_CONTENT_SUBQUERY} FROM prescriptions INNER JOIN patients ON prescriptions.patient_id = patients.patient_id {where_clause} ORDER BY {order_col} {order_dir}{limit_clause}"
     );
 
     let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;

@@ -17,11 +17,11 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { api } from '@/lib/api'
 import {
-  PRINT_FONTS,
-  PRINT_FONT_STORAGE_KEY,
-  getPrintFontKey,
   type DoctorProfileRecord,
-  type PaperSettingsRecord
+  getPrintFontKey,
+  type PaperSettingsRecord,
+  PRINT_FONT_STORAGE_KEY,
+  PRINT_FONTS
 } from '../../../shared/print'
 import {
   type DoctorProfileFormValues,
@@ -302,16 +302,21 @@ export function Settings(): React.JSX.Element {
               <CardTitle>Theme</CardTitle>
               <CardDescription>Stored locally on this computer.</CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
-              {['system', 'light', 'dark'].map((mode) => (
-                <Button
-                  key={mode}
-                  variant={theme === mode ? 'default' : 'outline'}
-                  onClick={() => setTheme(mode)}
-                >
-                  {mode[0].toUpperCase() + mode.slice(1)}
-                </Button>
-              ))}
+            <CardContent>
+              <div role="radiogroup" aria-label="Theme" className="flex flex-wrap gap-2">
+                {['system', 'light', 'dark'].map((mode) => (
+                  <Button
+                    key={mode}
+                    role="radio"
+                    aria-checked={theme === mode}
+                    aria-label={mode[0].toUpperCase() + mode.slice(1)}
+                    variant={theme === mode ? 'default' : 'outline'}
+                    onClick={() => setTheme(mode)}
+                  >
+                    {mode[0].toUpperCase() + mode.slice(1)}
+                  </Button>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </div>

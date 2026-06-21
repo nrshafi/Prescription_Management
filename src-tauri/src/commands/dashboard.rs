@@ -8,6 +8,7 @@ use crate::db::Db;
 #[serde(rename_all = "camelCase")]
 pub struct DashboardStats {
     pub total_patients: i64,
+    pub total_prescriptions: i64,
     pub todays_prescriptions: i64,
     pub recent_patients: Vec<PatientListItem>,
 }
@@ -18,6 +19,9 @@ pub fn dashboard_stats(state: State<'_, Db>) -> Result<DashboardStats, String> {
 
     let total_patients: i64 = conn
         .query_row("SELECT COUNT(*) FROM patients", [], |row| row.get(0))
+        .map_err(|e| e.to_string())?;
+    let total_prescriptions: i64 = conn
+        .query_row("SELECT COUNT(*) FROM prescriptions", [], |row| row.get(0))
         .map_err(|e| e.to_string())?;
     let todays_prescriptions: i64 = conn
         .query_row(
@@ -39,6 +43,7 @@ pub fn dashboard_stats(state: State<'_, Db>) -> Result<DashboardStats, String> {
 
     Ok(DashboardStats {
         total_patients,
+        total_prescriptions,
         todays_prescriptions,
         recent_patients,
     })

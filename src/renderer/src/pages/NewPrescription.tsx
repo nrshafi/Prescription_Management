@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, Plus, Search, Trash2, UserCheck, X } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { SearchMultiSelect } from '@/components/SearchMultiSelect'
 import { Button } from '@/components/ui/button'
 import {
@@ -95,23 +95,29 @@ function EditableSelectCell({
   options,
   onChange,
   placeholder,
-  listId
+  listId,
+  ariaLabel,
+  id
 }: {
   value: string
   options: string[]
   onChange: (val: string) => void
   placeholder: string
   listId: string
+  ariaLabel: string
+  id?: string
 }): React.JSX.Element {
   return (
     <div className="relative print:contents">
       <input
+        id={id}
         type="text"
         list={listId}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="border-input bg-muted text-foreground focus:ring-ring/50 focus:border-ring print:border-0 print:bg-transparent rounded border py-0.5 pr-4 pl-2 text-xs focus:ring-[3px] focus:outline-none print:p-0"
+        aria-label={ariaLabel}
+        className="border-input bg-muted text-foreground focus-visible:ring-ring/50 focus-visible:border-ring print:border-0 print:bg-transparent rounded border py-0.5 pr-4 pl-2 text-xs focus-visible:ring-[3px] focus-visible:outline-none print:p-0"
       />
       <datalist id={listId}>
         {options.map((o) => (
@@ -153,6 +159,7 @@ function MedRow({
             onChange={(v) => onChange(med.key, 'dosage', v)}
             placeholder="Dosage"
             listId={`dosage-options-${med.key}`}
+            ariaLabel={`Dosage for ${med.medicineName}`}
           />
           <EditableSelectCell
             value={med.frequency}
@@ -160,6 +167,7 @@ function MedRow({
             onChange={(v) => onChange(med.key, 'frequency', v)}
             placeholder="Instruction"
             listId={`frequency-options-${med.key}`}
+            ariaLabel={`Instruction for ${med.medicineName}`}
           />
           <EditableSelectCell
             value={med.duration}
@@ -167,6 +175,7 @@ function MedRow({
             onChange={(v) => onChange(med.key, 'duration', v)}
             placeholder="Duration"
             listId={`duration-options-${med.key}`}
+            ariaLabel={`Duration for ${med.medicineName}`}
           />
         </div>
         <input
@@ -177,7 +186,7 @@ function MedRow({
           className="border-input bg-muted text-foreground focus:ring-ring/50 focus:border-ring mt-1.5 w-full rounded border px-2 py-0.5 text-xs focus:ring-[3px] focus:outline-none print:hidden"
         />
       </div>
-      <div className="flex shrink-0 items-center gap-0.5 pt-1 opacity-0 transition-opacity group-hover:opacity-100 print:hidden">
+      <div className="flex shrink-0 items-center gap-0.5 pt-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 focus-within:opacity-100 print:hidden motion-reduce:transition-none">
         <Button
           type="button"
           variant="ghost"
@@ -215,6 +224,13 @@ function MedRow({
   )
 }
 
+type MedSearchOption =
+  | { type: 'suggestion'; name: string; suggestion: MedicineSuggestion }
+  | { type: 'preset'; name: string }
+  | { type: 'add'; name: string }
+
+const MED_SEARCH_LISTBOX_ID = 'med-search-listbox'
+
 function MedSearch({
   presets,
   onAdd
@@ -228,7 +244,10 @@ function MedSearch({
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const [suggestions, setSuggestions] = useState<MedicineSuggestion[]>([])
+  const [highlightedIndex, setHighlightedIndex] = useState(0)
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({})
   const ref = useRef<HTMLDivElement>(null)
+  const inputWrapperRef = useRef<HTMLDivElement>(null)
   const filtered = presets.filter((p) => p.toLowerCase().includes(query.toLowerCase()))
 
   useEffect(() => {
@@ -261,110 +280,179 @@ function MedSearch({
     setQuery('')
     setIsOpen(false)
     setSuggestions([])
+    setHighlightedIndex(0)
   }
 
   const suggestionNames = new Set(suggestions.map((s) => s.medicineName.toLowerCase()))
   const mergedPresets = filtered.filter((p) => !suggestionNames.has(p.toLowerCase()))
+  const trimmedQuery = query.trim()
+  const showAddCustom =
+    trimmedQuery.length > 0 &&
+    !suggestions.find((s) => s.medicineName.toLowerCase() === trimmedQuery.toLowerCase()) &&
+    !mergedPresets.find((p) => p.toLowerCase() === trimmedQuery.toLowerCase())
+
+  const options: MedSearchOption[] = [
+    ...suggestions.map((s) => ({
+      type: 'suggestion' as const,
+      name: s.medicineName,
+      suggestion: s
+    })),
+    ...mergedPresets.map((p) => ({ type: 'preset' as const, name: p })),
+    ...(showAddCustom ? [{ type: 'add' as const, name: trimmedQuery }] : [])
+  ]
+
+  useLayoutEffect(() => {
+    if (!isOpen || options.length === 0 || !inputWrapperRef.current) return
+    const update = (): void => {
+      const el = inputWrapperRef.current
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      setDropdownStyle({
+        position: 'fixed',
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width
+      })
+    }
+    update()
+    window.addEventListener('scroll', update, true)
+    window.addEventListener('resize', update)
+    return () => {
+      window.removeEventListener('scroll', update, true)
+      window.removeEventListener('resize', update)
+    }
+  }, [isOpen, options.length])
+
+  const selectOption = (opt: MedSearchOption): void => {
+    if (opt.type === 'suggestion') {
+      const s = opt.suggestion
+      handleAdd(s.medicineName, {
+        dosage: s.dosage ?? undefined,
+        frequency: s.frequency ?? undefined,
+        duration: s.duration ?? undefined,
+        notes: s.notes ?? undefined
+      })
+    } else {
+      handleAdd(opt.name)
+    }
+  }
 
   return (
     <div ref={ref} className="relative print:hidden">
-      <div className="relative">
+      <div className="relative" ref={inputWrapperRef}>
         <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2" />
         <input
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          role="combobox"
+          aria-expanded={isOpen && options.length > 0}
+          aria-autocomplete="list"
+          aria-controls={MED_SEARCH_LISTBOX_ID}
+          aria-activedescendant={
+            isOpen && options.length > 0 ? `med-option-${highlightedIndex}` : undefined
+          }
+          onChange={(e) => {
+            setQuery(e.target.value)
+            setHighlightedIndex(0)
+          }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault()
-              if (suggestions.length > 0) {
-                const s = suggestions[0]
-                handleAdd(s.medicineName, {
-                  dosage: s.dosage ?? undefined,
-                  frequency: s.frequency ?? undefined,
-                  duration: s.duration ?? undefined,
-                  notes: s.notes ?? undefined
-                })
-              } else if (mergedPresets.length > 0) handleAdd(mergedPresets[0])
-              else if (query.trim()) handleAdd(query.trim())
-            }
-            if (e.key === 'Escape') setIsOpen(false)
-          }}
-          placeholder="Search medicine to add..."
-          className="border-input bg-background focus:ring-ring/50 focus:border-ring w-full rounded-lg border py-1.5 pr-3 pl-8 text-sm focus:ring-[3px] focus:outline-none"
-        />
-      </div>
-      {isOpen && (query || suggestions.length > 0 || mergedPresets.length > 0) && (
-        <div
-          role="listbox"
-          className="bg-popover absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border shadow-lg"
-          onKeyDown={(e) => {
-            const options = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('[role="option"]'))
-            const active = document.activeElement as HTMLElement | null
-            const current = options.indexOf(active as HTMLElement)
             if (e.key === 'ArrowDown') {
               e.preventDefault()
-              const next = current < options.length - 1 ? current + 1 : 0
-              options[next]?.focus()
+              if (options.length > 0) {
+                setHighlightedIndex((i) => (i + 1) % options.length)
+              }
             } else if (e.key === 'ArrowUp') {
               e.preventDefault()
-              const prev = current > 0 ? current - 1 : options.length - 1
-              options[prev]?.focus()
+              if (options.length > 0) {
+                setHighlightedIndex((i) => (i - 1 + options.length) % options.length)
+              }
+            } else if (e.key === 'Home') {
+              e.preventDefault()
+              if (options.length > 0) setHighlightedIndex(0)
+            } else if (e.key === 'End') {
+              e.preventDefault()
+              if (options.length > 0) setHighlightedIndex(options.length - 1)
+            } else if (e.key === 'Enter') {
+              e.preventDefault()
+              if (options.length > 0 && options[highlightedIndex]) {
+                selectOption(options[highlightedIndex])
+              } else if (trimmedQuery) {
+                handleAdd(trimmedQuery)
+              }
+            } else if (e.key === 'Escape') {
+              setIsOpen(false)
             }
           }}
+          placeholder="Search medicine to add..."
+          className="border-input bg-background focus-visible:ring-ring/50 focus-visible:border-ring w-full rounded-lg border py-1.5 pr-3 pl-8 text-sm focus-visible:ring-[3px] focus-visible:outline-none"
+        />
+      </div>
+      {isOpen && options.length > 0 && (
+        <div
+          id={MED_SEARCH_LISTBOX_ID}
+          role="listbox"
+          tabIndex={0}
+          style={dropdownStyle}
+          className="bg-popover z-50 max-h-56 overflow-y-auto rounded-lg border shadow-lg"
         >
-          {suggestions.map((s) => (
-            <button
-              key={s.medicineName}
-              type="button"
-              role="option"
-              aria-selected={false}
-              onClick={() =>
-                handleAdd(s.medicineName, {
-                  dosage: s.dosage ?? undefined,
-                  frequency: s.frequency ?? undefined,
-                  duration: s.duration ?? undefined,
-                  notes: s.notes ?? undefined
-                })
-              }
-              className="hover:bg-accent w-full px-3 py-2 text-left text-sm"
-            >
-              <div className="font-medium">{s.medicineName}</div>
-              <div className="text-muted-foreground flex gap-2 text-xs">
-                {s.dosage && <span>{s.dosage}</span>}
-                {s.frequency && <span>{s.frequency}</span>}
-                {s.duration && <span>{s.duration}</span>}
-                <span className="ml-auto">Used {s.useCount}x</span>
-              </div>
-            </button>
-          ))}
-          {mergedPresets.map((item) => (
-            <button
-              key={item}
-              type="button"
-              role="option"
-              aria-selected={false}
-              onClick={() => handleAdd(item)}
-              className="hover:bg-accent w-full px-3 py-2 text-left text-sm"
-            >
-              {item}
-            </button>
-          ))}
-          {query.trim() &&
-            !suggestions.find((s) => s.medicineName.toLowerCase() === query.trim().toLowerCase()) &&
-            !mergedPresets.find((f) => f.toLowerCase() === query.trim().toLowerCase()) && (
+          {options.map((opt, i) => {
+            const isHighlighted = i === highlightedIndex
+            if (opt.type === 'suggestion') {
+              const s = opt.suggestion
+              return (
+                <button
+                  key={`s-${s.medicineName}`}
+                  id={`med-option-${i}`}
+                  type="button"
+                  role="option"
+                  aria-selected={isHighlighted}
+                  onMouseEnter={() => setHighlightedIndex(i)}
+                  onClick={() => selectOption(opt)}
+                  className={`hover:bg-accent w-full px-3 py-2 text-left text-sm ${isHighlighted ? 'bg-accent' : ''}`}
+                >
+                  <div className="font-medium">{s.medicineName}</div>
+                  <div className="text-muted-foreground flex gap-2 text-xs">
+                    {s.dosage && <span>{s.dosage}</span>}
+                    {s.frequency && <span>{s.frequency}</span>}
+                    {s.duration && <span>{s.duration}</span>}
+                    <span className="ml-auto">Used {s.useCount}x</span>
+                  </div>
+                </button>
+              )
+            }
+            if (opt.type === 'preset') {
+              return (
+                <button
+                  key={`p-${opt.name}`}
+                  id={`med-option-${i}`}
+                  type="button"
+                  role="option"
+                  aria-selected={isHighlighted}
+                  onMouseEnter={() => setHighlightedIndex(i)}
+                  onClick={() => selectOption(opt)}
+                  className={`hover:bg-accent w-full px-3 py-2 text-left text-sm ${isHighlighted ? 'bg-accent' : ''}`}
+                >
+                  {opt.name}
+                </button>
+              )
+            }
+            return (
               <button
+                key={`a-${opt.name}`}
+                id={`med-option-${i}`}
                 type="button"
                 role="option"
-                aria-selected={false}
-                onClick={() => handleAdd(query.trim())}
-                className="text-primary hover:bg-accent flex w-full items-center gap-2 border-t px-3 py-2 text-left text-sm"
+                aria-selected={isHighlighted}
+                onMouseEnter={() => setHighlightedIndex(i)}
+                onClick={() => selectOption(opt)}
+                className={`text-primary hover:bg-accent flex w-full items-center gap-2 border-t px-3 py-2 text-left text-sm ${isHighlighted ? 'bg-accent' : ''}`}
               >
                 <Plus className="size-4" />
-                Add &ldquo;{query.trim()}&rdquo;
+                Add &ldquo;{opt.name}&rdquo;
               </button>
-            )}
+            )
+          })}
         </div>
       )}
     </div>
@@ -811,19 +899,12 @@ export function NewPrescription({
           <div className="mb-3 flex items-center gap-3 rounded-lg border p-2.5 text-sm bg-muted/50">
             <UserCheck className="text-foreground size-4 shrink-0" />
             <div className="min-w-0 flex-1">
-              <span className="font-medium">
-                Existing Patient Found
-              </span>
+              <span className="font-medium">Existing Patient Found</span>
               <span className="text-muted-foreground ml-2">
                 {foundPatient.visitCount} visit{foundPatient.visitCount !== 1 ? 's' : ''}
               </span>
             </div>
-            <Button
-              type="button"
-              size="sm"
-              className="shrink-0"
-              onClick={loadPatientData}
-            >
+            <Button type="button" size="sm" className="shrink-0" onClick={loadPatientData}>
               Load Data
             </Button>
           </div>
@@ -912,7 +993,7 @@ export function NewPrescription({
                 type="text"
                 value={ui.patientWeight}
                 onChange={(e) => patchUi({ patientWeight: e.target.value })}
-                className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm"
+                className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none"
               />
             </div>
           </div>
@@ -1190,7 +1271,7 @@ export function NewPrescription({
                 <BulletSection title="Dx" items={ui.diagnoses} />
               </div>
               <div className="flex-1 px-5 py-4">
-                <span className="font-serif text-4xl leading-none font-bold">Rx</span>
+                <span className="text-4xl leading-none font-bold">Rx</span>
                 {medicines.length === 0 && (
                   <p className="text-muted-foreground mt-2 text-xs italic">
                     No medicines added yet

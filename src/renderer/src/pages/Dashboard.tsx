@@ -28,20 +28,29 @@ export function Dashboard({ onNavigate }: DashboardProps): React.JSX.Element {
   const [medicinePresetCount, setMedicinePresetCount] = useState(0)
   const [recent, setRecent] = useState<PrescriptionListItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
+
+  useEffect(() => {
+    const mql = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setPrefersReducedMotion(mql.matches)
+    const onChange = (e: MediaQueryListEvent): void => setPrefersReducedMotion(e.matches)
+    mql.addEventListener('change', onChange)
+    return () => mql.removeEventListener('change', onChange)
+  }, [])
 
   useEffect(() => {
     Promise.all([
       api.dashboard.stats(),
-      api.prescriptions.list(),
+      api.prescriptions.list({ limit: 8 }),
       api.presets.list('Medicine'),
       api.settings.get()
     ])
-      .then(([stats, allRx, medPresets, settings]) => {
+      .then(([stats, recentRx, medPresets, settings]) => {
         setTotalPatients(stats.totalPatients)
+        setTotalRx(stats.totalPrescriptions)
         setTodaysRx(stats.todaysPrescriptions)
-        setTotalRx(allRx.length)
         setMedicinePresetCount(medPresets.length)
-        setRecent(allRx.slice(0, 8))
+        setRecent(recentRx)
         setDoctor(settings.doctorProfile)
       })
       .finally(() => setLoading(false))
@@ -79,7 +88,10 @@ export function Dashboard({ onNavigate }: DashboardProps): React.JSX.Element {
         </Button>
       </header>
 
-      <dl className="mt-px grid grid-cols-2 divide-x divide-y border-b xl:grid-cols-4 xl:divide-y-0" aria-busy={loading}>
+      <dl
+        className="mt-px grid grid-cols-2 divide-x divide-y border-b xl:grid-cols-4 xl:divide-y-0"
+        aria-busy={loading}
+      >
         {loading
           ? stats.map((stat) => {
               const Icon = stat.icon
@@ -156,7 +168,11 @@ export function Dashboard({ onNavigate }: DashboardProps): React.JSX.Element {
             {recent.map((rx, index) => (
               <li
                 key={rx.id}
-                style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
+                style={
+                  prefersReducedMotion
+                    ? undefined
+                    : { animationDelay: `${Math.min(index, 8) * 40}ms` }
+                }
                 className="animate-in fade-in-0 slide-in-from-bottom-1 fill-mode-both flex items-center gap-4 px-5 py-3 duration-300 ease-out motion-reduce:animate-none"
               >
                 <div className="bg-muted text-foreground flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-medium">

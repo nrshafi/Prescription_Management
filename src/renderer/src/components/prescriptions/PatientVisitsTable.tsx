@@ -142,11 +142,21 @@ export function PatientVisitsTable({
           <TableBody>
             {['sk-x', 'sk-y', 'sk-z'].map((skeletonKey) => (
               <TableRow key={skeletonKey}>
-                <TableCell><div className="bg-muted h-4 w-8 animate-pulse rounded" /></TableCell>
-                <TableCell><div className="bg-muted h-4 w-6 animate-pulse rounded" /></TableCell>
-                <TableCell><div className="bg-muted h-4 w-24 animate-pulse rounded" /></TableCell>
-                <TableCell><div className="bg-muted h-4 w-32 animate-pulse rounded" /></TableCell>
-                <TableCell><div className="bg-muted h-4 w-28 animate-pulse rounded" /></TableCell>
+                <TableCell>
+                  <div className="bg-muted h-4 w-8 animate-pulse rounded" />
+                </TableCell>
+                <TableCell>
+                  <div className="bg-muted h-4 w-6 animate-pulse rounded" />
+                </TableCell>
+                <TableCell>
+                  <div className="bg-muted h-4 w-24 animate-pulse rounded" />
+                </TableCell>
+                <TableCell>
+                  <div className="bg-muted h-4 w-32 animate-pulse rounded" />
+                </TableCell>
+                <TableCell>
+                  <div className="bg-muted h-4 w-28 animate-pulse rounded" />
+                </TableCell>
                 <TableCell>
                   <div className="flex justify-end gap-1">
                     <div className="bg-muted size-8 animate-pulse rounded" />

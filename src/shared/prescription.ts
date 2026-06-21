@@ -11,6 +11,7 @@ export type PrescriptionQuery = {
   dateTo?: string
   sortBy?: 'id' | 'patientName' | 'patientCode' | 'visitNo' | 'createdAt'
   sortDir?: 'asc' | 'desc'
+  limit?: number
 }
 
 export const PRESCRIPTION_SECTION_TYPES = [

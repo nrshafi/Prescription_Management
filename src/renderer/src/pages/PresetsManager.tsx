@@ -3,13 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select'
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -18,6 +11,13 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import {
@@ -378,11 +378,19 @@ export function PresetsManager(): React.JSX.Element {
       </div>
 
       <div className="rounded-xl border bg-card shadow-sm">
-        <div className="flex flex-wrap gap-1 border-b px-4 pt-3">
+        <div
+          role="tablist"
+          aria-label="Preset categories"
+          className="flex flex-wrap gap-1 border-b px-4 pt-3"
+        >
           {TAB_CATEGORIES.map((cat) => (
             <button
               key={cat}
               type="button"
+              role="tab"
+              aria-selected={tab === cat}
+              id={`preset-tab-${cat.replace(/\s+/g, '-')}`}
+              aria-controls={`preset-panel-${tab.replace(/\s+/g, '-')}`}
               onClick={() => {
                 setTab(cat)
                 setSearch('')
@@ -400,7 +408,12 @@ export function PresetsManager(): React.JSX.Element {
           ))}
         </div>
 
-        <div className="p-4">
+        <div
+          role="tabpanel"
+          id={`preset-panel-${tab.replace(/\s+/g, '-')}`}
+          aria-labelledby={`preset-tab-${tab.replace(/\s+/g, '-')}`}
+          className="p-4"
+        >
           <div className="mb-4 flex items-center gap-3">
             <div className="relative flex-1">
               <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />

@@ -34,6 +34,7 @@ export const api = {
   dashboard: {
     stats: (): Promise<{
       totalPatients: number
+      totalPrescriptions: number
       todaysPrescriptions: number
       recentPatients: PatientListItem[]
     }> => invoke('dashboard_stats')

@@ -97,7 +97,7 @@ export function MedicinesManager(): React.JSX.Element {
                       if (e.key === 'Escape') setEditingId(null)
                     }}
                   />
-                   <Button
+                  <Button
                     type="button"
                     size="icon"
                     variant="ghost"
@@ -121,7 +121,7 @@ export function MedicinesManager(): React.JSX.Element {
               ) : (
                 <>
                   <span className="flex-1 text-sm">{row.title}</span>
-                   <Button
+                  <Button
                     type="button"
                     size="icon"
                     variant="ghost"

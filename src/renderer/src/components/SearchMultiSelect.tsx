@@ -20,6 +20,7 @@ export function SearchMultiSelect({
 }: SearchMultiSelectProps): React.JSX.Element {
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
+  const [highlightedIndex, setHighlightedIndex] = useState(0)
   const [dropdownPos, setDropdownPos] = useState<{
     top: number
     left: number
@@ -86,6 +87,12 @@ export function SearchMultiSelect({
   const canAddCustom =
     query.trim().length > 0 && !items.includes(query.trim()) && !selected.includes(query.trim())
 
+  type Option = { kind: 'item'; label: string } | { kind: 'add'; label: string }
+  const options: Option[] = [
+    ...filtered.map((item) => ({ kind: 'item' as const, label: item })),
+    ...(canAddCustom ? [{ kind: 'add' as const, label: `Add "${query.trim()}"` }] : [])
+  ]
+
   return (
     <div ref={containerRef} className={cn('relative', className)}>
       {selected.length > 0 && (
@@ -93,10 +100,15 @@ export function SearchMultiSelect({
           {selected.map((item) => (
             <span
               key={item}
-              className="bg-primary/10 text-primary border-primary/20 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-sm"
+              className="bg-muted text-foreground border-border inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-sm"
             >
               {item}
-              <button onClick={() => removeItem(item)} className="rounded-full focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none" type="button">
+              <button
+                onClick={() => removeItem(item)}
+                aria-label={`Remove ${item}`}
+                className="rounded-full focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none"
+                type="button"
+              >
                 <X className="size-3" />
               </button>
             </span>
@@ -110,18 +122,33 @@ export function SearchMultiSelect({
           ref={inputRef}
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value)
+            setHighlightedIndex(0)
+          }}
           onFocus={() => {
             setIsOpen(true)
             updatePosition()
           }}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') {
+            if (e.key === 'ArrowDown') {
               e.preventDefault()
-              if (filtered.length > 0) toggle(filtered[0])
-              else if (canAddCustom) addCustom()
-            }
-            if (e.key === 'Escape') {
+              if (options.length > 0) {
+                setHighlightedIndex((i) => (i + 1) % options.length)
+              }
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault()
+              if (options.length > 0) {
+                setHighlightedIndex((i) => (i - 1 + options.length) % options.length)
+              }
+            } else if (e.key === 'Enter') {
+              e.preventDefault()
+              if (options.length > 0) {
+                const opt = options[highlightedIndex]
+                if (opt.kind === 'item') toggle(opt.label)
+                else addCustom()
+              }
+            } else if (e.key === 'Escape') {
               setIsOpen(false)
               inputRef.current?.blur()
             }
@@ -135,6 +162,9 @@ export function SearchMultiSelect({
         dropdownPos &&
         createPortal(
           <div
+            role="listbox"
+            tabIndex={0}
+            aria-activedescendant={`sms-option-${highlightedIndex}`}
             className="bg-popover text-popover-foreground z-50 max-h-52 overflow-y-auto rounded-lg border shadow-md"
             style={{
               position: 'fixed',
@@ -143,27 +173,27 @@ export function SearchMultiSelect({
               width: dropdownPos.width
             }}
           >
-            {filtered.map((item) => (
+            {options.map((opt, i) => (
               <button
-                key={item}
+                key={opt.kind === 'item' ? opt.label : 'add'}
+                id={`sms-option-${i}`}
+                role="option"
+                aria-selected={i === highlightedIndex}
                 type="button"
-                onClick={() => toggle(item)}
-                className="hover:bg-accent flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors"
+                onClick={() => (opt.kind === 'item' ? toggle(opt.label) : addCustom())}
+                className={cn(
+                  'hover:bg-accent flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors',
+                  opt.kind === 'add' && 'text-primary border-t'
+                )}
               >
-                <Check className="size-4 text-transparent" />
-                {item}
+                {opt.kind === 'item' ? (
+                  <Check className="size-4 text-transparent" />
+                ) : (
+                  <Plus className="size-4" />
+                )}
+                {opt.kind === 'item' ? opt.label : `Add "${query.trim()}"`}
               </button>
             ))}
-            {canAddCustom && (
-              <button
-                type="button"
-                onClick={addCustom}
-                className="text-primary hover:bg-accent flex w-full items-center gap-2 border-t px-3 py-2 text-left text-sm"
-              >
-                <Plus className="size-4" />
-                Add &ldquo;{query.trim()}&rdquo;
-              </button>
-            )}
             {filtered.length === 0 && !canAddCustom && (
               <div className="text-muted-foreground px-3 py-2 text-sm">No results</div>
             )}
