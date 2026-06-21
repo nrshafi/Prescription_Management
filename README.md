@@ -33,6 +33,17 @@ bun run check        # Run Biome checks, formatting, and import sorting
 bun run format       # Format files with Biome
 ```
 
+### Keyboard Shortcuts
+
+| Key | Action | Scope |
+|-----|--------|-------|
+| `Ctrl/Cmd + S` | Save prescription | Global |
+| `Ctrl/Cmd + P` | Print prescription | Global |
+| `Ctrl/Cmd + Shift + E` | Export prescription as PDF | Global |
+| `Enter` | Add/select item, save edit, toggle patient row | Contextual |
+| `Escape` | Close dropdown, cancel edit | Contextual |
+| `Arrow Up/Down` | Navigate suggestion lists | Contextual |
+
 ### Tests
 
 The Rust backend (commands, JSON import validation, SQL builders, database
