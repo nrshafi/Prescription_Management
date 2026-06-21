@@ -1,0 +1,272 @@
+
+=== DIRECTORY TREE (max depth 3, source files only) ===
+.agents
+.agents\skills
+.agents\skills\rust-best-practices
+.agents\skills\rust-best-practices\references
+.agents\skills\rust-best-practices\SKILL.md
+.agents\skills\shadcn
+.agents\skills\shadcn\agents
+.agents\skills\shadcn\assets
+.agents\skills\shadcn\cli.md
+.agents\skills\shadcn\customization.md
+.agents\skills\shadcn\evals
+.agents\skills\shadcn\mcp.md
+.agents\skills\shadcn\registry.md
+.agents\skills\shadcn\rules
+.agents\skills\shadcn\SKILL.md
+.agents\skills\sqlite-database-expert
+.agents\skills\sqlite-database-expert\references
+.agents\skills\sqlite-database-expert\SKILL.md
+.agents\skills\tauri-v2
+.agents\skills\tauri-v2\README.md
+.agents\skills\tauri-v2\references
+.agents\skills\tauri-v2\SKILL.md
+.agents\skills\vercel-react-best-practices
+.agents\skills\vercel-react-best-practices\AGENTS.md
+.agents\skills\vercel-react-best-practices\metadata.json
+.agents\skills\vercel-react-best-practices\README.md
+.agents\skills\vercel-react-best-practices\rules
+.agents\skills\vercel-react-best-practices\SKILL.md
+.agents\skills\web-design-guidelines
+.agents\skills\web-design-guidelines\SKILL.md
+.cargo
+.cargo\config.toml
+.editorconfig
+.gitignore
+.vscode
+.vscode\launch.json
+AGENTS.md
+biome.json
+bun.lock
+components.json
+diagrams
+diagrams\er.mmd
+docs
+docs\codebase
+docs\codebase\.codebase-scan.txt
+package.json
+README.md
+Reference
+Reference\ATTRIBUTIONS.md
+Reference\default_shadcn_theme.css
+Reference\guidelines
+Reference\guidelines\Guidelines.md
+Reference\index.html
+Reference\package.json
+Reference\pnpm-workspace.yaml
+Reference\postcss.config.mjs
+Reference\README.md
+Reference\src
+Reference\src\app
+Reference\src\app\App.tsx
+Reference\src\app\components
+Reference\src\app\types.ts
+Reference\src\imports
+Reference\src\imports\pasted_text
+Reference\src\main.tsx
+Reference\src\styles
+Reference\src\styles\fonts.css
+Reference\src\styles\globals.css
+Reference\src\styles\index.css
+Reference\src\styles\tailwind.css
+Reference\src\styles\theme.css
+Reference\vite.config.ts
+resources
+skills-lock.json
+src
+src\renderer
+src\renderer\index.html
+src\renderer\src
+src\renderer\src\App.tsx
+src\renderer\src\assets
+src\renderer\src\components
+src\renderer\src\env.d.ts
+src\renderer\src\lib
+src\renderer\src\main.tsx
+src\renderer\src\pages
+src\shared
+src\shared\patient.ts
+src\shared\prescription.ts
+src\shared\print.ts
+src\shared\settings.ts
+src-tauri
+src-tauri\.gitignore
+src-tauri\build.rs
+src-tauri\capabilities
+src-tauri\capabilities\default.json
+src-tauri\Cargo.lock
+src-tauri\Cargo.toml
+src-tauri\gen
+src-tauri\gen\schemas
+src-tauri\gen\schemas\acl-manifests.json
+src-tauri\gen\schemas\capabilities.json
+src-tauri\gen\schemas\desktop-schema.json
+src-tauri\gen\schemas\windows-schema.json
+src-tauri\src
+src-tauri\src\commands
+src-tauri\src\commands\dashboard.rs
+src-tauri\src\commands\mod.rs
+src-tauri\src\commands\patients.rs
+src-tauri\src\commands\prescriptions.rs
+src-tauri\src\commands\presets.rs
+src-tauri\src\commands\printing.rs
+src-tauri\src\commands\settings.rs
+src-tauri\src\db.rs
+src-tauri\src\lib.rs
+src-tauri\src\main.rs
+src-tauri\src\migrations.rs
+src-tauri\tauri.conf.json
+tsconfig.json
+vite.config.ts
+
+=== STACK DETECTION (manifest files) ===
+
+--- package.json ---
+{
+  "name": "prescriptx",
+  "version": "0.1.0",
+  "description": "Offline prescription management desktop app for a single doctor",
+  "author": "PrescriptX",
+  "scripts": {
+    "format": "biome format --write .",
+    "lint": "biome lint .",
+    "check": "biome check .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "dev": "tauri dev",
+    "dev:renderer": "vite",
+    "build": "bun run typecheck && tauri build",
+    "build:renderer": "vite build",
+    "preview": "vite preview",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.4.0",
+    "@radix-ui/react-dialog": "^1.1.16",
+    "@radix-ui/react-label": "^2.1.9",
+    "@radix-ui/react-select": "^2.3.0",
+    "@radix-ui/react-slot": "^1.2.5",
+    "@tauri-apps/api": "^2.9.0",
+    "@tauri-apps/plugin-shell": "^2.3.5",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.17.0",
+    "radix-ui": "^1.5.0",
+    "react-hook-form": "^7.77.0",
+    "tailwind-merge": "^3.6.0",
+    "tw-animate-css": "^1.4.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.16",
+    "@tailwindcss/vite": "^4.3.0",
+    "@tauri-apps/cli": "^2.11.2",
+    "@types/node": "^22.19.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.6"
+  }
+}
+
+
+=== ENTRY POINTS ===
+No common entry points found. Check 'main' or 'scripts.start' in manifest files above.
+
+=== LINTING AND FORMATTING CONFIG ===
+Found: .editorconfig
+Found: tsconfig.json
+Found: biome.json
+
+=== ENVIRONMENT VARIABLE TEMPLATES ===
+No .env.example or .env.template found. Identify required environment variables by searching the code and config for environment variable reads.
+
+=== TODO / FIXME / HACK (production code only, test dirs excluded) ===
+None found.
+
+=== GIT RECENT COMMITS (last 20) ===
+eba30c2 fix: repair legacy prescriptions.template_id foreign key on DB init and import
+6dac2f5 fix: clear new-prescription status on navigation and avoid redundant patient address updates
+aeeee8a feat: add medicine note field and preserve suggested notes when adding medicines
+5cc2203 refactor: remove legacy Electron/Drizzle import compatibility, obsolete draft save API, and legacy weight handling
+93fc9bc refactor: unify patient search and improve backup robustness
+3091ab3 Add stable IDs for custom O/E entries and key rows by id
+c5c3265 Add dedicated Weight section, custom O/E rows, and print weight support
+2de7e62 Add print font selection and apply chosen font to printed prescriptions
+83cbf20 Add linked preset suggestions to NewPrescription and make bundle application explicit
+1331bfc Ignore .kilo build artifacts and auto-scroll advice section only for manual advice additions
+65c3d79 Remove prescriptions view mode toggle and compact patient visits table support
+38a5df8 Add phone_search_enabled helper with tests, use it to disable phone matching for short search terms in patient and prescription filters, and simplify App navigation reset logic
+2a7adad Enable starting a new prescription from a patient row with seeded patient data and clean up obsolete .kilo plan docs
+f9464c3 Add Tauri shell plugin dependency, enable shell permission, and open support links from Settings
+6694c12 Simplify Settings UI by removing backup/JSON import alerts, cleaning card layout, and updating contact link styling
+0f23ae0 Simplify Settings UI by inlining A4 defaults in paper settings and moving developer contact to footer
+8ce4209 Remove obsolete template and opener plumbing, drop unused assets and print fallback fields, simplify shared schemas, and add Settings support contact link
+1974529 Add reusable Alert component and clarify backup/import UI in Settings
+c488fd5 Preserve imported prescription visit numbers and created_at timestamps and skip duplicate imports
+43ba061 Add patient address to prescription UI state and persist address updates
+
+=== HIGH-CHURN FILES (last 90 days, top 20) ===
+  21 src/renderer/src/pages/NewPrescription.tsx
+  16 src/renderer/src/pages/Prescriptions.tsx
+  12 src/renderer/src/lib/prescription-mapping.ts
+  12 src/renderer/src/pages/Settings.tsx
+  12 src/main/services/patients.ts
+  11 src/renderer/src/App.tsx
+  11 package.json
+  11 src/main/ipc/index.ts
+  10 src/renderer/src/pages/PrintRenderer.tsx
+  10 src/preload/index.d.ts
+  10 src/preload/index.ts
+   9 AGENTS.md
+   9 src/main/services/prescriptions.ts
+   8 README.md
+   8 src-tauri/src/commands/prescriptions.rs
+   8 src/shared/prescription.ts
+   8 src/renderer/src/pages/PresetsManager.tsx
+   8 src/renderer/src/pages/Patients.tsx
+   7 src-tauri/src/commands/settings.rs
+   7 src/renderer/src/components/patients/DeletePatientDialog.tsx
+
+=== MONOREPO SIGNALS ===
+No monorepo signals detected.
+
+=== CODE METRICS ===
+Total files scanned: 258
+Total lines of code: 22661
+
+Files by language:
+  Other: 148
+  TypeScript/React: 84
+  TypeScript: 14
+  Rust: 12
+
+Top 10 largest files:
+src-tauri\gen\schemas\desktop-schema.json: 134.3KB
+src-tauri\gen\schemas\windows-schema.json: 134.3KB
+src-tauri\Cargo.lock: 118.1KB
+.agents\skills\vercel-react-best-practices\AGENTS.md: 105.7KB
+bun.lock: 94.5KB
+src-tauri\gen\schemas\acl-manifests.json: 72.0KB
+src-tauri\src\commands\settings.rs: 47.6KB
+src\renderer\src\pages\NewPrescription.tsx: 45.4KB
+Reference\src\app\components\NewPrescription.tsx: 29.2KB
+Reference\src\app\components\ui\sidebar.tsx: 21.2KB
+
+=== CI/CD PIPELINES ===
+No CI/CD pipelines detected.
+
+=== CONTAINERS & ORCHESTRATION ===
+No containerization configs detected.
+
+=== SECURITY & COMPLIANCE ===
+No security configs detected.
+
+=== PERFORMANCE & TESTING ===
+No performance testing configs detected.
+
+=== SCAN COMPLETE ===
