@@ -2,7 +2,7 @@ use rusqlite::Connection;
 
 /// Ordered, append-only migration scripts. The current schema version is
 /// tracked with `PRAGMA user_version`.
-const MIGRATIONS: [&str; 4] = [
+const MIGRATIONS: [&str; 5] = [
     r#"
 CREATE TABLE IF NOT EXISTS doctor_profile (
   doctor_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -107,6 +107,10 @@ DROP TABLE prescriptions;
 ALTER TABLE prescriptions_new RENAME TO prescriptions;
 DROP TABLE IF EXISTS templates;
 "#,
+    r#"
+CREATE INDEX IF NOT EXISTS prescription_sections_lookup_idx
+  ON prescription_sections (prescription_id, section_type, position);
+"#,
 ];
 
 fn user_version(conn: &Connection) -> Result<i64, String> {
@@ -167,5 +171,83 @@ pub fn ensure_preset_links_table(conn: &Connection) -> Result<(), String> {
         CREATE INDEX IF NOT EXISTS preset_links_target_preset_id_idx ON preset_links (target_preset_id);",
     )
     .map_err(|e| e.to_string())
+}
+
+/// Ensures the `prescription_sections_lookup_idx` exists for imported backups
+/// whose `user_version` was already bumped past migration 5.
+pub fn ensure_prescription_sections_index(conn: &Connection) -> Result<(), String> {
+    conn.execute_batch(
+        "CREATE INDEX IF NOT EXISTS prescription_sections_lookup_idx
+            ON prescription_sections (prescription_id, section_type, position);",
+    )
+    .map_err(|e| e.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use rusqlite::Connection;
+
+    use super::{ensure_prescription_sections_index, ensure_singleton_rows, run_migrations};
+
+    fn fresh_db() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        run_migrations(&conn).unwrap();
+        ensure_singleton_rows(&conn).unwrap();
+        conn
+    }
+
+    #[test]
+    fn prescription_sections_lookup_index_exists_after_migrations() {
+        let conn = fresh_db();
+        let count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master
+                    WHERE type = 'index' AND name = 'prescription_sections_lookup_idx'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(count, 1, "prescription_sections_lookup_idx should exist");
+    }
+
+    #[test]
+    fn ensure_prescription_sections_index_is_idempotent() {
+        let conn = fresh_db();
+        // The migration already created it; running the ensure helper should
+        // be a no-op (CREATE INDEX IF NOT EXISTS), not an error.
+        ensure_prescription_sections_index(&conn).unwrap();
+        ensure_prescription_sections_index(&conn).unwrap();
+    }
+
+    #[test]
+    fn ensure_prescription_sections_index_creates_index_on_legacy_db() {
+        // Simulate an imported backup whose user_version was bumped past
+        // migration 5 by manually clearing the index, then verify the helper
+        // recreates it.
+        let conn = fresh_db();
+        conn.execute_batch("DROP INDEX IF EXISTS prescription_sections_lookup_idx")
+            .unwrap();
+        let before: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master
+                    WHERE type = 'index' AND name = 'prescription_sections_lookup_idx'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(before, 0);
+
+        ensure_prescription_sections_index(&conn).unwrap();
+
+        let after: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master
+                    WHERE type = 'index' AND name = 'prescription_sections_lookup_idx'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(after, 1);
+    }
 }
 

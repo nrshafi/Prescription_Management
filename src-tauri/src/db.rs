@@ -94,6 +94,7 @@ pub fn init_database(app: &AppHandle) -> Result<Connection, String> {
     let conn = open_connection(&db_path)?;
     migrations::run_migrations(&conn)?;
     migrations::ensure_singleton_rows(&conn)?;
+    migrations::ensure_prescription_sections_index(&conn)?;
     log::info!("db: ready");
     Ok(conn)
 }

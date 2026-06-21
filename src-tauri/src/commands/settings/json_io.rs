@@ -720,6 +720,11 @@ pub async fn settings_export_json(
     let json = {
         let conn = state.conn()?;
         let export = build_json_export(&conn)?;
+        log::info!(
+            "json export: {} patients, {} presets",
+            export.patients.len(),
+            export.presets.len()
+        );
         serde_json::to_string_pretty(&export).map_err(|e| e.to_string())?
     };
 
@@ -741,10 +746,15 @@ pub async fn settings_export_json(
     .map_err(|e| e.to_string())?;
 
     let Some(picked) = picked else {
+        log::info!("json export: cancelled by user");
         return Ok(BackupActionResult::cancelled());
     };
     let target = picked.into_path().map_err(|e| e.to_string())?;
-    fs::write(&target, json).map_err(|e| e.to_string())?;
+    if let Err(err) = fs::write(&target, json) {
+        log::error!("json export: failed to write file");
+        return Err(err.to_string());
+    }
+    log::info!("json export: saved to {}", target.display());
 
     Ok(BackupActionResult {
         ok: true,
@@ -758,6 +768,7 @@ pub async fn settings_import_json(
     app: AppHandle,
     state: State<'_, Db>,
 ) -> Result<BackupActionResult, String> {
+    log::info!("json import: starting");
     let dialog_app = app.clone();
     let picked = tauri::async_runtime::spawn_blocking(move || {
         dialog_app
@@ -771,6 +782,7 @@ pub async fn settings_import_json(
     .map_err(|e| e.to_string())?;
 
     let Some(picked) = picked else {
+        log::info!("json import: cancelled by user");
         return Ok(BackupActionResult::cancelled());
     };
     let source = picked.into_path().map_err(|e| e.to_string())?;
@@ -778,6 +790,7 @@ pub async fn settings_import_json(
     let export = match serde_json::from_str::<JsonExport>(&contents) {
         Ok(export) => export,
         Err(err) => {
+            log::warn!("json import: failed to parse file");
             return Ok(BackupActionResult {
                 ok: false,
                 path: None,
@@ -785,9 +798,15 @@ pub async fn settings_import_json(
             });
         }
     };
+    log::info!(
+        "json import: parsed {} patient entries, {} preset entries",
+        export.patients.len(),
+        export.presets.len()
+    );
     let import = match validate_json_import(export) {
         Ok(import) => import,
         Err(message) => {
+            log::warn!("json import: validation rejected file");
             return Ok(BackupActionResult {
                 ok: false,
                 path: None,
@@ -807,6 +826,7 @@ pub async fn settings_import_json(
     let conn = state.conn()?;
     if let Some(path) = &snapshot_path {
         if let Err(err) = backup_to(&conn, path) {
+            log::error!("json import: failed to create safety snapshot");
             return Ok(BackupActionResult {
                 ok: false,
                 path: None,
@@ -820,6 +840,15 @@ pub async fn settings_import_json(
             if let Some(path) = &snapshot_path {
                 let _ = fs::remove_file(path);
             }
+            log::info!(
+                "json import: success (created={}, matched={}, imported={}, skipped={}, presets_created={}, presets_skipped={})",
+                stats.patients_created,
+                stats.patients_matched,
+                stats.prescriptions_imported,
+                stats.prescriptions_skipped,
+                stats.presets_created,
+                stats.presets_skipped
+            );
             Ok(BackupActionResult {
                 ok: true,
                 path: Some(source.display().to_string()),
@@ -830,6 +859,7 @@ pub async fn settings_import_json(
             if let Some(path) = &snapshot_path {
                 let _ = fs::remove_file(path);
             }
+            log::error!("json import: failed, no changes saved");
             Ok(BackupActionResult {
                 ok: false,
                 path: None,

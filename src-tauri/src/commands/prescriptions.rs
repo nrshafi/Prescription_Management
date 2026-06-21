@@ -778,6 +778,6 @@ mod parity_tests {
             Vec::new(),
         );
         let err = normalize_prescription(&input).err().expect("should reject");
-        assert!(err.contains("Notes are too long"), "got: {err}");
+        assert!(err.contains("Notes is too long"), "got: {err}");
     }
 }
