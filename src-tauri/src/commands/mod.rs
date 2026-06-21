@@ -6,6 +6,36 @@ pub mod printing;
 pub mod settings;
 
 /// Trim an optional string, mapping empty results to None.
+/// Canonical field length limits for the `normalize_*` validators.
+///
+/// These mirror the Zod `.max(N)` values in `src/shared/*.ts` and are the
+/// single source of truth for the Rust side. If you change a limit in
+/// `src/shared/*.ts`, update the matching constant here **and** the parity
+/// tests in `commands::patients`, `commands::prescriptions`, and
+/// `commands::presets`. The parity tests cover both the ASCII and multi-byte
+/// (`chars().count()`) semantics to match Zod's `.max()` exactly.
+
+// Patient (`src/shared/patient.ts` -> `patientFormSchema`).
+pub(crate) const PATIENT_NAME_MAX: usize = 120;
+pub(crate) const PATIENT_AGE_MAX: usize = 30;
+pub(crate) const PATIENT_PHONE_MAX: usize = 30;
+pub(crate) const PATIENT_ADDRESS_MAX: usize = 300;
+
+// Prescription (`src/shared/prescription.ts` -> `prescriptionSectionInputSchema`,
+// `prescriptionMedicineInputSchema`).
+pub(crate) const PRESCRIPTION_SECTION_CONTENT_MAX: usize = 4000;
+pub(crate) const MEDICINE_NAME_MAX: usize = 160;
+pub(crate) const MEDICINE_DOSAGE_MAX: usize = 120;
+pub(crate) const MEDICINE_FREQUENCY_MAX: usize = 120;
+pub(crate) const MEDICINE_DURATION_MAX: usize = 120;
+pub(crate) const MEDICINE_NOTES_MAX: usize = 300;
+
+// Preset (`src/shared/prescription.ts` -> `presetFormSchema`,
+// `presetLinkFormSchema`).
+pub(crate) const PRESET_TITLE_MAX: usize = 160;
+pub(crate) const PRESET_CONTENT_MAX: usize = 4000;
+pub(crate) const PRESET_LINK_LABEL_MAX: usize = 160;
+
 pub(crate) fn opt_trim(value: Option<&String>) -> Option<String> {
     value
         .map(|v| v.trim().to_string())

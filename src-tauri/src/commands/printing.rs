@@ -76,13 +76,21 @@ pub fn printing_data(
 
 #[tauri::command]
 pub async fn printing_preview(app: AppHandle, prescription_id: i64) -> Result<PrintActionResult, String> {
-    open_print_window(&app, prescription_id, false)?;
+    if let Err(err) = open_print_window(&app, prescription_id, false) {
+        log::error!("printing: preview window failed for prescription_id={prescription_id}");
+        return Err(err);
+    }
+    log::info!("printing: preview window opened for prescription_id={prescription_id}");
     Ok(PrintActionResult::ok())
 }
 
 #[tauri::command]
 pub async fn printing_print(app: AppHandle, prescription_id: i64) -> Result<PrintActionResult, String> {
-    open_print_window(&app, prescription_id, true)?;
+    if let Err(err) = open_print_window(&app, prescription_id, true) {
+        log::error!("printing: print dialog failed for prescription_id={prescription_id}");
+        return Err(err);
+    }
+    log::info!("printing: print dialog opened for prescription_id={prescription_id}");
     Ok(PrintActionResult::ok())
 }
 
@@ -90,7 +98,11 @@ pub async fn printing_print(app: AppHandle, prescription_id: i64) -> Result<Prin
 pub async fn printing_pdf(app: AppHandle, prescription_id: i64) -> Result<PrintActionResult, String> {
     // One-click PDF export is a separate milestone. For now the print dialog
     // opens and the user can choose "Save as PDF" as the destination.
-    open_print_window(&app, prescription_id, true)?;
+    if let Err(err) = open_print_window(&app, prescription_id, true) {
+        log::error!("printing: pdf dialog failed for prescription_id={prescription_id}");
+        return Err(err);
+    }
+    log::info!("printing: pdf dialog opened for prescription_id={prescription_id}");
     Ok(PrintActionResult {
         ok: true,
         path: None,

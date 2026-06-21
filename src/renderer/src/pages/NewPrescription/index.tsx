@@ -1,5 +1,8 @@
-import { ArrowDown, ArrowUp, Plus, Search, Trash2, UserCheck, X } from 'lucide-react'
-import { useCallback, useEffect, useLayoutEffect, memo, useMemo, useRef, useState } from 'react'
+import type { PatientFormValues, PatientListItem } from '@shared/patient'
+import type { PresetRecord } from '@shared/prescription'
+import type { DoctorProfileRecord } from '@shared/print'
+import { UserCheck, X } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { SearchMultiSelect } from '@/components/SearchMultiSelect'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,7 +14,6 @@ import {
 } from '@/components/ui/select'
 import { api } from '@/lib/api'
 import {
-  createOeCustomEntry,
   detailToUi,
   emptyUiState,
   mergeChips,
@@ -20,444 +22,19 @@ import {
   uiStateFromPatient,
   uiToFormValues
 } from '@/lib/prescription-mapping'
-import type { PatientFormValues, PatientListItem } from '../../../shared/patient'
-import type { MedicineSuggestion, PresetRecord } from '../../../shared/prescription'
-import type { DoctorProfileRecord } from '../../../shared/print'
+import { FOLLOWUP_UNITS, MEDICINE_DEFAULTS } from './constants'
+import { buildUiForSave, formatDate, nextMedKey, toErrorMessage } from './helpers'
+import { MedicinesEditor } from './MedicinesEditor'
+import { PresetBundles } from './PresetBundles'
+import { BulletSection, SectionsEditor } from './SectionsEditor'
+import type {
+  ApplicableBundle,
+  MedicineAddHandler,
+  MedicineRow,
+  NewPrescriptionProps
+} from './types'
 
-const DOSAGE_OPTIONS = ['1+0+1', '1+1+1', '0+0+1', '1+0+0', '0+1+0', '1+1+0', '0+0+2', '1+1+2']
-const INSTRUCTION_OPTIONS = [
-  'After Meal',
-  'Before Meal',
-  'Night Only',
-  'Morning Only',
-  'Empty Stomach',
-  'With Water',
-  'As Directed'
-]
-const DURATION_OPTIONS = [
-  '1 Day',
-  '3 Days',
-  '5 Days',
-  '7 Days',
-  '10 Days',
-  '15 Days',
-  '1 Month',
-  '2 Months',
-  '3 Months',
-  'Ongoing'
-]
-const FOLLOWUP_UNITS = ['Days', 'Weeks', 'Months']
-const MEDICINE_DEFAULTS = { dosage: '1+1+1', frequency: 'After Meal', duration: '5 Days' }
-
-export interface PrescriptionPageActions {
-  savePrescription: () => Promise<void>
-  exportPdf: () => Promise<void>
-  print: () => Promise<void>
-}
-
-interface NewPrescriptionProps {
-  editId: number | null
-  seedPatient?: PatientListItem | null
-  onEditIdChange: (id: number | null) => void
-  onBindActions: (actions: PrescriptionPageActions | null) => void
-  onStatus?: (message: string | null) => void
-}
-
-interface MedicineRow {
-  key: string
-  medicineName: string
-  dosage: string
-  frequency: string
-  duration: string
-  notes: string
-}
-
-interface ApplicableBundle {
-  key: string
-  label: string
-  bundle: PresetRecord
-}
-
-let medKey = 0
-
-function toErrorMessage(err: unknown, fallback: string): string {
-  if (err instanceof Error) return err.message
-  if (typeof err === 'string' && err.trim()) return err
-  return fallback
-}
-
-function formatDate(date: Date): string {
-  return date.toLocaleDateString('en-BD', { day: '2-digit', month: 'short', year: 'numeric' })
-}
-
-function EditableSelectCell({
-  value,
-  options,
-  onChange,
-  placeholder,
-  listId,
-  ariaLabel,
-  id
-}: {
-  value: string
-  options: string[]
-  onChange: (val: string) => void
-  placeholder: string
-  listId: string
-  ariaLabel: string
-  id?: string
-}): React.JSX.Element {
-  return (
-    <div className="relative print:contents">
-      <input
-        id={id}
-        type="text"
-        list={listId}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        aria-label={ariaLabel}
-        className="border-input bg-muted text-foreground focus-visible:ring-ring/50 focus-visible:border-ring print:border-0 print:bg-transparent rounded border py-0.5 pr-4 pl-2 text-xs focus-visible:ring-[3px] focus-visible:outline-none print:p-0"
-      />
-      <datalist id={listId}>
-        {options.map((o) => (
-          <option key={o} value={o} />
-        ))}
-      </datalist>
-    </div>
-  )
-}
-
-const MedRow = memo(function MedRow({
-  med,
-  index,
-  total,
-  onChange,
-  onRemove,
-  onMoveUp,
-  onMoveDown
-}: {
-  med: MedicineRow
-  index: number
-  total: number
-  onChange: (key: string, field: keyof MedicineRow, val: string) => void
-  onRemove: (key: string) => void
-  onMoveUp: (key: string) => void
-  onMoveDown: (key: string) => void
-}): React.JSX.Element {
-  return (
-    <div className="group flex items-start gap-2 border-b py-2 last:border-0">
-      <span className="text-muted-foreground w-5 shrink-0 pt-1.5 text-sm print:block">
-        {index + 1}.
-      </span>
-      <div className="min-w-0 flex-1">
-        <div className="mb-1 text-sm font-medium">{med.medicineName}</div>
-        <div className="flex flex-wrap items-center gap-1.5">
-          <EditableSelectCell
-            value={med.dosage}
-            options={DOSAGE_OPTIONS}
-            onChange={(v) => onChange(med.key, 'dosage', v)}
-            placeholder="Dosage"
-            listId={`dosage-options-${med.key}`}
-            ariaLabel={`Dosage for ${med.medicineName}`}
-          />
-          <EditableSelectCell
-            value={med.frequency}
-            options={INSTRUCTION_OPTIONS}
-            onChange={(v) => onChange(med.key, 'frequency', v)}
-            placeholder="Instruction"
-            listId={`frequency-options-${med.key}`}
-            ariaLabel={`Instruction for ${med.medicineName}`}
-          />
-          <EditableSelectCell
-            value={med.duration}
-            options={DURATION_OPTIONS}
-            onChange={(v) => onChange(med.key, 'duration', v)}
-            placeholder="Duration"
-            listId={`duration-options-${med.key}`}
-            ariaLabel={`Duration for ${med.medicineName}`}
-          />
-        </div>
-        <input
-          type="text"
-          value={med.notes}
-          onChange={(e) => onChange(med.key, 'notes', e.target.value)}
-          placeholder="Notes (optional)"
-          className="border-input bg-muted text-foreground focus:ring-ring/50 focus:border-ring mt-1.5 w-full rounded border px-2 py-0.5 text-xs focus:ring-[3px] focus:outline-none print:hidden"
-        />
-      </div>
-      <div className="flex shrink-0 items-center gap-0.5 pt-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 focus-within:opacity-100 print:hidden motion-reduce:transition-none">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-7"
-          disabled={index === 0}
-          onClick={() => onMoveUp(med.key)}
-          aria-label="Move up"
-        >
-          <ArrowUp className="size-3.5" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-7"
-          disabled={index === total - 1}
-          onClick={() => onMoveDown(med.key)}
-          aria-label="Move down"
-        >
-          <ArrowDown className="size-3.5" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="text-destructive size-7"
-          onClick={() => onRemove(med.key)}
-          aria-label="Remove medicine"
-        >
-          <Trash2 className="size-3.5" />
-        </Button>
-      </div>
-    </div>
-  )
-})
-
-type MedSearchOption =
-  | { type: 'suggestion'; name: string; suggestion: MedicineSuggestion }
-  | { type: 'preset'; name: string }
-  | { type: 'add'; name: string }
-
-const MED_SEARCH_LISTBOX_ID = 'med-search-listbox'
-
-function MedSearch({
-  presets,
-  onAdd
-}: {
-  presets: string[]
-  onAdd: (
-    name: string,
-    defaults?: { dosage?: string; frequency?: string; duration?: string; notes?: string }
-  ) => void
-}): React.JSX.Element {
-  const [query, setQuery] = useState('')
-  const [isOpen, setIsOpen] = useState(false)
-  const [suggestions, setSuggestions] = useState<MedicineSuggestion[]>([])
-  const [highlightedIndex, setHighlightedIndex] = useState(0)
-  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({})
-  const ref = useRef<HTMLDivElement>(null)
-  const inputWrapperRef = useRef<HTMLDivElement>(null)
-  const filtered = presets.filter((p) => p.toLowerCase().includes(query.toLowerCase()))
-
-  useEffect(() => {
-    const h = (e: MouseEvent): void => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false)
-    }
-    document.addEventListener('mousedown', h)
-    return () => document.removeEventListener('mousedown', h)
-  }, [])
-
-  useEffect(() => {
-    if (!query.trim()) {
-      setSuggestions([])
-      return
-    }
-    const t = setTimeout(() => {
-      api.prescriptions
-        .medicineSuggestions(query)
-        .then((rows) => setSuggestions(rows))
-        .catch(() => setSuggestions([]))
-    }, 200)
-    return () => clearTimeout(t)
-  }, [query])
-
-  const handleAdd = (
-    name: string,
-    defaults?: { dosage?: string; frequency?: string; duration?: string; notes?: string }
-  ): void => {
-    onAdd(name, defaults)
-    setQuery('')
-    setIsOpen(false)
-    setSuggestions([])
-    setHighlightedIndex(0)
-  }
-
-  const suggestionNames = new Set(suggestions.map((s) => s.medicineName.toLowerCase()))
-  const mergedPresets = filtered.filter((p) => !suggestionNames.has(p.toLowerCase()))
-  const trimmedQuery = query.trim()
-  const showAddCustom =
-    trimmedQuery.length > 0 &&
-    !suggestions.find((s) => s.medicineName.toLowerCase() === trimmedQuery.toLowerCase()) &&
-    !mergedPresets.find((p) => p.toLowerCase() === trimmedQuery.toLowerCase())
-
-  const options: MedSearchOption[] = [
-    ...suggestions.map((s) => ({
-      type: 'suggestion' as const,
-      name: s.medicineName,
-      suggestion: s
-    })),
-    ...mergedPresets.map((p) => ({ type: 'preset' as const, name: p })),
-    ...(showAddCustom ? [{ type: 'add' as const, name: trimmedQuery }] : [])
-  ]
-
-  useLayoutEffect(() => {
-    if (!isOpen || options.length === 0 || !inputWrapperRef.current) return
-    const update = (): void => {
-      const el = inputWrapperRef.current
-      if (!el) return
-      const rect = el.getBoundingClientRect()
-      setDropdownStyle({
-        position: 'fixed',
-        top: rect.bottom + 4,
-        left: rect.left,
-        width: rect.width
-      })
-    }
-    update()
-    window.addEventListener('scroll', update, true)
-    window.addEventListener('resize', update)
-    return () => {
-      window.removeEventListener('scroll', update, true)
-      window.removeEventListener('resize', update)
-    }
-  }, [isOpen, options.length])
-
-  const selectOption = (opt: MedSearchOption): void => {
-    if (opt.type === 'suggestion') {
-      const s = opt.suggestion
-      handleAdd(s.medicineName, {
-        dosage: s.dosage ?? undefined,
-        frequency: s.frequency ?? undefined,
-        duration: s.duration ?? undefined,
-        notes: s.notes ?? undefined
-      })
-    } else {
-      handleAdd(opt.name)
-    }
-  }
-
-  return (
-    <div ref={ref} className="relative print:hidden">
-      <div className="relative" ref={inputWrapperRef}>
-        <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2" />
-        <input
-          type="text"
-          value={query}
-          role="combobox"
-          aria-expanded={isOpen && options.length > 0}
-          aria-autocomplete="list"
-          aria-controls={MED_SEARCH_LISTBOX_ID}
-          aria-activedescendant={
-            isOpen && options.length > 0 ? `med-option-${highlightedIndex}` : undefined
-          }
-          onChange={(e) => {
-            setQuery(e.target.value)
-            setHighlightedIndex(0)
-          }}
-          onFocus={() => setIsOpen(true)}
-          onKeyDown={(e) => {
-            if (e.key === 'ArrowDown') {
-              e.preventDefault()
-              if (options.length > 0) {
-                setHighlightedIndex((i) => (i + 1) % options.length)
-              }
-            } else if (e.key === 'ArrowUp') {
-              e.preventDefault()
-              if (options.length > 0) {
-                setHighlightedIndex((i) => (i - 1 + options.length) % options.length)
-              }
-            } else if (e.key === 'Home') {
-              e.preventDefault()
-              if (options.length > 0) setHighlightedIndex(0)
-            } else if (e.key === 'End') {
-              e.preventDefault()
-              if (options.length > 0) setHighlightedIndex(options.length - 1)
-            } else if (e.key === 'Enter') {
-              e.preventDefault()
-              if (options.length > 0 && options[highlightedIndex]) {
-                selectOption(options[highlightedIndex])
-              } else if (trimmedQuery) {
-                handleAdd(trimmedQuery)
-              }
-            } else if (e.key === 'Escape') {
-              setIsOpen(false)
-            }
-          }}
-          placeholder="Search medicine to add..."
-          className="border-input bg-background focus-visible:ring-ring/50 focus-visible:border-ring w-full rounded-lg border py-1.5 pr-3 pl-8 text-sm focus-visible:ring-[3px] focus-visible:outline-none"
-        />
-      </div>
-      {isOpen && options.length > 0 && (
-        <div
-          id={MED_SEARCH_LISTBOX_ID}
-          role="listbox"
-          tabIndex={0}
-          style={dropdownStyle}
-          className="bg-popover z-50 max-h-56 overflow-y-auto rounded-lg border shadow-lg"
-        >
-          {options.map((opt, i) => {
-            const isHighlighted = i === highlightedIndex
-            if (opt.type === 'suggestion') {
-              const s = opt.suggestion
-              return (
-                <button
-                  key={`s-${s.medicineName}`}
-                  id={`med-option-${i}`}
-                  type="button"
-                  role="option"
-                  aria-selected={isHighlighted}
-                  onMouseEnter={() => setHighlightedIndex(i)}
-                  onClick={() => selectOption(opt)}
-                  className={`hover:bg-accent w-full px-3 py-2 text-left text-sm ${isHighlighted ? 'bg-accent' : ''}`}
-                >
-                  <div className="font-medium">{s.medicineName}</div>
-                  <div className="text-muted-foreground flex gap-2 text-xs">
-                    {s.dosage && <span>{s.dosage}</span>}
-                    {s.frequency && <span>{s.frequency}</span>}
-                    {s.duration && <span>{s.duration}</span>}
-                    <span className="ml-auto">Used {s.useCount}x</span>
-                  </div>
-                </button>
-              )
-            }
-            if (opt.type === 'preset') {
-              return (
-                <button
-                  key={`p-${opt.name}`}
-                  id={`med-option-${i}`}
-                  type="button"
-                  role="option"
-                  aria-selected={isHighlighted}
-                  onMouseEnter={() => setHighlightedIndex(i)}
-                  onClick={() => selectOption(opt)}
-                  className={`hover:bg-accent w-full px-3 py-2 text-left text-sm ${isHighlighted ? 'bg-accent' : ''}`}
-                >
-                  {opt.name}
-                </button>
-              )
-            }
-            return (
-              <button
-                key={`a-${opt.name}`}
-                id={`med-option-${i}`}
-                type="button"
-                role="option"
-                aria-selected={isHighlighted}
-                onMouseEnter={() => setHighlightedIndex(i)}
-                onClick={() => selectOption(opt)}
-                className={`text-primary hover:bg-accent flex w-full items-center gap-2 border-t px-3 py-2 text-left text-sm ${isHighlighted ? 'bg-accent' : ''}`}
-              >
-                <Plus className="size-4" />
-                Add &ldquo;{opt.name}&rdquo;
-              </button>
-            )
-          })}
-        </div>
-      )}
-    </div>
-  )
-}
+export type { PrescriptionPageActions } from './types'
 
 export function NewPrescription({
   editId,
@@ -560,7 +137,7 @@ export function NewPrescription({
         parsed.medicines
           .filter((m) => m.medicineName)
           .map((m) => ({
-            key: `m-${++medKey}`,
+            key: nextMedKey(),
             medicineName: m.medicineName ?? '',
             dosage: m.dosage ?? '1+1+1',
             frequency: m.frequency ?? 'After Meal',
@@ -621,14 +198,11 @@ export function NewPrescription({
     })
   }
 
-  const addMedicine = (
-    name: string,
-    defaults?: { dosage?: string; frequency?: string; duration?: string; notes?: string }
-  ): void => {
+  const addMedicine: MedicineAddHandler = (name, defaults) => {
     setMedicines((prev) => [
       ...prev,
       {
-        key: `m-${++medKey}`,
+        key: nextMedKey(),
         medicineName: name,
         dosage: defaults?.dosage || MEDICINE_DEFAULTS.dosage,
         frequency: defaults?.frequency || MEDICINE_DEFAULTS.frequency,
@@ -645,7 +219,7 @@ export function NewPrescription({
       const seen = new Set(prev.map((medicine) => medicine.medicineName.trim().toLowerCase()))
       const additions = medicineLinks
         .map((link) => ({
-          key: `m-${++medKey}`,
+          key: nextMedKey(),
           medicineName: link.label.trim(),
           dosage: link.dosage?.trim() || MEDICINE_DEFAULTS.dosage,
           frequency: link.frequency?.trim() || MEDICINE_DEFAULTS.frequency,
@@ -685,14 +259,6 @@ export function NewPrescription({
     addBundleMedicines(bundle)
   }
 
-  const handleComplaintChange = (chiefComplaints: string[]): void => {
-    patchUi({ chiefComplaints })
-  }
-
-  const handleDiagnosisChange = (diagnoses: string[]): void => {
-    patchUi({ diagnoses })
-  }
-
   const handleApplyBundle = (bundle: PresetRecord): void => {
     applyBundle(bundle)
     onStatus?.(`Applied preset "${bundle.title}".`)
@@ -710,12 +276,9 @@ export function NewPrescription({
     patchUi({ advice })
   }
 
-  const updateMedicine = useCallback(
-    (key: string, field: keyof MedicineRow, val: string): void => {
-      setMedicines((prev) => prev.map((m) => (m.key === key ? { ...m, [field]: val } : m)))
-    },
-    []
-  )
+  const updateMedicine = useCallback((key: string, field: keyof MedicineRow, val: string): void => {
+    setMedicines((prev) => prev.map((m) => (m.key === key ? { ...m, [field]: val } : m)))
+  }, [])
 
   const removeMedicine = useCallback((key: string): void => {
     setMedicines((prev) => prev.filter((m) => m.key !== key))
@@ -790,23 +353,10 @@ export function NewPrescription({
     return created.id
   }
 
-  const buildUiForSave = (patientId: number): PrescriptionUiState => ({
-    ...ui,
-    patientId,
-    medicines: medicines.map((m, position) => ({
-      medicineName: m.medicineName,
-      dosage: m.dosage,
-      frequency: m.frequency,
-      duration: m.duration,
-      notes: m.notes,
-      position
-    }))
-  })
-
   const persist = async () => {
     setSaveError(null)
     const patientId = await resolvePatientId()
-    const formValues = uiToFormValues(buildUiForSave(patientId))
+    const formValues = uiToFormValues(buildUiForSave(ui, medicines, patientId))
     const currentId = editingIdRef.current
     if (currentId) return api.prescriptions.update(currentId, formValues)
     return api.prescriptions.create(formValues)
@@ -1028,155 +578,18 @@ export function NewPrescription({
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-6 pb-4 xl:flex-row">
         <div className="print:hidden flex w-full shrink-0 flex-col gap-3 overflow-y-auto pr-1 xl:w-[40%]">
-          <SectionCard title="Chief Complaints (C/C)">
-            <SearchMultiSelect
-              items={complaintItems}
-              selected={ui.chiefComplaints}
-              onChange={handleComplaintChange}
-              placeholder="Search complaints..."
-            />
-          </SectionCard>
-          <SectionCard title="O/E (Examination)">
-            <div className="grid grid-cols-2 gap-3">
-              {(['bp', 'pulse', 'temp', 'rr'] as const).map((field) => {
-                const labels = {
-                  bp: 'BP (mmHg)',
-                  pulse: 'Pulse (/min)',
-                  temp: 'Temp (°F)',
-                  rr: 'R/R (/min)'
-                }
-                const placeholders = { bp: '120/80', pulse: '80', temp: '98.6', rr: '18' }
-                return (
-                  <div key={field}>
-                    <label
-                      htmlFor={`rx-oe-${field}`}
-                      className="text-muted-foreground mb-1 block text-xs"
-                    >
-                      {labels[field]}
-                    </label>
-                    <input
-                      id={`rx-oe-${field}`}
-                      type="text"
-                      value={ui.oe[field]}
-                      onChange={(e) => patchUi({ oe: { ...ui.oe, [field]: e.target.value } })}
-                      placeholder={placeholders[field]}
-                      className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm"
-                    />
-                  </div>
-                )
-              })}
-            </div>
-            <div className="mt-3 flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-xs font-medium">Custom O/E</span>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    patchUi({
-                      oe: { ...ui.oe, custom: [...ui.oe.custom, createOeCustomEntry()] }
-                    })
-                  }
-                >
-                  <Plus className="size-3.5" /> Add row
-                </Button>
-              </div>
-              {ui.oe.custom.map((row, index) => (
-                <div key={row.id} className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={row.label}
-                    onChange={(e) => {
-                      const custom = ui.oe.custom.map((item) =>
-                        item.id === row.id ? { ...item, label: e.target.value } : item
-                      )
-                      patchUi({ oe: { ...ui.oe, custom } })
-                    }}
-                    placeholder="Label"
-                    aria-label={`Custom O/E label ${index + 1}`}
-                    className="border-input bg-background w-1/3 rounded-lg border px-3 py-2 text-sm"
-                  />
-                  <input
-                    type="text"
-                    value={row.value}
-                    onChange={(e) => {
-                      const custom = ui.oe.custom.map((item) =>
-                        item.id === row.id ? { ...item, value: e.target.value } : item
-                      )
-                      patchUi({ oe: { ...ui.oe, custom } })
-                    }}
-                    placeholder="Value"
-                    aria-label={`Custom O/E value ${index + 1}`}
-                    className="border-input bg-background min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-9 shrink-0"
-                    onClick={() => {
-                      const custom = ui.oe.custom.filter((item) => item.id !== row.id)
-                      patchUi({ oe: { ...ui.oe, custom } })
-                    }}
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </SectionCard>
-          <SectionCard title="Investigation">
-            <SearchMultiSelect
-              items={investigationItems}
-              selected={ui.investigations}
-              onChange={(investigations) => patchUi({ investigations })}
-              placeholder="Search investigations..."
-            />
-          </SectionCard>
-          <SectionCard title="Provisional Diagnosis (Dx)">
-            <SearchMultiSelect
-              items={diagnosisItems}
-              selected={ui.diagnoses}
-              onChange={handleDiagnosisChange}
-              placeholder="Search diagnoses..."
-            />
-          </SectionCard>
-          {applicableBundles.length > 0 && (
-            <SectionCard title="Linked Presets">
-              <div className="flex flex-col gap-2">
-                <div className="text-muted-foreground text-xs">
-                  Apply linked medicines, investigations, advice, or diagnoses when needed.
-                </div>
-                {applicableBundles.map(({ key, label, bundle }) => (
-                  <div
-                    key={key}
-                    className="border-border bg-muted/30 flex items-center gap-2 rounded-lg border p-2"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">{label}</div>
-                      {bundle.title !== label && (
-                        <div className="text-muted-foreground truncate text-xs">{bundle.title}</div>
-                      )}
-                    </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleApplyBundle(bundle)}
-                    >
-                      Apply
-                    </Button>
-                  </div>
-                ))}
-                {applicableBundles.length > 1 && (
-                  <Button type="button" size="sm" onClick={handleApplyAllBundles}>
-                    Apply all
-                  </Button>
-                )}
-              </div>
-            </SectionCard>
-          )}
+          <SectionsEditor
+            ui={ui}
+            complaintItems={complaintItems}
+            investigationItems={investigationItems}
+            diagnosisItems={diagnosisItems}
+            onPatchUi={patchUi}
+          />
+          <PresetBundles
+            bundles={applicableBundles}
+            onApplyBundle={handleApplyBundle}
+            onApplyAll={handleApplyAllBundles}
+          />
         </div>
 
         <div className="min-w-0 flex-1 overflow-y-auto print:w-full">
@@ -1286,21 +699,15 @@ export function NewPrescription({
                     No medicines added yet
                   </p>
                 )}
-                {medicines.map((med, idx) => (
-                  <MedRow
-                    key={med.key}
-                    med={med}
-                    index={idx}
-                    total={medicines.length}
-                    onChange={updateMedicine}
-                    onRemove={removeMedicine}
-                    onMoveUp={moveMedicineUp}
-                    onMoveDown={moveMedicineDown}
-                  />
-                ))}
-                <div className="mt-3">
-                  <MedSearch presets={medicinePresets} onAdd={addMedicine} />
-                </div>
+                <MedicinesEditor
+                  medicines={medicines}
+                  presets={medicinePresets}
+                  onChange={updateMedicine}
+                  onAdd={addMedicine}
+                  onRemove={removeMedicine}
+                  onMoveUp={moveMedicineUp}
+                  onMoveDown={moveMedicineDown}
+                />
               </div>
             </div>
 
@@ -1363,56 +770,6 @@ export function NewPrescription({
           </div>
         </div>
       </div>
-    </div>
-  )
-}
-
-function SectionCard({
-  title,
-  children
-}: {
-  title: string
-  children: React.ReactNode
-}): React.JSX.Element {
-  return (
-    <div className="rounded-xl border bg-card p-4 shadow-sm">
-      <h3 className="mb-3 text-sm font-semibold">{title}</h3>
-      {children}
-    </div>
-  )
-}
-
-function BulletSection({
-  title,
-  items,
-  empty,
-  className = ''
-}: {
-  title: string
-  items: string[]
-  empty?: string
-  className?: string
-}): React.JSX.Element | null {
-  if (!items.length && !empty) return null
-  return (
-    <div className={className}>
-      {title && (
-        <p className="text-muted-foreground mb-1.5 text-xs font-bold tracking-wider uppercase">
-          {title}
-        </p>
-      )}
-      {items.length > 0 ? (
-        <ul className="space-y-0.5">
-          {items.map((c) => (
-            <li key={c} className="flex items-start gap-1.5">
-              <span className="text-muted-foreground mt-0.5">•</span>
-              <span>{c}</span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        empty && <p className="text-muted-foreground text-xs italic">{empty}</p>
-      )}
     </div>
   )
 }

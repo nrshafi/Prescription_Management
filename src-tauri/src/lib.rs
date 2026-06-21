@@ -10,6 +10,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_log::Builder::new().build())
         .setup(|app| {
             let conn = db::init_database(app.handle()).map_err(std::io::Error::other)?;
             app.manage(db::Db(Mutex::new(conn)));
@@ -36,10 +37,10 @@ pub fn run() {
             commands::settings::settings_get,
             commands::settings::settings_update_doctor_profile,
             commands::settings::settings_update_paper_settings,
-            commands::settings::settings_export_backup,
-            commands::settings::settings_import_backup,
-            commands::settings::settings_export_json,
-            commands::settings::settings_import_json,
+            commands::settings::backup::settings_export_backup,
+            commands::settings::backup::settings_import_backup,
+            commands::settings::json_io::settings_export_json,
+            commands::settings::json_io::settings_import_json,
             commands::printing::printing_data,
             commands::printing::printing_preview,
             commands::printing::printing_print,

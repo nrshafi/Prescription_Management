@@ -28,12 +28,21 @@ pub fn database_path(app: &AppHandle) -> Result<PathBuf, String> {
 }
 
 pub fn open_connection(path: &Path) -> Result<Connection, String> {
-    let conn = Connection::open(path).map_err(|e| format!("Could not open database: {e}"))?;
+    let conn = Connection::open(path).map_err(|e| {
+        log::error!("db: failed to open connection");
+        format!("Could not open database: {e}")
+    })?;
     // `journal_mode` returns a row, so it cannot go through execute().
     conn.query_row("PRAGMA journal_mode = WAL", [], |_| Ok(()))
-        .map_err(|e| format!("Could not enable WAL mode: {e}"))?;
+        .map_err(|e| {
+            log::error!("db: failed to enable WAL mode");
+            format!("Could not enable WAL mode: {e}")
+        })?;
     conn.execute_batch("PRAGMA foreign_keys = ON;")
-        .map_err(|e| format!("Could not enable foreign keys: {e}"))?;
+        .map_err(|e| {
+            log::error!("db: failed to enable foreign keys");
+            format!("Could not enable foreign keys: {e}")
+        })?;
     Ok(conn)
 }
 
@@ -81,9 +90,10 @@ pub fn remove_wal_artifacts(db_path: &Path) {
 /// Opens the application database, runs migrations, and ensures singleton rows.
 pub fn init_database(app: &AppHandle) -> Result<Connection, String> {
     let db_path = database_path(app)?;
+    log::info!("db: opening database");
     let conn = open_connection(&db_path)?;
     migrations::run_migrations(&conn)?;
-    migrations::ensure_prescriptions_no_templates_fk(&conn)?;
     migrations::ensure_singleton_rows(&conn)?;
+    log::info!("db: ready");
     Ok(conn)
 }

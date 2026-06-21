@@ -107,10 +107,10 @@ fn normalize_preset(input: &PresetFormValues) -> Result<NormalizedPreset, String
     if title.is_empty() {
         return Err("Title is required".to_string());
     }
-    super::ensure_max_len(&title, 160, "Title")?;
+    super::ensure_max_len(&title, super::PRESET_TITLE_MAX, "Title")?;
 
     let content = input.content.as_deref().unwrap_or("").trim().to_string();
-    super::ensure_max_len(&content, 4000, "Content")?;
+    super::ensure_max_len(&content, super::PRESET_CONTENT_MAX, "Content")?;
 
     let mut links = Vec::new();
     if is_bundle_category(&input.category) {
@@ -127,13 +127,13 @@ fn normalize_preset(input: &PresetFormValues) -> Result<NormalizedPreset, String
             if label.is_empty() {
                 continue;
             }
-            super::ensure_max_len(&label, 160, "Linked item")?;
+            super::ensure_max_len(&label, super::PRESET_LINK_LABEL_MAX, "Linked item")?;
             let dosage = link.dosage.as_deref().unwrap_or("").trim().to_string();
-            super::ensure_max_len(&dosage, 120, "Dosage")?;
+            super::ensure_max_len(&dosage, super::MEDICINE_DOSAGE_MAX, "Dosage")?;
             let frequency = link.frequency.as_deref().unwrap_or("").trim().to_string();
-            super::ensure_max_len(&frequency, 120, "Frequency")?;
+            super::ensure_max_len(&frequency, super::MEDICINE_FREQUENCY_MAX, "Frequency")?;
             let duration = link.duration.as_deref().unwrap_or("").trim().to_string();
-            super::ensure_max_len(&duration, 120, "Duration")?;
+            super::ensure_max_len(&duration, super::MEDICINE_DURATION_MAX, "Duration")?;
 
             links.push(NormalizedPresetLink {
                 target_kind: link.target_kind.clone(),
@@ -401,4 +401,171 @@ pub fn presets_delete(state: State<'_, Db>, id: i64) -> Result<PresetDeleteResul
     conn.execute("DELETE FROM presets WHERE preset_id = ?", [id])
         .map_err(|e| e.to_string())?;
     Ok(PresetDeleteResult { id })
+}
+
+#[cfg(test)]
+mod parity_tests {
+    use super::*;
+
+    fn link(label: &str, dosage: &str, frequency: &str, duration: &str) -> PresetLinkInput {
+        PresetLinkInput {
+            target_kind: "Medicine".to_string(),
+            target_preset_id: None,
+            label: label.to_string(),
+            dosage: Some(dosage.to_string()),
+            frequency: Some(frequency.to_string()),
+            duration: Some(duration.to_string()),
+            position: Some(0),
+        }
+    }
+
+    fn form(
+        category: &str,
+        title: &str,
+        content: &str,
+        links: Option<Vec<PresetLinkInput>>,
+    ) -> PresetFormValues {
+        PresetFormValues {
+            category: category.to_string(),
+            title: title.to_string(),
+            content: Some(content.to_string()),
+            links,
+        }
+    }
+
+    #[test]
+    fn title_at_limit_is_accepted() {
+        let input = form("Medicine", &"a".repeat(super::super::PRESET_TITLE_MAX), "", None);
+        assert!(normalize_preset(&input).is_ok());
+    }
+
+    #[test]
+    fn title_over_limit_is_rejected() {
+        let input = form(
+            "Medicine",
+            &"a".repeat(super::super::PRESET_TITLE_MAX + 1),
+            "",
+            None,
+        );
+        let err = normalize_preset(&input).err().expect("should reject");
+        assert!(err.contains("Title is too long"), "got: {err}");
+    }
+
+    #[test]
+    fn title_multibyte_at_limit_is_accepted() {
+        let input = form(
+            "Medicine",
+            &"é".repeat(super::super::PRESET_TITLE_MAX),
+            "",
+            None,
+        );
+        assert!(normalize_preset(&input).is_ok());
+    }
+
+    #[test]
+    fn content_at_limit_is_accepted() {
+        let input = form(
+            "Medicine",
+            "Aspirin",
+            &"a".repeat(super::super::PRESET_CONTENT_MAX),
+            None,
+        );
+        assert!(normalize_preset(&input).is_ok());
+    }
+
+    #[test]
+    fn content_over_limit_is_rejected() {
+        let input = form(
+            "Medicine",
+            "Aspirin",
+            &"a".repeat(super::super::PRESET_CONTENT_MAX + 1),
+            None,
+        );
+        let err = normalize_preset(&input).err().expect("should reject");
+        assert!(err.contains("Content is too long"), "got: {err}");
+    }
+
+    #[test]
+    fn link_label_over_limit_is_rejected() {
+        // Bundle categories process links.
+        let input = form(
+            "Chief Complaint",
+            "Bundle",
+            "",
+            Some(vec![link(
+                &"a".repeat(super::super::PRESET_LINK_LABEL_MAX + 1),
+                "",
+                "",
+                "",
+            )]),
+        );
+        let err = normalize_preset(&input).err().expect("should reject");
+        assert!(err.contains("Linked item is too long"), "got: {err}");
+    }
+
+    #[test]
+    fn link_label_multibyte_at_limit_is_accepted() {
+        let input = form(
+            "Chief Complaint",
+            "Bundle",
+            "",
+            Some(vec![link(
+                &"日".repeat(super::super::PRESET_LINK_LABEL_MAX),
+                "",
+                "",
+                "",
+            )]),
+        );
+        assert!(normalize_preset(&input).is_ok());
+    }
+
+    #[test]
+    fn link_dosage_over_limit_is_rejected() {
+        let input = form(
+            "Chief Complaint",
+            "Bundle",
+            "",
+            Some(vec![link(
+                "Aspirin",
+                &"a".repeat(super::super::MEDICINE_DOSAGE_MAX + 1),
+                "",
+                "",
+            )]),
+        );
+        let err = normalize_preset(&input).err().expect("should reject");
+        assert!(err.contains("Dosage is too long"), "got: {err}");
+    }
+
+    #[test]
+    fn link_frequency_multibyte_over_limit_is_rejected() {
+        let input = form(
+            "Chief Complaint",
+            "Bundle",
+            "",
+            Some(vec![link(
+                "Aspirin",
+                "",
+                &"日".repeat(super::super::MEDICINE_FREQUENCY_MAX + 1),
+                "",
+            )]),
+        );
+        let err = normalize_preset(&input).err().expect("should reject");
+        assert!(err.contains("Frequency is too long"), "got: {err}");
+    }
+
+    #[test]
+    fn link_duration_at_limit_is_accepted() {
+        let input = form(
+            "Chief Complaint",
+            "Bundle",
+            "",
+            Some(vec![link(
+                "Aspirin",
+                "",
+                "",
+                &"a".repeat(super::super::MEDICINE_DURATION_MAX),
+            )]),
+        );
+        assert!(normalize_preset(&input).is_ok());
+    }
 }

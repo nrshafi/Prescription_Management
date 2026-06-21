@@ -168,7 +168,7 @@ fn normalize_prescription(input: &PrescriptionFormValues) -> Result<NormalizedPr
             return Err(format!("Invalid section type: {}", section.section_type));
         }
         let content = trimmed(&section.content);
-        super::ensure_max_len(&content, 4000, "Section content")?;
+        super::ensure_max_len(&content, super::PRESCRIPTION_SECTION_CONTENT_MAX, "Section content")?;
         sections.push(NormalizedSection {
             section_type: section.section_type.clone(),
             content,
@@ -180,15 +180,15 @@ fn normalize_prescription(input: &PrescriptionFormValues) -> Result<NormalizedPr
     let mut position: i64 = 0;
     for medicine in &input.medicines {
         let medicine_name = trimmed(&medicine.medicine_name);
-        super::ensure_max_len(&medicine_name, 160, "Medicine name")?;
+        super::ensure_max_len(&medicine_name, super::MEDICINE_NAME_MAX, "Medicine name")?;
         let dosage = trimmed(&medicine.dosage);
-        super::ensure_max_len(&dosage, 120, "Dosage")?;
+        super::ensure_max_len(&dosage, super::MEDICINE_DOSAGE_MAX, "Dosage")?;
         let frequency = trimmed(&medicine.frequency);
-        super::ensure_max_len(&frequency, 120, "Frequency")?;
+        super::ensure_max_len(&frequency, super::MEDICINE_FREQUENCY_MAX, "Frequency")?;
         let duration = trimmed(&medicine.duration);
-        super::ensure_max_len(&duration, 120, "Duration")?;
+        super::ensure_max_len(&duration, super::MEDICINE_DURATION_MAX, "Duration")?;
         let notes = trimmed(&medicine.notes);
-        super::ensure_max_len(&notes, 300, "Notes")?;
+        super::ensure_max_len(&notes, super::MEDICINE_NOTES_MAX, "Notes")?;
 
         if medicine_name.is_empty()
             && dosage.is_empty()
@@ -610,4 +610,174 @@ pub fn prescriptions_medicine_suggestions(
         .collect::<rusqlite::Result<Vec<_>>>()
         .map_err(|e| e.to_string())?;
     Ok(rows)
+}
+
+#[cfg(test)]
+mod parity_tests {
+    use super::*;
+
+    fn medicine(
+        name: &str,
+        dosage: &str,
+        frequency: &str,
+        duration: &str,
+        notes: &str,
+    ) -> PrescriptionMedicineInput {
+        PrescriptionMedicineInput {
+            medicine_name: Some(name.to_string()),
+            dosage: Some(dosage.to_string()),
+            frequency: Some(frequency.to_string()),
+            duration: Some(duration.to_string()),
+            notes: Some(notes.to_string()),
+        }
+    }
+
+    fn section(section_type: &str, content: &str) -> PrescriptionSectionInput {
+        PrescriptionSectionInput {
+            section_type: section_type.to_string(),
+            content: Some(content.to_string()),
+        }
+    }
+
+    fn form(
+        medicines: Vec<PrescriptionMedicineInput>,
+        sections: Vec<PrescriptionSectionInput>,
+    ) -> PrescriptionFormValues {
+        PrescriptionFormValues {
+            patient_id: 1,
+            sections,
+            medicines,
+        }
+    }
+
+    #[test]
+    fn section_content_at_limit_is_accepted() {
+        let input = form(
+            Vec::new(),
+            vec![section(
+                "Chief Complaint",
+                &"a".repeat(super::super::PRESCRIPTION_SECTION_CONTENT_MAX),
+            )],
+        );
+        assert!(normalize_prescription(&input).is_ok());
+    }
+
+    #[test]
+    fn section_content_over_limit_is_rejected() {
+        let input = form(
+            Vec::new(),
+            vec![section(
+                "Chief Complaint",
+                &"a".repeat(super::super::PRESCRIPTION_SECTION_CONTENT_MAX + 1),
+            )],
+        );
+        let err = normalize_prescription(&input).err().expect("should reject");
+        assert!(err.contains("Section content is too long"), "got: {err}");
+    }
+
+    #[test]
+    fn section_content_multibyte_at_limit_is_accepted() {
+        let input = form(
+            Vec::new(),
+            vec![section(
+                "Chief Complaint",
+                &"日".repeat(super::super::PRESCRIPTION_SECTION_CONTENT_MAX),
+            )],
+        );
+        assert!(normalize_prescription(&input).is_ok());
+    }
+
+    #[test]
+    fn medicine_name_over_limit_is_rejected() {
+        let input = form(
+            vec![medicine(
+                &"a".repeat(super::super::MEDICINE_NAME_MAX + 1),
+                "",
+                "",
+                "",
+                "",
+            )],
+            Vec::new(),
+        );
+        let err = normalize_prescription(&input).err().expect("should reject");
+        assert!(err.contains("Medicine name is too long"), "got: {err}");
+    }
+
+    #[test]
+    fn medicine_name_multibyte_at_limit_is_accepted() {
+        let input = form(
+            vec![medicine(
+                &"é".repeat(super::super::MEDICINE_NAME_MAX),
+                "",
+                "",
+                "",
+                "",
+            )],
+            Vec::new(),
+        );
+        assert!(normalize_prescription(&input).is_ok());
+    }
+
+    #[test]
+    fn medicine_dosage_over_limit_is_rejected() {
+        let input = form(
+            vec![medicine(
+                "Aspirin",
+                &"a".repeat(super::super::MEDICINE_DOSAGE_MAX + 1),
+                "",
+                "",
+                "",
+            )],
+            Vec::new(),
+        );
+        let err = normalize_prescription(&input).err().expect("should reject");
+        assert!(err.contains("Dosage is too long"), "got: {err}");
+    }
+
+    #[test]
+    fn medicine_frequency_multibyte_over_limit_is_rejected() {
+        let input = form(
+            vec![medicine(
+                "Aspirin",
+                "",
+                &"日".repeat(super::super::MEDICINE_FREQUENCY_MAX + 1),
+                "",
+                "",
+            )],
+            Vec::new(),
+        );
+        let err = normalize_prescription(&input).err().expect("should reject");
+        assert!(err.contains("Frequency is too long"), "got: {err}");
+    }
+
+    #[test]
+    fn medicine_duration_at_limit_is_accepted() {
+        let input = form(
+            vec![medicine(
+                "Aspirin",
+                "",
+                "",
+                &"a".repeat(super::super::MEDICINE_DURATION_MAX),
+                "",
+            )],
+            Vec::new(),
+        );
+        assert!(normalize_prescription(&input).is_ok());
+    }
+
+    #[test]
+    fn medicine_notes_over_limit_is_rejected() {
+        let input = form(
+            vec![medicine(
+                "Aspirin",
+                "",
+                "",
+                "",
+                &"a".repeat(super::super::MEDICINE_NOTES_MAX + 1),
+            )],
+            Vec::new(),
+        );
+        let err = normalize_prescription(&input).err().expect("should reject");
+        assert!(err.contains("Notes are too long"), "got: {err}");
+    }
 }

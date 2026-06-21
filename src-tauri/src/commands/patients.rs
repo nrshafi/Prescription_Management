@@ -120,11 +120,11 @@ fn normalize_patient(input: &PatientFormValues) -> Result<NormalizedPatient, Str
     if name.is_empty() {
         return Err("Name is required".to_string());
     }
-    super::ensure_max_len(&name, 120, "Name")?;
+    super::ensure_max_len(&name, super::PATIENT_NAME_MAX, "Name")?;
 
     let age = super::opt_trim(input.age.as_ref());
     if let Some(value) = &age {
-        super::ensure_max_len(value, 30, "Age")?;
+        super::ensure_max_len(value, super::PATIENT_AGE_MAX, "Age")?;
     }
 
     let gender = super::opt_trim(input.gender.as_ref());
@@ -136,12 +136,12 @@ fn normalize_patient(input: &PatientFormValues) -> Result<NormalizedPatient, Str
 
     let phone = super::opt_trim(input.phone.as_ref());
     if let Some(value) = &phone {
-        super::ensure_max_len(value, 30, "Phone")?;
+        super::ensure_max_len(value, super::PATIENT_PHONE_MAX, "Phone")?;
     }
 
     let address = super::opt_trim(input.address.as_ref());
     if let Some(value) = &address {
-        super::ensure_max_len(value, 300, "Address")?;
+        super::ensure_max_len(value, super::PATIENT_ADDRESS_MAX, "Address")?;
     }
 
     Ok(NormalizedPatient {
@@ -439,4 +439,84 @@ pub fn patients_delete(
 pub fn patients_prescription_count(state: State<'_, Db>, id: i64) -> Result<i64, String> {
     let conn = state.conn()?;
     prescription_count(&conn, id)
+}
+
+#[cfg(test)]
+mod parity_tests {
+    use super::*;
+
+    fn form(name: &str, age: Option<&str>, phone: Option<&str>, address: Option<&str>) -> PatientFormValues {
+        PatientFormValues {
+            name: name.to_string(),
+            age: age.map(str::to_string),
+            gender: None,
+            phone: phone.map(str::to_string),
+            address: address.map(str::to_string),
+        }
+    }
+
+    #[test]
+    fn name_at_limit_is_accepted() {
+        let input = form(&"a".repeat(super::super::PATIENT_NAME_MAX), None, None, None);
+        assert!(normalize_patient(&input).is_ok());
+    }
+
+    #[test]
+    fn name_over_limit_is_rejected() {
+        let input = form(&"a".repeat(super::super::PATIENT_NAME_MAX + 1), None, None, None);
+        let err = normalize_patient(&input).err().expect("should reject");
+        assert!(err.contains("Name is too long"), "got: {err}");
+    }
+
+    #[test]
+    fn name_multibyte_at_limit_is_accepted() {
+        // "é" is 2 bytes / 1 char; the limit must count chars, not bytes.
+        let input = form(&"é".repeat(super::super::PATIENT_NAME_MAX), None, None, None);
+        assert!(normalize_patient(&input).is_ok());
+    }
+
+    #[test]
+    fn name_multibyte_over_limit_is_rejected() {
+        let input = form(&"é".repeat(super::super::PATIENT_NAME_MAX + 1), None, None, None);
+        let err = normalize_patient(&input).err().expect("should reject");
+        assert!(err.contains("Name is too long"), "got: {err}");
+    }
+
+    #[test]
+    fn age_over_limit_is_rejected() {
+        let input = form("Bob", Some(&"a".repeat(super::super::PATIENT_AGE_MAX + 1)), None, None);
+        let err = normalize_patient(&input).err().expect("should reject");
+        assert!(err.contains("Age is too long"), "got: {err}");
+    }
+
+    #[test]
+    fn phone_multibyte_over_limit_is_rejected() {
+        // CJK characters are 3 bytes / 1 char.
+        let input = form("Bob", None, Some(&"日".repeat(super::super::PATIENT_PHONE_MAX + 1)), None);
+        let err = normalize_patient(&input).err().expect("should reject");
+        assert!(err.contains("Phone is too long"), "got: {err}");
+    }
+
+    #[test]
+    fn address_at_limit_is_accepted() {
+        let input = form(
+            "Bob",
+            None,
+            None,
+            Some(&"a".repeat(super::super::PATIENT_ADDRESS_MAX)),
+        );
+        assert!(normalize_patient(&input).is_ok());
+    }
+
+    #[test]
+    fn address_over_limit_is_rejected() {
+        let input = form(
+            "Bob",
+            None,
+            None,
+            Some(&"a".repeat(super::super::PATIENT_ADDRESS_MAX + 1)),
+        );
+        let err = normalize_patient(&input).err().expect("should reject");
+        assert!(err.contains("Address is too long"), "got: {err}");
+    }
 }
