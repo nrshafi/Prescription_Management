@@ -10,6 +10,16 @@ interface DashboardProps {
   onNavigate: (page: AppPage) => void
 }
 
+const dateLocale = 'en-BD'
+
+function formatRecordDate(value: string): string {
+  return new Date(value).toLocaleDateString(dateLocale, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  })
+}
+
 export function Dashboard({ onNavigate }: DashboardProps): React.JSX.Element {
   const [doctor, setDoctor] = useState<DoctorProfileRecord | null>(null)
   const [totalPatients, setTotalPatients] = useState(0)
@@ -35,111 +45,108 @@ export function Dashboard({ onNavigate }: DashboardProps): React.JSX.Element {
   }, [])
 
   const stats = [
-    { label: 'Total Prescriptions', value: totalRx, icon: FileText, hint: 'All time' },
-    { label: 'Total Patients', value: totalPatients, icon: Users, hint: 'Registered' },
-    {
-      label: "Today's Prescriptions",
-      value: todaysRx,
-      icon: Calendar,
-      hint: new Date().toLocaleDateString('en-BD', { day: '2-digit', month: 'short' })
-    },
-    { label: 'Medicine Presets', value: medicinePresetCount, icon: TrendingUp, hint: 'Saved' }
+    { label: 'Total Prescriptions', value: totalRx, icon: FileText },
+    { label: 'Total Patients', value: totalPatients, icon: Users },
+    { label: "Today's Prescriptions", value: todaysRx, icon: Calendar },
+    { label: 'Medicine Presets', value: medicinePresetCount, icon: TrendingUp }
   ]
 
-  return (
-    <div className="space-y-6 p-6">
-      <div className="from-primary to-primary/80 text-primary-foreground rounded-2xl bg-gradient-to-r p-6">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold opacity-90">Welcome back,</h2>
-            <h1 className="mt-0.5 text-2xl font-bold">{doctor?.name || 'Doctor'}</h1>
-            <p className="mt-1 text-sm opacity-80">{doctor?.speciality}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-sm opacity-80">
-              {new Date().toLocaleDateString('en-BD', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
-              })}
-            </p>
-            <Button
-              type="button"
-              variant="secondary"
-              className="mt-3"
-              onClick={() => onNavigate('new-prescription')}
-            >
-              <FilePlus className="size-4" />
-              New Prescription
-            </Button>
-          </div>
-        </div>
-      </div>
+  const today = new Date().toLocaleDateString(dateLocale, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  })
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+  return (
+    <div className="flex flex-col p-6">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b pb-6">
+        <div className="min-w-0">
+          <p className="text-muted-foreground text-xs font-medium">Welcome back</p>
+          <h1 className="mt-1 truncate text-2xl font-bold tracking-tight">
+            {doctor?.name || 'Doctor'}
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            {doctor?.speciality ? `${doctor.speciality} · ${today}` : today}
+          </p>
+        </div>
+        <Button type="button" onClick={() => onNavigate('new-prescription')}>
+          <FilePlus className="size-4" />
+          New Prescription
+        </Button>
+      </header>
+
+      <dl className="mt-px grid grid-cols-2 divide-x divide-y border-b xl:grid-cols-4 xl:divide-y-0">
         {stats.map((stat) => {
           const Icon = stat.icon
           return (
-            <div key={stat.label} className="rounded-xl border bg-card p-4 shadow-sm">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-muted-foreground text-xs">{stat.label}</p>
-                  <p className="mt-1 text-3xl font-bold">{stat.value}</p>
-                  <p className="text-muted-foreground mt-1 text-xs">{stat.hint}</p>
-                </div>
-                <div className="bg-muted flex size-10 items-center justify-center rounded-lg">
-                  <Icon className="text-foreground size-5" />
-                </div>
-              </div>
+            <div key={stat.label} className="px-5 py-4">
+              <dt className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
+                <Icon className="size-3.5" />
+                {stat.label}
+              </dt>
+              <dd className="mt-2 text-2xl font-bold tabular-nums">{stat.value}</dd>
             </div>
           )
         })}
-      </div>
+      </dl>
 
-      <div className="rounded-xl border bg-card shadow-sm">
-        <div className="flex items-center justify-between border-b px-5 py-4">
-          <div className="flex items-center gap-2">
+      <section className="mt-6">
+        <div className="flex items-center justify-between pb-3">
+          <h2 className="flex items-center gap-2 text-base font-semibold">
             <Clock className="text-muted-foreground size-4" />
-            <h3 className="font-medium">Recent Prescriptions</h3>
-          </div>
-          <button
-            type="button"
-            onClick={() => onNavigate('prescriptions')}
-            className="text-primary text-sm hover:underline"
-          >
-            View all
-          </button>
+            Recent Prescriptions
+          </h2>
+          {recent.length > 0 && (
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              className="h-auto px-0"
+              onClick={() => onNavigate('prescriptions')}
+            >
+              View all
+            </Button>
+          )}
         </div>
+
         {recent.length === 0 ? (
-          <div className="py-12 text-center">
-            <FileText className="text-muted-foreground/30 mx-auto mb-2 size-10" />
-            <p className="text-muted-foreground text-sm">No prescriptions yet</p>
-            <Button type="button" variant="link" onClick={() => onNavigate('new-prescription')}>
+          <div className="rounded-xl border py-14 text-center">
+            <FileText className="text-muted-foreground/40 mx-auto mb-3 size-10" />
+            <p className="text-sm font-medium">No prescriptions yet</p>
+            <p className="text-muted-foreground mx-auto mt-1 max-w-sm text-sm">
+              Capture a visit and print it on your letterhead to see it here.
+            </p>
+            <Button type="button" className="mt-4" onClick={() => onNavigate('new-prescription')}>
+              <FilePlus className="size-4" />
               Create your first prescription
             </Button>
           </div>
         ) : (
-          <ul className="divide-y">
-            {recent.map((rx) => (
-              <li key={rx.id} className="flex items-center gap-4 px-5 py-3">
-                <div className="bg-muted flex size-9 items-center justify-center rounded-full text-sm font-medium">
+          <ul className="divide-y rounded-xl border">
+            {recent.map((rx, index) => (
+              <li
+                key={rx.id}
+                style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
+                className="animate-in fade-in-0 slide-in-from-bottom-1 fill-mode-both flex items-center gap-4 px-5 py-3 duration-300 ease-out motion-reduce:animate-none"
+              >
+                <div className="bg-muted text-foreground flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-medium">
                   {rx.patientName.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{rx.patientName}</p>
-                  <p className="text-muted-foreground truncate text-xs">
+                  <p className="truncate text-sm font-medium">{rx.patientName}</p>
+                  <p className="text-muted-foreground truncate text-sm">
                     {rx.provisionalDiagnosis || rx.chiefComplaint || '—'}
                   </p>
                 </div>
-                <div className="text-muted-foreground shrink-0 text-xs">
-                  {new Date(rx.createdAt).toLocaleDateString()}
-                </div>
+                <time className="text-muted-foreground shrink-0 text-xs tabular-nums">
+                  {formatRecordDate(rx.createdAt)}
+                </time>
               </li>
             ))}
           </ul>
         )}
-      </div>
+      </section>
     </div>
   )
 }
