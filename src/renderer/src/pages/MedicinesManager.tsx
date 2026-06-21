@@ -62,8 +62,8 @@ export function MedicinesManager(): React.JSX.Element {
   return (
     <div className="space-y-4 p-6">
       <div className="flex items-center gap-3">
-        <div className="flex size-10 items-center justify-center rounded-lg bg-green-500/10">
-          <Pill className="size-5 text-green-600" />
+        <div className="bg-muted flex size-10 items-center justify-center rounded-lg">
+          <Pill className="text-foreground size-5" />
         </div>
         <div>
           <h2 className="text-lg font-semibold">Medicines</h2>
@@ -85,7 +85,7 @@ export function MedicinesManager(): React.JSX.Element {
               key={row.id}
               className="group hover:bg-muted/50 flex items-center gap-2 rounded-lg px-2 py-2"
             >
-              <Pill className="size-4 shrink-0 text-green-600" />
+              <Pill className="text-muted-foreground size-4 shrink-0" />
               {editingId === row.id ? (
                 <>
                   <Input
@@ -152,7 +152,7 @@ export function MedicinesManager(): React.JSX.Element {
             placeholder="Add new medicine..."
             onKeyDown={(e) => e.key === 'Enter' && addMedicine()}
           />
-          <Button type="button" className="bg-green-600 hover:bg-green-700" onClick={addMedicine}>
+          <Button type="button" onClick={addMedicine}>
             <Plus className="size-4" />
             Add
           </Button>

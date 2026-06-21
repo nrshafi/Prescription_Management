@@ -375,11 +375,44 @@ export function Prescriptions({
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-muted-foreground py-10 text-center">
-                  Loading...
-                </TableCell>
-              </TableRow>
+              ['sk-a', 'sk-b', 'sk-c', 'sk-d', 'sk-e'].map((skeletonKey) => (
+                <TableRow key={skeletonKey}>
+                  <TableCell>
+                    <div className="bg-muted size-7 animate-pulse rounded" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="bg-muted h-4 w-10 animate-pulse rounded font-mono text-xs" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="bg-muted size-8 shrink-0 animate-pulse rounded-full" />
+                      <div className="space-y-1.5">
+                        <div className="bg-muted h-4 w-28 animate-pulse rounded" />
+                        <div className="bg-muted h-3 w-20 animate-pulse rounded" />
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="bg-muted h-4 w-20 animate-pulse rounded" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="bg-muted h-4 w-8 animate-pulse rounded" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="bg-muted h-4 w-12 animate-pulse rounded" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="bg-muted h-5 w-6 animate-pulse rounded-md" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-1">
+                      <div className="bg-muted size-8 animate-pulse rounded" />
+                      <div className="bg-muted size-8 animate-pulse rounded" />
+                      <div className="bg-muted size-8 animate-pulse rounded" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
             ) : patients.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-muted-foreground py-10 text-center">

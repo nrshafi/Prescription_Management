@@ -126,7 +126,42 @@ export function PatientVisitsTable({
   onDuplicate
 }: PatientVisitsTableProps): React.JSX.Element {
   if (!state || state.loading) {
-    return <p className="text-muted-foreground px-3 py-4 text-sm">Loading prescriptions...</p>
+    return (
+      <div className="overflow-hidden rounded-lg border bg-background">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Pres. ID</TableHead>
+              <TableHead>Visit</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>C/C</TableHead>
+              <TableHead>Diagnosis</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {['sk-x', 'sk-y', 'sk-z'].map((skeletonKey) => (
+              <TableRow key={skeletonKey}>
+                <TableCell><div className="bg-muted h-4 w-8 animate-pulse rounded" /></TableCell>
+                <TableCell><div className="bg-muted h-4 w-6 animate-pulse rounded" /></TableCell>
+                <TableCell><div className="bg-muted h-4 w-24 animate-pulse rounded" /></TableCell>
+                <TableCell><div className="bg-muted h-4 w-32 animate-pulse rounded" /></TableCell>
+                <TableCell><div className="bg-muted h-4 w-28 animate-pulse rounded" /></TableCell>
+                <TableCell>
+                  <div className="flex justify-end gap-1">
+                    <div className="bg-muted size-8 animate-pulse rounded" />
+                    <div className="bg-muted size-8 animate-pulse rounded" />
+                    <div className="bg-muted size-8 animate-pulse rounded" />
+                    <div className="bg-muted size-8 animate-pulse rounded" />
+                    <div className="bg-muted size-8 animate-pulse rounded" />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    )
   }
 
   if (state.error) {

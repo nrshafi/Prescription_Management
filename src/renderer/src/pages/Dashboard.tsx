@@ -27,6 +27,7 @@ export function Dashboard({ onNavigate }: DashboardProps): React.JSX.Element {
   const [totalRx, setTotalRx] = useState(0)
   const [medicinePresetCount, setMedicinePresetCount] = useState(0)
   const [recent, setRecent] = useState<PrescriptionListItem[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     Promise.all([
@@ -34,14 +35,16 @@ export function Dashboard({ onNavigate }: DashboardProps): React.JSX.Element {
       api.prescriptions.list(),
       api.presets.list('Medicine'),
       api.settings.get()
-    ]).then(([stats, allRx, medPresets, settings]) => {
-      setTotalPatients(stats.totalPatients)
-      setTodaysRx(stats.todaysPrescriptions)
-      setTotalRx(allRx.length)
-      setMedicinePresetCount(medPresets.length)
-      setRecent(allRx.slice(0, 8))
-      setDoctor(settings.doctorProfile)
-    })
+    ])
+      .then(([stats, allRx, medPresets, settings]) => {
+        setTotalPatients(stats.totalPatients)
+        setTodaysRx(stats.todaysPrescriptions)
+        setTotalRx(allRx.length)
+        setMedicinePresetCount(medPresets.length)
+        setRecent(allRx.slice(0, 8))
+        setDoctor(settings.doctorProfile)
+      })
+      .finally(() => setLoading(false))
   }, [])
 
   const stats = [
@@ -77,18 +80,31 @@ export function Dashboard({ onNavigate }: DashboardProps): React.JSX.Element {
       </header>
 
       <dl className="mt-px grid grid-cols-2 divide-x divide-y border-b xl:grid-cols-4 xl:divide-y-0">
-        {stats.map((stat) => {
-          const Icon = stat.icon
-          return (
-            <div key={stat.label} className="px-5 py-4">
-              <dt className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
-                <Icon className="size-3.5" />
-                {stat.label}
-              </dt>
-              <dd className="mt-2 text-2xl font-bold tabular-nums">{stat.value}</dd>
-            </div>
-          )
-        })}
+        {loading
+          ? stats.map((stat) => {
+              const Icon = stat.icon
+              return (
+                <div key={stat.label} className="px-5 py-4">
+                  <dt className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
+                    <Icon className="size-3.5" />
+                    {stat.label}
+                  </dt>
+                  <dd className="bg-muted mt-2 h-8 w-16 animate-pulse rounded tabular-nums" />
+                </div>
+              )
+            })
+          : stats.map((stat) => {
+              const Icon = stat.icon
+              return (
+                <div key={stat.label} className="px-5 py-4">
+                  <dt className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
+                    <Icon className="size-3.5" />
+                    {stat.label}
+                  </dt>
+                  <dd className="mt-2 text-2xl font-bold tabular-nums">{stat.value}</dd>
+                </div>
+              )
+            })}
       </dl>
 
       <section className="mt-6">
@@ -110,7 +126,20 @@ export function Dashboard({ onNavigate }: DashboardProps): React.JSX.Element {
           )}
         </div>
 
-        {recent.length === 0 ? (
+        {loading ? (
+          <ul className="divide-y rounded-xl border">
+            {['sk-1', 'sk-2', 'sk-3', 'sk-4'].map((skeletonKey) => (
+              <li key={skeletonKey} className="flex items-center gap-4 px-5 py-3">
+                <div className="bg-muted size-9 shrink-0 animate-pulse rounded-full" />
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <div className="bg-muted h-4 w-32 animate-pulse rounded" />
+                  <div className="bg-muted h-3.5 w-48 animate-pulse rounded" />
+                </div>
+                <div className="bg-muted h-3.5 w-20 shrink-0 animate-pulse rounded" />
+              </li>
+            ))}
+          </ul>
+        ) : recent.length === 0 ? (
           <div className="rounded-xl border py-14 text-center">
             <FileText className="text-muted-foreground/40 mx-auto mb-3 size-10" />
             <p className="text-sm font-medium">No prescriptions yet</p>

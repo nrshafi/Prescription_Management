@@ -37,13 +37,6 @@ const TAB_CATEGORIES: PresetCategory[] = [
   'Advice'
 ]
 
-const TAB_COLORS: Record<string, string> = {
-  'Chief Complaint': 'border-orange-400',
-  'Provisional Diagnosis': 'border-green-500',
-  Investigations: 'border-purple-400',
-  Advice: 'border-blue-500'
-}
-
 const BUNDLE_CATEGORIES = new Set<string>(PRESET_BUNDLE_CATEGORIES)
 const MEDICINE_DEFAULTS = { dosage: '1+1+1', frequency: 'After Meal', duration: '5 Days' }
 
@@ -398,7 +391,7 @@ export function PresetsManager(): React.JSX.Element {
               className={cn(
                 'border-b-2 px-4 pb-2 text-sm font-medium transition-colors',
                 tab === cat
-                  ? `${TAB_COLORS[cat]} text-foreground`
+                  ? 'border-foreground text-foreground'
                   : 'text-muted-foreground hover:text-foreground border-transparent'
               )}
             >

@@ -111,7 +111,7 @@ function EditableSelectCell({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="border-input bg-muted text-foreground focus:ring-ring print:border-0 print:bg-transparent rounded border py-0.5 pr-4 pl-2 text-xs focus:ring-1 focus:outline-none print:p-0"
+        className="border-input bg-muted text-foreground focus:ring-ring/50 focus:border-ring print:border-0 print:bg-transparent rounded border py-0.5 pr-4 pl-2 text-xs focus:ring-[3px] focus:outline-none print:p-0"
       />
       <datalist id={listId}>
         {options.map((o) => (
@@ -174,7 +174,7 @@ function MedRow({
           value={med.notes}
           onChange={(e) => onChange(med.key, 'notes', e.target.value)}
           placeholder="Notes (optional)"
-          className="border-input bg-muted text-foreground focus:ring-ring mt-1.5 w-full rounded border px-2 py-0.5 text-xs focus:ring-1 focus:outline-none print:hidden"
+          className="border-input bg-muted text-foreground focus:ring-ring/50 focus:border-ring mt-1.5 w-full rounded border px-2 py-0.5 text-xs focus:ring-[3px] focus:outline-none print:hidden"
         />
       </div>
       <div className="flex shrink-0 items-center gap-0.5 pt-1 opacity-0 transition-opacity group-hover:opacity-100 print:hidden">
@@ -289,7 +289,7 @@ function MedSearch({
             if (e.key === 'Escape') setIsOpen(false)
           }}
           placeholder="Search medicine to add..."
-          className="border-primary/30 bg-primary/5 focus:ring-ring w-full rounded-lg border border-dashed py-1.5 pr-3 pl-8 text-sm focus:ring-2 focus:outline-none"
+          className="border-input bg-background focus:ring-ring/50 focus:border-ring w-full rounded-lg border py-1.5 pr-3 pl-8 text-sm focus:ring-[3px] focus:outline-none"
         />
       </div>
       {isOpen && (query || suggestions.length > 0 || mergedPresets.length > 0) && (
@@ -782,20 +782,20 @@ export function NewPrescription({
         </div>
 
         {foundPatient && !editId && seedPatient?.id !== foundPatient.id && (
-          <div className="mb-3 flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-2.5 text-sm dark:border-green-900 dark:bg-green-950/40">
-            <UserCheck className="size-4 shrink-0 text-green-600" />
+          <div className="mb-3 flex items-center gap-3 rounded-lg border p-2.5 text-sm bg-muted/50">
+            <UserCheck className="text-foreground size-4 shrink-0" />
             <div className="min-w-0 flex-1">
-              <span className="font-medium text-green-800 dark:text-green-200">
+              <span className="font-medium">
                 Existing Patient Found
               </span>
-              <span className="ml-2 text-green-700 dark:text-green-300">
+              <span className="text-muted-foreground ml-2">
                 {foundPatient.visitCount} visit{foundPatient.visitCount !== 1 ? 's' : ''}
               </span>
             </div>
             <Button
               type="button"
               size="sm"
-              className="shrink-0 bg-green-600 hover:bg-green-700"
+              className="shrink-0"
               onClick={loadPatientData}
             >
               Load Data
@@ -803,7 +803,7 @@ export function NewPrescription({
           </div>
         )}
 
-        <div className="grid grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           <div className="col-span-2">
             <label
               htmlFor="rx-patient-name"
@@ -817,7 +817,7 @@ export function NewPrescription({
               value={ui.patientName}
               onChange={(e) => patchUi({ patientName: e.target.value })}
               disabled={Boolean(editId)}
-              className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+              className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none"
               placeholder="Full name"
             />
           </div>
@@ -834,7 +834,7 @@ export function NewPrescription({
               value={ui.patientPhone}
               onChange={(e) => patchUi({ patientPhone: e.target.value })}
               disabled={Boolean(editId)}
-              className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+              className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none"
             />
           </div>
           <div>
@@ -849,7 +849,7 @@ export function NewPrescription({
               type="text"
               value={ui.patientAge}
               onChange={(e) => patchUi({ patientAge: e.target.value })}
-              className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+              className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none"
             />
           </div>
           <div className="flex gap-2">
@@ -903,16 +903,16 @@ export function NewPrescription({
             rows={2}
             value={ui.patientAddress}
             onChange={(e) => patchUi({ patientAddress: e.target.value })}
-            className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+            className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none"
             placeholder="Patient address"
           />
         </div>
         {saveError && <p className="text-destructive mt-2 text-sm">{saveError}</p>}
       </div>
 
-      <div className="flex min-h-0 flex-1 gap-4 overflow-hidden px-6 pb-4">
-        <div className="print:hidden flex w-[40%] shrink-0 flex-col gap-3 overflow-y-auto pr-1">
-          <SectionCard accent="bg-orange-400" title="Chief Complaints (C/C)">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-6 pb-4 lg:flex-row">
+        <div className="print:hidden flex w-full shrink-0 flex-col gap-3 overflow-y-auto pr-1 lg:w-[40%]">
+          <SectionCard title="Chief Complaints (C/C)">
             <SearchMultiSelect
               items={complaintItems}
               selected={ui.chiefComplaints}
@@ -920,7 +920,7 @@ export function NewPrescription({
               placeholder="Search complaints..."
             />
           </SectionCard>
-          <SectionCard accent="bg-red-400" title="O/E (Examination)">
+          <SectionCard title="O/E (Examination)">
             <div className="grid grid-cols-2 gap-3">
               {(['bp', 'pulse', 'temp', 'rr'] as const).map((field) => {
                 const labels = {
@@ -1010,7 +1010,7 @@ export function NewPrescription({
               ))}
             </div>
           </SectionCard>
-          <SectionCard accent="bg-purple-400" title="Investigation">
+          <SectionCard title="Investigation">
             <SearchMultiSelect
               items={investigationItems}
               selected={ui.investigations}
@@ -1018,7 +1018,7 @@ export function NewPrescription({
               placeholder="Search investigations..."
             />
           </SectionCard>
-          <SectionCard accent="bg-green-500" title="Provisional Diagnosis (Dx)">
+          <SectionCard title="Provisional Diagnosis (Dx)">
             <SearchMultiSelect
               items={diagnosisItems}
               selected={ui.diagnoses}
@@ -1027,7 +1027,7 @@ export function NewPrescription({
             />
           </SectionCard>
           {applicableBundles.length > 0 && (
-            <SectionCard accent="bg-primary" title="Linked Presets">
+            <SectionCard title="Linked Presets">
               <div className="flex flex-col gap-2">
                 <div className="text-muted-foreground text-xs">
                   Apply linked medicines, investigations, advice, or diagnoses when needed.
@@ -1115,8 +1115,8 @@ export function NewPrescription({
               </span>
             </div>
 
-            <div className="flex min-h-[360px] divide-x">
-              <div className="w-[38%] shrink-0 space-y-4 px-5 py-4 text-sm">
+            <div className="flex min-h-[360px] flex-col divide-x lg:flex-row lg:divide-x lg:divide-y-0">
+              <div className="shrink-0 space-y-4 px-5 py-4 text-sm lg:w-[38%]">
                 <BulletSection
                   title="C/C"
                   items={ui.chiefComplaints}
@@ -1252,20 +1252,15 @@ export function NewPrescription({
 }
 
 function SectionCard({
-  accent,
   title,
   children
 }: {
-  accent: string
   title: string
   children: React.ReactNode
 }): React.JSX.Element {
   return (
     <div className="rounded-xl border bg-card p-4 shadow-sm">
-      <div className="mb-3 flex items-center gap-2">
-        <div className={`h-4 w-1.5 rounded ${accent}`} />
-        <h3 className="text-sm font-semibold">{title}</h3>
-      </div>
+      <h3 className="mb-3 text-sm font-semibold">{title}</h3>
       {children}
     </div>
   )

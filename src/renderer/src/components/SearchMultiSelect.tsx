@@ -96,7 +96,7 @@ export function SearchMultiSelect({
               className="bg-primary/10 text-primary border-primary/20 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-sm"
             >
               {item}
-              <button onClick={() => removeItem(item)} className="focus:outline-none" type="button">
+              <button onClick={() => removeItem(item)} className="rounded-full focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none" type="button">
                 <X className="size-3" />
               </button>
             </span>
@@ -127,7 +127,7 @@ export function SearchMultiSelect({
             }
           }}
           placeholder={placeholder}
-          className="border-input bg-background focus:ring-ring w-full rounded-lg border py-2 pr-4 pl-9 text-sm focus:ring-2 focus:outline-none"
+          className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-lg border py-2 pr-4 pl-9 text-sm focus-visible:ring-[3px] focus-visible:outline-none"
         />
       </div>
 

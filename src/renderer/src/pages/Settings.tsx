@@ -429,23 +429,25 @@ export function Settings(): React.JSX.Element {
       </div>
 
       <div className="text-center">
-        <p className="text-sm">
+        <p className="text-muted-foreground text-sm">
           Facing issues? Contact the developer on{' '}
-          <button
+          <Button
             type="button"
+            variant="link"
+            className="h-auto p-0"
             onClick={() => open('https://t.me/nafiur_rahman_shafi')}
-            className="text-blue-400 font-medium underline-offset-4 hover:underline"
           >
             Telegram
-          </button>{' '}
+          </Button>{' '}
           or{' '}
-          <button
+          <Button
             type="button"
+            variant="link"
+            className="h-auto p-0"
             onClick={() => open('https://discord.com/users/775961069083951115')}
-            className="text-blue-400 font-medium underline-offset-4 hover:underline"
           >
             Discord
-          </button>
+          </Button>
         </p>
       </div>
     </div>

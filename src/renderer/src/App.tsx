@@ -30,6 +30,27 @@ function App(): React.JSX.Element {
     )
   }, [])
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent): void => {
+      const mod = e.metaKey || e.ctrlKey
+      if (!mod) return
+
+      if (e.key === 's') {
+        e.preventDefault()
+        rxActionsRef.current?.savePrescription()
+      } else if (e.key === 'p') {
+        e.preventDefault()
+        rxActionsRef.current?.print()
+      } else if (e.key === 'e' && e.shiftKey) {
+        e.preventDefault()
+        rxActionsRef.current?.exportPdf()
+      }
+    }
+
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [])
+
   const bindRxActions = useCallback((actions: PrescriptionPageActions | null) => {
     rxActionsRef.current = actions
   }, [])
