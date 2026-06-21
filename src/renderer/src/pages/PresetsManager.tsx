@@ -446,8 +446,9 @@ export function PresetsManager(): React.JSX.Element {
                         variant="ghost"
                         className="size-8"
                         onClick={() => saveEdit(row.id)}
+                        aria-label="Save"
                       >
-                        <Save />
+                        <Save className="size-4" />
                       </Button>
                       <Button
                         type="button"
@@ -455,8 +456,9 @@ export function PresetsManager(): React.JSX.Element {
                         variant="ghost"
                         className="size-8"
                         onClick={() => setEditingId(null)}
+                        aria-label="Cancel"
                       >
-                        <X />
+                        <X className="size-4" />
                       </Button>
                     </>
                   ) : (
@@ -489,8 +491,9 @@ export function PresetsManager(): React.JSX.Element {
                             setEditTitle(row.title)
                           }
                         }}
+                        aria-label="Edit preset"
                       >
-                        <Pencil />
+                        <Pencil className="size-4" />
                       </Button>
                       <Button
                         type="button"
@@ -498,8 +501,9 @@ export function PresetsManager(): React.JSX.Element {
                         variant="ghost"
                         className="text-destructive size-8 opacity-0 group-hover:opacity-100"
                         onClick={() => remove(row.id)}
+                        aria-label="Delete preset"
                       >
-                        <Trash2 />
+                        <Trash2 className="size-4" />
                       </Button>
                     </>
                   )}

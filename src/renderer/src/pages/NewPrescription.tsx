@@ -185,6 +185,7 @@ function MedRow({
           className="size-7"
           disabled={index === 0}
           onClick={() => onMoveUp(med.key)}
+          aria-label="Move up"
         >
           <ArrowUp className="size-3.5" />
         </Button>
@@ -195,6 +196,7 @@ function MedRow({
           className="size-7"
           disabled={index === total - 1}
           onClick={() => onMoveDown(med.key)}
+          aria-label="Move down"
         >
           <ArrowDown className="size-3.5" />
         </Button>
@@ -204,6 +206,7 @@ function MedRow({
           size="icon"
           className="text-destructive size-7"
           onClick={() => onRemove(med.key)}
+          aria-label="Remove medicine"
         >
           <Trash2 className="size-3.5" />
         </Button>
@@ -293,11 +296,30 @@ function MedSearch({
         />
       </div>
       {isOpen && (query || suggestions.length > 0 || mergedPresets.length > 0) && (
-        <div className="bg-popover absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border shadow-lg">
+        <div
+          role="listbox"
+          className="bg-popover absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border shadow-lg"
+          onKeyDown={(e) => {
+            const options = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('[role="option"]'))
+            const active = document.activeElement as HTMLElement | null
+            const current = options.indexOf(active as HTMLElement)
+            if (e.key === 'ArrowDown') {
+              e.preventDefault()
+              const next = current < options.length - 1 ? current + 1 : 0
+              options[next]?.focus()
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault()
+              const prev = current > 0 ? current - 1 : options.length - 1
+              options[prev]?.focus()
+            }
+          }}
+        >
           {suggestions.map((s) => (
             <button
               key={s.medicineName}
               type="button"
+              role="option"
+              aria-selected={false}
               onClick={() =>
                 handleAdd(s.medicineName, {
                   dosage: s.dosage ?? undefined,
@@ -321,6 +343,8 @@ function MedSearch({
             <button
               key={item}
               type="button"
+              role="option"
+              aria-selected={false}
               onClick={() => handleAdd(item)}
               className="hover:bg-accent w-full px-3 py-2 text-left text-sm"
             >
@@ -332,6 +356,8 @@ function MedSearch({
             !mergedPresets.find((f) => f.toLowerCase() === query.trim().toLowerCase()) && (
               <button
                 type="button"
+                role="option"
+                aria-selected={false}
                 onClick={() => handleAdd(query.trim())}
                 className="text-primary hover:bg-accent flex w-full items-center gap-2 border-t px-3 py-2 text-left text-sm"
               >
@@ -910,8 +936,8 @@ export function NewPrescription({
         {saveError && <p className="text-destructive mt-2 text-sm">{saveError}</p>}
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-6 pb-4 lg:flex-row">
-        <div className="print:hidden flex w-full shrink-0 flex-col gap-3 overflow-y-auto pr-1 lg:w-[40%]">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-6 pb-4 xl:flex-row">
+        <div className="print:hidden flex w-full shrink-0 flex-col gap-3 overflow-y-auto pr-1 xl:w-[40%]">
           <SectionCard title="Chief Complaints (C/C)">
             <SearchMultiSelect
               items={complaintItems}
@@ -1204,7 +1230,7 @@ export function NewPrescription({
                   </div>
                   <BulletSection title="" items={ui.advice} className="mt-2" />
                 </div>
-                <div className="w-48 shrink-0">
+                <div className="w-full xl:w-48 shrink-0">
                   <p className="text-muted-foreground mb-2 text-xs font-bold tracking-wider uppercase">
                     Follow-up
                   </p>

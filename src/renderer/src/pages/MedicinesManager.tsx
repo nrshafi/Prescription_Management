@@ -97,12 +97,13 @@ export function MedicinesManager(): React.JSX.Element {
                       if (e.key === 'Escape') setEditingId(null)
                     }}
                   />
-                  <Button
+                   <Button
                     type="button"
                     size="icon"
                     variant="ghost"
                     className="size-8"
                     onClick={() => saveEdit(row.id)}
+                    aria-label="Save"
                   >
                     <Save className="size-4" />
                   </Button>
@@ -112,6 +113,7 @@ export function MedicinesManager(): React.JSX.Element {
                     variant="ghost"
                     className="size-8"
                     onClick={() => setEditingId(null)}
+                    aria-label="Cancel"
                   >
                     <X className="size-4" />
                   </Button>
@@ -119,7 +121,7 @@ export function MedicinesManager(): React.JSX.Element {
               ) : (
                 <>
                   <span className="flex-1 text-sm">{row.title}</span>
-                  <Button
+                   <Button
                     type="button"
                     size="icon"
                     variant="ghost"
@@ -128,6 +130,7 @@ export function MedicinesManager(): React.JSX.Element {
                       setEditingId(row.id)
                       setEditTitle(row.title)
                     }}
+                    aria-label="Edit medicine"
                   >
                     <Pencil className="size-4" />
                   </Button>
@@ -137,6 +140,7 @@ export function MedicinesManager(): React.JSX.Element {
                     variant="ghost"
                     className="text-destructive size-8 opacity-0 group-hover:opacity-100"
                     onClick={() => remove(row.id)}
+                    aria-label="Delete medicine"
                   >
                     <Trash2 className="size-4" />
                   </Button>

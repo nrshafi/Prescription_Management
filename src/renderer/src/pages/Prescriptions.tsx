@@ -296,7 +296,7 @@ export function Prescriptions({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 sm:max-w-xs">
+        <div className="relative flex-1 max-w-xs">
           <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <Input
             value={search}
@@ -306,7 +306,7 @@ export function Prescriptions({
           />
         </div>
         <Select value={gender} onValueChange={setGender}>
-          <SelectTrigger className="w-36">
+          <SelectTrigger className="w-full sm:w-36">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -322,13 +322,15 @@ export function Prescriptions({
           type="date"
           value={dateFrom}
           onChange={(e) => setDateFrom(e.target.value)}
-          className="w-36"
+          className="w-full sm:w-36"
+          aria-label="From date"
         />
         <Input
           type="date"
           value={dateTo}
           onChange={(e) => setDateTo(e.target.value)}
-          className="w-36"
+          className="w-full sm:w-36"
+          aria-label="To date"
         />
       </div>
 
@@ -373,7 +375,7 @@ export function Prescriptions({
               <TableHead className="text-right">Patient Actions</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody aria-busy={loading}>
             {loading ? (
               ['sk-a', 'sk-b', 'sk-c', 'sk-d', 'sk-e'].map((skeletonKey) => (
                 <TableRow key={skeletonKey}>
@@ -424,7 +426,18 @@ export function Prescriptions({
                 const expanded = expandedPatients.has(patient.id)
                 return (
                   <Fragment key={patient.id}>
-                    <TableRow className="cursor-pointer" onClick={() => togglePatient(patient.id)}>
+                    <TableRow
+                      className="cursor-pointer"
+                      onClick={() => togglePatient(patient.id)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          togglePatient(patient.id)
+                        }
+                      }}
+                    >
                       <TableCell>
                         <Button
                           type="button"

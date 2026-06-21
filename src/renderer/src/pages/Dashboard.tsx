@@ -79,7 +79,7 @@ export function Dashboard({ onNavigate }: DashboardProps): React.JSX.Element {
         </Button>
       </header>
 
-      <dl className="mt-px grid grid-cols-2 divide-x divide-y border-b xl:grid-cols-4 xl:divide-y-0">
+      <dl className="mt-px grid grid-cols-2 divide-x divide-y border-b xl:grid-cols-4 xl:divide-y-0" aria-busy={loading}>
         {loading
           ? stats.map((stat) => {
               const Icon = stat.icon
@@ -127,7 +127,7 @@ export function Dashboard({ onNavigate }: DashboardProps): React.JSX.Element {
         </div>
 
         {loading ? (
-          <ul className="divide-y rounded-xl border">
+          <ul className="divide-y rounded-xl border" aria-busy={loading}>
             {['sk-1', 'sk-2', 'sk-3', 'sk-4'].map((skeletonKey) => (
               <li key={skeletonKey} className="flex items-center gap-4 px-5 py-3">
                 <div className="bg-muted size-9 shrink-0 animate-pulse rounded-full" />

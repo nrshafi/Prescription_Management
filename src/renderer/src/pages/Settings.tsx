@@ -50,6 +50,15 @@ const defaultPaper: PaperSettingsFormValues = {
   marginRight: 10
 }
 
+const PAPER_FIELD_LABELS: Record<keyof PaperSettingsFormValues, string> = {
+  widthMm: 'Width (mm)',
+  heightMm: 'Height (mm)',
+  marginTop: 'Margin Top (mm)',
+  marginBottom: 'Margin Bottom (mm)',
+  marginLeft: 'Margin Left (mm)',
+  marginRight: 'Margin Right (mm)'
+}
+
 function doctorToForm(profile: DoctorProfileRecord): DoctorProfileFormValues {
   return {
     name: profile.name ?? '',
@@ -317,7 +326,7 @@ export function Settings(): React.JSX.Element {
               <div className="grid gap-3 sm:grid-cols-2">
                 {(Object.keys(paper) as (keyof PaperSettingsFormValues)[]).map((field) => (
                   <div key={field} className="grid gap-2">
-                    <Label>{field}</Label>
+                    <Label>{PAPER_FIELD_LABELS[field]}</Label>
                     <Input
                       type="number"
                       value={paper[field]}

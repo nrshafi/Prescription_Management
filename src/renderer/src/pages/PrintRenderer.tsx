@@ -163,7 +163,7 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
 
   if (error) {
     return (
-      <div className="print-shell min-h-screen bg-neutral-100 p-8 text-neutral-950">
+      <div className="print-shell min-h-screen bg-muted p-8 text-foreground">
         <div
           data-print-content
           className="mx-auto max-w-xl rounded-md bg-white p-8 text-neutral-950 shadow"
@@ -176,7 +176,7 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
 
   if (!data) {
     return (
-      <div className="print-shell min-h-screen bg-neutral-100 p-8 text-neutral-950">
+      <div className="print-shell min-h-screen bg-muted p-8 text-foreground">
         <div className="mx-auto max-w-xl rounded-md bg-white p-8 shadow">
           Preparing print preview...
         </div>
@@ -192,11 +192,11 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
   const printFontStack = getPrintFontStack(localStorage.getItem(PRINT_FONT_STORAGE_KEY))
 
   return (
-    <div className="print-shell min-h-screen bg-neutral-100 p-6 text-neutral-950 print:bg-white">
+    <div className="print-shell min-h-screen bg-muted p-6 text-foreground print:bg-white">
       <style>{pageStyle}</style>
       <article
         data-print-content
-        className="print-sheet mx-auto bg-white text-neutral-950 shadow-xl print:shadow-none"
+        className="print-sheet mx-auto bg-white text-foreground shadow-xl print:shadow-none"
         style={{ fontFamily: printFontStack }}
       >
         <header className="border-b-2 border-neutral-900 pb-4">
