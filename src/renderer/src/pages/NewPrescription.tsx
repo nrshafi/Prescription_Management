@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, Plus, Search, Trash2, UserCheck, X } from 'lucide-react'
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, memo, useMemo, useRef, useState } from 'react'
 import { SearchMultiSelect } from '@/components/SearchMultiSelect'
 import { Button } from '@/components/ui/button'
 import {
@@ -128,7 +128,7 @@ function EditableSelectCell({
   )
 }
 
-function MedRow({
+const MedRow = memo(function MedRow({
   med,
   index,
   total,
@@ -222,7 +222,7 @@ function MedRow({
       </div>
     </div>
   )
-}
+})
 
 type MedSearchOption =
   | { type: 'suggestion'; name: string; suggestion: MedicineSuggestion }
@@ -605,9 +605,9 @@ export function NewPrescription({
     return () => clearTimeout(t)
   }, [ui.patientPhone])
 
-  const patchUi = (patch: Partial<PrescriptionUiState>): void => {
+  const patchUi = useCallback((patch: Partial<PrescriptionUiState>): void => {
     setUi((prev) => ({ ...prev, ...patch }))
-  }
+  }, [])
 
   const loadPatientData = (): void => {
     if (!foundPatient) return
@@ -710,15 +710,18 @@ export function NewPrescription({
     patchUi({ advice })
   }
 
-  const updateMedicine = (key: string, field: keyof MedicineRow, val: string): void => {
-    setMedicines((prev) => prev.map((m) => (m.key === key ? { ...m, [field]: val } : m)))
-  }
+  const updateMedicine = useCallback(
+    (key: string, field: keyof MedicineRow, val: string): void => {
+      setMedicines((prev) => prev.map((m) => (m.key === key ? { ...m, [field]: val } : m)))
+    },
+    []
+  )
 
-  const removeMedicine = (key: string): void => {
+  const removeMedicine = useCallback((key: string): void => {
     setMedicines((prev) => prev.filter((m) => m.key !== key))
-  }
+  }, [])
 
-  const moveMedicine = (key: string, dir: 'up' | 'down'): void => {
+  const moveMedicine = useCallback((key: string, dir: 'up' | 'down'): void => {
     setMedicines((prev) => {
       const idx = prev.findIndex((m) => m.key === key)
       if (idx < 0) return prev
@@ -729,7 +732,13 @@ export function NewPrescription({
       ;[arr[idx], arr[swap]] = [arr[swap], arr[idx]]
       return arr
     })
-  }
+  }, [])
+
+  const moveMedicineUp = useCallback((key: string): void => moveMedicine(key, 'up'), [moveMedicine])
+  const moveMedicineDown = useCallback(
+    (key: string): void => moveMedicine(key, 'down'),
+    [moveMedicine]
+  )
 
   const handleClear = (): void => {
     loadedAddressRef.current = null
@@ -910,7 +919,7 @@ export function NewPrescription({
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
           <div className="col-span-2">
             <label
               htmlFor="rx-patient-name"
@@ -1285,8 +1294,8 @@ export function NewPrescription({
                     total={medicines.length}
                     onChange={updateMedicine}
                     onRemove={removeMedicine}
-                    onMoveUp={(k) => moveMedicine(k, 'up')}
-                    onMoveDown={(k) => moveMedicine(k, 'down')}
+                    onMoveUp={moveMedicineUp}
+                    onMoveDown={moveMedicineDown}
                   />
                 ))}
                 <div className="mt-3">

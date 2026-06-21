@@ -1,5 +1,5 @@
 import { Check, Plus, Search, X } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 
@@ -29,8 +29,12 @@ export function SearchMultiSelect({
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const filtered = items.filter(
-    (item) => item.toLowerCase().includes(query.toLowerCase()) && !selected.includes(item)
+  const filtered = useMemo(
+    () =>
+      items.filter(
+        (item) => item.toLowerCase().includes(query.toLowerCase()) && !selected.includes(item)
+      ),
+    [items, selected, query]
   )
 
   const toggle = (item: string): void => {

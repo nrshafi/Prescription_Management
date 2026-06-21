@@ -79,7 +79,7 @@ export function MedicinesManager(): React.JSX.Element {
           className="mb-4"
         />
         {error && <p className="text-destructive mb-2 text-sm">{error}</p>}
-        <ul className="max-h-[28rem] space-y-1 overflow-y-auto">
+        <ul className="max-h-[min(28rem,60vh)] space-y-1 overflow-y-auto">
           {filtered.map((row) => (
             <li
               key={row.id}
