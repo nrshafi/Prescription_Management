@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2025-01-01T00:00:00.000Z",
+  "title": "Design System: PrescriptX",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Ink",
+        "canonical": "oklch(0.205 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.205 0 0)",
+          "oklch(0.32 0 0)",
+          "oklch(0.45 0 0)",
+          "oklch(0.556 0 0)",
+          "oklch(0.708 0 0)",
+          "oklch(0.85 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "background": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "oklch(1 0 0)",
+        "tonalRamp": [
+          "oklch(0.145 0 0)",
+          "oklch(0.205 0 0)",
+          "oklch(0.32 0 0)",
+          "oklch(0.45 0 0)",
+          "oklch(0.556 0 0)",
+          "oklch(0.708 0 0)",
+          "oklch(0.922 0 0)",
+          "oklch(1 0 0)"
+        ]
+      },
+      "muted-foreground": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "oklch(0.556 0 0)",
+        "tonalRamp": [
+          "oklch(0.145 0 0)",
+          "oklch(0.32 0 0)",
+          "oklch(0.45 0 0)",
+          "oklch(0.556 0 0)",
+          "oklch(0.65 0 0)",
+          "oklch(0.708 0 0)",
+          "oklch(0.85 0 0)",
+          "oklch(0.97 0 0)"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "oklch(0.922 0 0)",
+        "tonalRamp": [
+          "oklch(0.269 0 0)",
+          "oklch(0.45 0 0)",
+          "oklch(0.6 0 0)",
+          "oklch(0.708 0 0)",
+          "oklch(0.85 0 0)",
+          "oklch(0.922 0 0)",
+          "oklch(0.96 0 0)",
+          "oklch(0.99 0 0)"
+        ]
+      },
+      "destructive": {
+        "role": "functional",
+        "displayName": "Danger Red",
+        "canonical": "oklch(0.577 0.245 27.325)",
+        "tonalRamp": [
+          "oklch(0.35 0.18 27.325)",
+          "oklch(0.45 0.21 27.325)",
+          "oklch(0.577 0.245 27.325)",
+          "oklch(0.65 0.22 27.325)",
+          "oklch(0.704 0.191 22.216)",
+          "oklch(0.8 0.13 27.325)",
+          "oklch(0.88 0.08 27.325)",
+          "oklch(0.95 0.03 27.325)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Largest type; dashboard welcome name and page identity. Used sparingly." },
+      "headline": { "displayName": "Headline", "purpose": "Section and panel headings within a page." },
+      "title": { "displayName": "Title", "purpose": "Card titles, dialog titles, list-row primary text." },
+      "body": { "displayName": "Body", "purpose": "Default reading size for all content, fields, and table cells." },
+      "label": { "displayName": "Label", "purpose": "Field labels, hints, timestamps, muted metadata." }
+    },
+    "shadows": [
+      { "name": "whisper", "value": "0 1px 2px 0 rgb(0 0 0 / 0.05)", "purpose": "Buttons, inputs, small controls. Just enough to seat the control (Tailwind shadow-xs)." },
+      { "name": "soft", "value": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)", "purpose": "Cards and content panels. The ceiling of elevation (Tailwind shadow-sm)." }
+    ],
+    "motion": [
+      { "name": "sidebar-collapse", "value": "200ms ease (width)", "purpose": "Sidebar collapse/expand between 56px and 224px. Needs a reduced-motion instant alternative." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Default call to action: solid Ink with Paper text and a whisper shadow.",
+      "html": "<button class=\"ds-btn-primary\">New Prescription</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; height: 2.25rem; padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500; color: var(--primary-foreground, oklch(0.985 0 0)); background: var(--primary, oklch(0.205 0 0)); border: none; border-radius: 0.425rem; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); cursor: pointer; transition: background 0.15s, box-shadow 0.15s; } .ds-btn-primary:hover { background: color-mix(in oklab, oklch(0.205 0 0) 90%, transparent); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklab, oklch(0.708 0 0) 50%, transparent); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Quiet secondary action: transparent on Paper with a hairline border; hover fills Surface.",
+      "html": "<button class=\"ds-btn-outline\">Cancel</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; height: 2.25rem; padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500; color: var(--foreground, oklch(0.145 0 0)); background: var(--background, oklch(1 0 0)); border: 1px solid var(--border, oklch(0.922 0 0)); border-radius: 0.425rem; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); cursor: pointer; transition: background 0.15s; } .ds-btn-outline:hover { background: var(--accent, oklch(0.97 0 0)); } .ds-btn-outline:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklab, oklch(0.708 0 0) 50%, transparent); }"
+    },
+    {
+      "name": "Destructive Button",
+      "kind": "button",
+      "refersTo": "button-destructive",
+      "description": "Irreversible actions only: solid Danger Red with white text.",
+      "html": "<button class=\"ds-btn-destructive\">Delete patient</button>",
+      "css": ".ds-btn-destructive { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; height: 2.25rem; padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500; color: #fff; background: var(--destructive, oklch(0.577 0.245 27.325)); border: none; border-radius: 0.425rem; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); cursor: pointer; transition: background 0.15s; } .ds-btn-destructive:hover { background: color-mix(in oklab, oklch(0.577 0.245 27.325) 90%, transparent); } .ds-btn-destructive:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklab, oklch(0.577 0.245 27.325) 20%, transparent); }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Transparent field with a hairline border; focus shifts the border and adds a 3px ring.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Patient name\" />",
+      "css": ".ds-input { display: flex; width: 100%; height: 2.25rem; padding: 0.25rem 0.75rem; font-size: 0.875rem; color: var(--foreground, oklch(0.145 0 0)); background: transparent; border: 1px solid var(--input, oklch(0.922 0 0)); border-radius: 0.425rem; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); outline: none; transition: color 0.15s, box-shadow 0.15s; } .ds-input::placeholder { color: var(--muted-foreground, oklch(0.556 0 0)); } .ds-input:focus-visible { border-color: var(--ring, oklch(0.708 0 0)); box-shadow: 0 0 0 3px color-mix(in oklab, oklch(0.708 0 0) 50%, transparent); } .ds-input[aria-invalid=\"true\"] { border-color: var(--destructive, oklch(0.577 0.245 27.325)); }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Flat content panel: Paper surface, 1px hairline border, soft whisper shadow.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">Recent Prescriptions</div><div class=\"ds-card-body\">Border defines the edge, not the shadow.</div></div>",
+      "css": ".ds-card { display: flex; flex-direction: column; gap: 1.5rem; padding: 1.5rem; color: var(--card-foreground, oklch(0.145 0 0)); background: var(--card, oklch(1 0 0)); border: 1px solid var(--border, oklch(0.922 0 0)); border-radius: 0.825rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); } .ds-card-title { font-size: 1rem; font-weight: 600; line-height: 1.25; } .ds-card-body { font-size: 0.875rem; line-height: 1.5; color: var(--muted-foreground, oklch(0.556 0 0)); }"
+    },
+    {
+      "name": "Sidebar Nav Item",
+      "kind": "nav",
+      "refersTo": "navigation",
+      "description": "Rounded row; muted at rest, Surface fill on hover, solid accent + medium weight when active. No colored stripe.",
+      "html": "<nav class=\"ds-nav\"><button class=\"ds-nav-item ds-nav-item--active\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg><span>Dashboard</span></button><button class=\"ds-nav-item\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z\"/><path d=\"M14 2v6h6\"/></svg><span>Prescriptions</span></button></nav>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 0.125rem; padding: 0.5rem; width: 224px; background: var(--card, oklch(1 0 0)); } .ds-nav-item { display: flex; align-items: center; gap: 0.75rem; width: 100%; padding: 0.625rem 0.75rem; font-size: 0.875rem; text-align: left; color: var(--muted-foreground, oklch(0.556 0 0)); background: transparent; border: none; border-radius: 0.625rem; cursor: pointer; transition: background 0.15s, color 0.15s; } .ds-nav-item:hover { background: color-mix(in oklab, oklch(0.97 0 0) 50%, transparent); color: var(--foreground, oklch(0.145 0 0)); } .ds-nav-item--active { background: var(--accent, oklch(0.97 0 0)); color: var(--foreground, oklch(0.145 0 0)); font-weight: 500; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Clinical Instrument",
+    "overview": "PrescriptX looks and behaves like a precise, well-calibrated medical instrument sitting on the doctor's desk: neutral, quiet, and utterly legible. It is achromatic by deliberate choice — a pure grayscale system where the only color that ever appears is red, and only to signal danger. Nothing competes for attention with the patient in the room. The interface is the steady backdrop against which the doctor's work happens, never the subject. The system is calm and dense in the right places: an app shell with a fixed sidebar, flat surfaces separated by hairline borders, and barely-there shadows that suggest structure without decoration. It reads as a native desktop application, not a web page — no marketing chrome, no hero treatments, no gradient cards. Restraint is the entire point.",
+    "keyCharacteristics": [
+      "Achromatic neutral palette; red reserved strictly for destructive/danger.",
+      "Borders-first depth: 1px hairlines and tonal layering, whisper-soft shadows.",
+      "Calm app-shell density — fixed sidebar, flat working surfaces, glance-and-go.",
+      "Light and dark modes both first-class, for varied clinic lighting.",
+      "Legibility and keyboard operability over decoration, every time."
+    ],
+    "rules": [
+      { "name": "The Achromatic Rule", "body": "Every surface, text, border, and fill is chroma 0. The only permitted chromatic value in the entire system is Danger Red, and it appears only on destructive actions and error states. A brand accent enters only through one deliberate token, never by tinting neutrals.", "section": "colors" },
+      { "name": "The Red-Means-Danger Rule", "body": "Red is never decorative, never an accent, never a brand flourish. If something is red, it is dangerous or invalid. Full stop.", "section": "colors" },
+      { "name": "The One-Family Rule", "body": "The system uses exactly one typeface — the OS UI stack. Hierarchy comes from weight (400/500/600/700) and size, never from pairing a second font.", "section": "typography" },
+      { "name": "The Quiet-Ceiling Rule", "body": "The largest type in the app is 24px/700. This is a working tool, not a landing page; nothing shouts.", "section": "typography" },
+      { "name": "The Borders-First Rule", "body": "When you need to separate two surfaces, reach for a 1px border or a one-step tonal shift before a shadow. Shadows are a whisper, not a lift; nothing in this system floats.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep the palette achromatic (chroma 0). Build hierarchy with the neutral ramp — Paper, Surface, Muted Ink, Ink — not with color.",
+      "Do reserve red strictly for destructive actions and error/invalid states.",
+      "Do define surfaces with 1px Hairline borders and one-step tonal shifts first; treat shadows as a whisper (shadow-xs / shadow-sm), never a lift.",
+      "Do keep one typeface (the OS UI stack) and build hierarchy from weight and size.",
+      "Do keep a visible 3px focus ring on every interactive control; this tool is operated by keyboard during consults.",
+      "Do honor prefers-reduced-motion — every transition needs an instant/crossfade alternative.",
+      "Do keep Muted Ink for the supporting layer only, and verify its contrast against Paper for any text the doctor actually reads."
+    ],
+    "donts": [
+      "Don't introduce a brand accent, gradient, or tinted neutral. If a brand color is ever added, it comes through one deliberate token — not by hand-tinting surfaces.",
+      "Don't build the cluttered, dense hospital EHR/EMR wall of gray fields.",
+      "Don't reach for the generic SaaS dashboard template: hero metrics with gradient accent cards, glassmorphism, or animated stats.",
+      "Don't add consumer-health-app styling — emoji, mascots, gamification, playful or hand-drawn illustration.",
+      "Don't use web-app conventions that forget this is a desktop tool.",
+      "Don't use a colored left/right border stripe as an accent on cards, rows, or alerts.",
+      "Don't exceed 24px/700 for any display type.",
+      "Don't pile shadow on top of border as decoration. Pick the border; keep the shadow a whisper."
+    ]
+  }
+}
