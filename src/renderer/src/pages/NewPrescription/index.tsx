@@ -442,8 +442,8 @@ export function NewPrescription({
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      <div className="print:hidden mx-6 mt-4 mb-3 shrink-0 rounded-xl border bg-card p-4 shadow-sm">
-        <div className="mb-3 flex items-center justify-between">
+      <div className="print:hidden mx-6 mt-3 mb-2 shrink-0 rounded-xl border bg-card p-3 shadow-sm">
+        <div className="mb-2 flex items-center justify-between">
           <h2 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
             Patient Information
           </h2>
@@ -471,7 +471,7 @@ export function NewPrescription({
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
           <div className="col-span-2">
             <label
               htmlFor="rx-patient-name"
@@ -520,60 +520,58 @@ export function NewPrescription({
               className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none"
             />
           </div>
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <label
-                htmlFor="rx-patient-gender"
-                className="text-muted-foreground mb-1 block text-xs font-medium"
-              >
-                Gender
-              </label>
-              <Select
-                value={ui.patientGender}
-                onValueChange={(val) => patchUi({ patientGender: val })}
-              >
-                <SelectTrigger id="rx-patient-gender" className="w-full">
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Male">Male</SelectItem>
-                  <SelectItem value="Female">Female</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex-1">
-              <label
-                htmlFor="rx-patient-weight"
-                className="text-muted-foreground mb-1 block text-xs font-medium"
-              >
-                Weight (kg)
-              </label>
-              <input
-                id="rx-patient-weight"
-                type="text"
-                value={ui.patientWeight}
-                onChange={(e) => patchUi({ patientWeight: e.target.value })}
-                className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none"
-              />
-            </div>
+          <div>
+            <label
+              htmlFor="rx-patient-gender"
+              className="text-muted-foreground mb-1 block text-xs font-medium"
+            >
+              Gender
+            </label>
+            <Select
+              value={ui.patientGender}
+              onValueChange={(val) => patchUi({ patientGender: val })}
+            >
+              <SelectTrigger id="rx-patient-gender" className="w-full">
+                <SelectValue placeholder="Select gender" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Male">Male</SelectItem>
+                <SelectItem value="Female">Female</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        </div>
-        <div className="mt-3">
-          <label
-            htmlFor="rx-patient-address"
-            className="text-muted-foreground mb-1 block text-xs font-medium"
-          >
-            Address
-          </label>
-          <textarea
-            id="rx-patient-address"
-            rows={2}
-            value={ui.patientAddress}
-            onChange={(e) => patchUi({ patientAddress: e.target.value })}
-            className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none"
-            placeholder="Patient address"
-          />
+          <div>
+            <label
+              htmlFor="rx-patient-weight"
+              className="text-muted-foreground mb-1 block text-xs font-medium"
+            >
+              Weight (kg)
+            </label>
+            <input
+              id="rx-patient-weight"
+              type="text"
+              value={ui.patientWeight}
+              onChange={(e) => patchUi({ patientWeight: e.target.value })}
+              className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none"
+            />
+          </div>
+          <div className="col-span-2 md:col-span-3 xl:col-span-3">
+            <label
+              htmlFor="rx-patient-address"
+              className="text-muted-foreground mb-1 block text-xs font-medium"
+            >
+              Address
+            </label>
+            <input
+              id="rx-patient-address"
+              type="text"
+              value={ui.patientAddress}
+              onChange={(e) => patchUi({ patientAddress: e.target.value })}
+              className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none"
+              placeholder="Patient address"
+            />
+          </div>
         </div>
         {saveError && <p className="text-destructive mt-2 text-sm">{saveError}</p>}
       </div>
