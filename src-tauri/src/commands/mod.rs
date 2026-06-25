@@ -1,4 +1,5 @@
 pub mod dashboard;
+pub mod logging;
 pub mod patients;
 pub mod prescriptions;
 pub mod presets;

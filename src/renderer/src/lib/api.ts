@@ -1,4 +1,3 @@
-import { invoke } from '@tauri-apps/api/core'
 import type {
   PatientDeleteOptions,
   PatientDeleteResult,
@@ -28,6 +27,7 @@ import type {
   DoctorProfileFormValues,
   PaperSettingsFormValues
 } from '@shared/settings'
+import { invokeLogged } from './logger'
 
 // Renderer-side API adapter backed by Tauri commands.
 export const api = {
@@ -37,60 +37,61 @@ export const api = {
       totalPrescriptions: number
       todaysPrescriptions: number
       recentPatients: PatientListItem[]
-    }> => invoke('dashboard_stats')
+    }> => invokeLogged('dashboard_stats')
   },
   patients: {
     list: (query?: PatientQuery): Promise<PatientListItem[]> =>
-      invoke('patients_list', { query: query ?? {} }),
-    visits: (id: number): Promise<PatientVisit[]> => invoke('patients_visits', { id }),
+      invokeLogged('patients_list', { query: query ?? {} }),
+    visits: (id: number): Promise<PatientVisit[]> => invokeLogged('patients_visits', { id }),
     create: (input: PatientFormValues): Promise<PatientRecord> =>
-      invoke('patients_create', { input }),
+      invokeLogged('patients_create', { input }),
     update: (id: number, input: PatientFormValues): Promise<PatientRecord> =>
-      invoke('patients_update', { id, input }),
+      invokeLogged('patients_update', { id, input }),
     delete: (id: number, options?: PatientDeleteOptions): Promise<PatientDeleteResult> =>
-      invoke('patients_delete', { id, options: options ?? {} }),
+      invokeLogged('patients_delete', { id, options: options ?? {} }),
     prescriptionCount: (id: number): Promise<number> =>
-      invoke('patients_prescription_count', { id })
+      invokeLogged('patients_prescription_count', { id })
   },
   prescriptions: {
     list: (query?: PrescriptionQuery): Promise<PrescriptionListItem[]> =>
-      invoke('prescriptions_list', { query: query ?? {} }),
+      invokeLogged('prescriptions_list', { query: query ?? {} }),
     get: (id: number): Promise<PrescriptionDetail | undefined> =>
-      invoke<PrescriptionDetail | null>('prescriptions_get', { id }).then(
+      invokeLogged<PrescriptionDetail | null>('prescriptions_get', { id }).then(
         (value) => value ?? undefined
       ),
     create: (input: PrescriptionFormValues): Promise<PrescriptionDetail> =>
-      invoke('prescriptions_create', { input }),
+      invokeLogged('prescriptions_create', { input }),
     update: (id: number, input: PrescriptionFormValues): Promise<PrescriptionDetail> =>
-      invoke('prescriptions_update', { id, input }),
+      invokeLogged('prescriptions_update', { id, input }),
     duplicate: (id: number): Promise<PrescriptionDetail> =>
-      invoke('prescriptions_duplicate', { id }),
+      invokeLogged('prescriptions_duplicate', { id }),
     medicineSuggestions: (search?: string): Promise<MedicineSuggestion[]> =>
-      invoke('prescriptions_medicine_suggestions', { search: search ?? '' })
+      invokeLogged('prescriptions_medicine_suggestions', { search: search ?? '' })
   },
   presets: {
     list: (category?: string): Promise<PresetRecord[]> =>
-      invoke('presets_list', { category: category ?? null }),
-    create: (input: PresetFormValues): Promise<PresetRecord> => invoke('presets_create', { input }),
+      invokeLogged('presets_list', { category: category ?? null }),
+    create: (input: PresetFormValues): Promise<PresetRecord> =>
+      invokeLogged('presets_create', { input }),
     update: (id: number, input: PresetFormValues): Promise<PresetRecord> =>
-      invoke('presets_update', { id, input }),
-    delete: (id: number): Promise<{ id: number }> => invoke('presets_delete', { id })
+      invokeLogged('presets_update', { id, input }),
+    delete: (id: number): Promise<{ id: number }> => invokeLogged('presets_delete', { id })
   },
   settings: {
     get: (): Promise<{ doctorProfile: DoctorProfileRecord; paperSettings: PaperSettingsRecord }> =>
-      invoke('settings_get'),
+      invokeLogged('settings_get'),
     updateDoctorProfile: (input: DoctorProfileFormValues): Promise<DoctorProfileRecord> =>
-      invoke('settings_update_doctor_profile', { input }),
+      invokeLogged('settings_update_doctor_profile', { input }),
     updatePaperSettings: (input: PaperSettingsFormValues): Promise<PaperSettingsRecord> =>
-      invoke('settings_update_paper_settings', { input }),
-    exportBackup: (): Promise<BackupActionResult> => invoke('settings_export_backup'),
-    importBackup: (): Promise<BackupActionResult> => invoke('settings_import_backup'),
-    exportJson: (): Promise<BackupActionResult> => invoke('settings_export_json'),
-    importJson: (): Promise<BackupActionResult> => invoke('settings_import_json')
+      invokeLogged('settings_update_paper_settings', { input }),
+    exportBackup: (): Promise<BackupActionResult> => invokeLogged('settings_export_backup'),
+    importBackup: (): Promise<BackupActionResult> => invokeLogged('settings_import_backup'),
+    exportJson: (): Promise<BackupActionResult> => invokeLogged('settings_export_json'),
+    importJson: (): Promise<BackupActionResult> => invokeLogged('settings_import_json')
   },
   printing: {
     data: (prescriptionId: number): Promise<PrescriptionPrintData> =>
-      invoke('printing_data', { prescriptionId }),
+      invokeLogged('printing_data', { prescriptionId }),
     // The print window calls this once its content has rendered. When the
     // window was opened with autoprint=1 (print / PDF flows), trigger the
     // system print dialog from the webview itself.
@@ -101,11 +102,11 @@ export const api = {
       }
     },
     preview: (prescriptionId: number): Promise<PrintActionResult> =>
-      invoke('printing_preview', { prescriptionId }),
+      invokeLogged('printing_preview', { prescriptionId }),
     print: (prescriptionId: number): Promise<PrintActionResult> =>
-      invoke('printing_print', { prescriptionId }),
+      invokeLogged('printing_print', { prescriptionId }),
     pdf: (prescriptionId: number): Promise<PrintActionResult> =>
-      invoke('printing_pdf', { prescriptionId })
+      invokeLogged('printing_pdf', { prescriptionId })
   }
 }
 

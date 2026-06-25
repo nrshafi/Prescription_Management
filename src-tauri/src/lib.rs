@@ -44,7 +44,8 @@ pub fn run() {
             commands::printing::printing_data,
             commands::printing::printing_preview,
             commands::printing::printing_print,
-            commands::printing::printing_pdf
+            commands::printing::printing_pdf,
+            commands::logging::log_event
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
