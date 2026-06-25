@@ -1,4 +1,4 @@
-import type { PatientRecord } from '../../../shared/patient'
+import type { PatientRecord } from '@shared/patient'
 import {
   PRESCRIPTION_SECTION_TYPES,
   type PrescriptionDetail,
@@ -6,7 +6,7 @@ import {
   type PrescriptionMedicineInput,
   type PrescriptionSectionInput,
   type PrescriptionSectionType
-} from '../../../shared/prescription'
+} from '@shared/prescription'
 
 export interface OeValues {
   bp: string

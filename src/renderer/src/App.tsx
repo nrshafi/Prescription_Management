@@ -9,7 +9,7 @@ import { Prescriptions } from '@/pages/Prescriptions'
 import { PresetsManager } from '@/pages/PresetsManager'
 import { PrintRenderer } from '@/pages/PrintRenderer'
 import { Settings } from '@/pages/Settings'
-import type { PatientListItem } from '../../shared/patient'
+import type { PatientListItem } from '@shared/patient'
 
 function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(

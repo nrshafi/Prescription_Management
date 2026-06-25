@@ -28,7 +28,7 @@ import {
   type PresetLinkFormValues,
   type PresetLinkKind,
   type PresetRecord
-} from '../../../shared/prescription'
+} from '@shared/prescription'
 
 const TAB_CATEGORIES: PresetCategory[] = [
   'Chief Complaint',

@@ -7,7 +7,7 @@ import type {
   PatientQuery,
   PatientRecord,
   PatientVisit
-} from '../../../shared/patient'
+} from '@shared/patient'
 import type {
   MedicineSuggestion,
   PrescriptionDetail,
@@ -16,18 +16,18 @@ import type {
   PrescriptionQuery,
   PresetFormValues,
   PresetRecord
-} from '../../../shared/prescription'
+} from '@shared/prescription'
 import type {
   DoctorProfileRecord,
   PaperSettingsRecord,
   PrescriptionPrintData,
   PrintActionResult
-} from '../../../shared/print'
+} from '@shared/print'
 import type {
   BackupActionResult,
   DoctorProfileFormValues,
   PaperSettingsFormValues
-} from '../../../shared/settings'
+} from '@shared/settings'
 
 // Renderer-side API adapter backed by Tauri commands.
 export const api = {

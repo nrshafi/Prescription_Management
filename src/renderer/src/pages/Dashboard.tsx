@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { api } from '@/lib/api'
 import type { AppPage } from '@/lib/navigation'
-import type { PrescriptionListItem } from '../../../shared/prescription'
-import type { DoctorProfileRecord } from '../../../shared/print'
+import type { PrescriptionListItem } from '@shared/prescription'
+import type { DoctorProfileRecord } from '@shared/print'
 
 interface DashboardProps {
   onNavigate: (page: AppPage) => void

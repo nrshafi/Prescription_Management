@@ -9,7 +9,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 import { api } from '@/lib/api'
-import type { PatientListItem } from '../../../../shared/patient'
+import type { PatientListItem } from '@shared/patient'
 
 interface DeletePatientDialogProps {
   patient: PatientListItem | null

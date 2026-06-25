@@ -25,7 +25,7 @@ import {
   type PatientFormValues,
   type PatientRecord,
   patientFormSchema
-} from '../../../../shared/patient'
+} from '@shared/patient'
 
 interface PatientFormDialogProps {
   open: boolean

@@ -22,12 +22,12 @@ import {
   type PaperSettingsRecord,
   PRINT_FONT_STORAGE_KEY,
   PRINT_FONTS
-} from '../../../shared/print'
+} from '@shared/print'
 import {
   type DoctorProfileFormValues,
   JSON_EXPORT_EXAMPLE,
   type PaperSettingsFormValues
-} from '../../../shared/settings'
+} from '@shared/settings'
 
 const defaultDoctor: DoctorProfileFormValues = {
   name: '',

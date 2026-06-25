@@ -9,7 +9,7 @@ import {
   TableRow
 } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import type { PatientVisit } from '../../../../shared/patient'
+import type { PatientVisit } from '@shared/patient'
 
 export interface VisitState {
   loading: boolean

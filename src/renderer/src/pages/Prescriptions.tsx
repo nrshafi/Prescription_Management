@@ -41,8 +41,8 @@ import type {
   PatientRecord,
   PatientSortField,
   SortDirection
-} from '../../../shared/patient'
-import { GENDERS } from '../../../shared/patient'
+} from '@shared/patient'
+import { GENDERS } from '@shared/patient'
 
 const ALL_GENDERS = '__all__'
 

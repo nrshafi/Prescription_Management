@@ -1,11 +1,11 @@
 import { useEffect, useLayoutEffect, useState } from 'react'
 import { api } from '@/lib/api'
-import type { PrescriptionSectionType } from '../../../shared/prescription'
+import type { PrescriptionSectionType } from '@shared/prescription'
 import {
   getPrintFontStack,
   PRINT_FONT_STORAGE_KEY,
   type PrescriptionPrintData
-} from '../../../shared/print'
+} from '@shared/print'
 
 const SECTION_LABELS: Record<PrescriptionSectionType, string> = {
   'Chief Complaint': 'C/C',

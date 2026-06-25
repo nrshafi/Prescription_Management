@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { api } from '@/lib/api'
-import type { PresetFormValues, PresetRecord } from '../../../shared/prescription'
+import type { PresetFormValues, PresetRecord } from '@shared/prescription'
 
 export function MedicinesManager(): React.JSX.Element {
   const [rows, setRows] = useState<PresetRecord[]>([])
