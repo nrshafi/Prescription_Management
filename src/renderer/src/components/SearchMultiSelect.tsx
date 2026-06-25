@@ -87,9 +87,14 @@ export function SearchMultiSelect({
     const scrollContainer = containerRef.current?.closest('[class*="overflow"]')
     scrollContainer?.addEventListener('scroll', updatePosition, { passive: true })
     window.addEventListener('scroll', updatePosition, { passive: true })
+
+    const resizeObserver = new ResizeObserver(() => updatePosition())
+    if (containerRef.current) resizeObserver.observe(containerRef.current)
+
     return () => {
       scrollContainer?.removeEventListener('scroll', updatePosition)
       window.removeEventListener('scroll', updatePosition)
+      resizeObserver.disconnect()
     }
   }, [isOpen, updatePosition])
 

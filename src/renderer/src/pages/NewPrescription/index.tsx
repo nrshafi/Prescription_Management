@@ -81,7 +81,8 @@ export function NewPrescription({
     const map = new Map<string, PresetRecord>()
     for (const preset of presets) {
       if (preset.category === 'Chief Complaint') {
-        map.set(preset.content?.trim() ? preset.content.trim() : preset.title, preset)
+        if (preset.title.trim()) map.set(preset.title.trim(), preset)
+        if (preset.content?.trim()) map.set(preset.content.trim(), preset)
       }
     }
     return map
@@ -91,7 +92,8 @@ export function NewPrescription({
     const map = new Map<string, PresetRecord>()
     for (const preset of presets) {
       if (preset.category === 'Provisional Diagnosis') {
-        map.set(preset.content?.trim() ? preset.content.trim() : preset.title, preset)
+        if (preset.title.trim()) map.set(preset.title.trim(), preset)
+        if (preset.content?.trim()) map.set(preset.content.trim(), preset)
       }
     }
     return map
@@ -108,10 +110,10 @@ export function NewPrescription({
     }
 
     for (const complaint of ui.chiefComplaints) {
-      addBundle(complaint, complaintPresetByTitle.get(complaint))
+      addBundle(complaint, complaintPresetByTitle.get(complaint.trim()))
     }
     for (const diagnosis of ui.diagnoses) {
-      addBundle(diagnosis, diagnosisPresetByTitle.get(diagnosis))
+      addBundle(diagnosis, diagnosisPresetByTitle.get(diagnosis.trim()))
     }
 
     return bundles
