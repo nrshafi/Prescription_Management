@@ -441,7 +441,7 @@ export function NewPrescription({
   const customOePreviewRows = ui.oe.custom.filter((row) => row.label.trim() && row.value.trim())
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col overflow-y-auto xl:overflow-hidden">
       <div className="print:hidden mx-6 mt-3 mb-2 shrink-0 rounded-xl border bg-card p-3 shadow-sm">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
@@ -576,8 +576,8 @@ export function NewPrescription({
         {saveError && <p className="text-destructive mt-2 text-sm">{saveError}</p>}
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-6 pb-4 xl:flex-row">
-        <div className="print:hidden flex w-full shrink-0 flex-col gap-3 overflow-y-auto pr-1 xl:w-[40%]">
+      <div className="flex flex-col gap-4 px-6 pb-4 xl:min-h-0 xl:flex-1 xl:flex-row xl:overflow-hidden">
+        <div className="print:hidden flex w-full shrink-0 flex-col gap-3 pr-1 xl:w-[40%] xl:overflow-y-auto">
           <SectionsEditor
             ui={ui}
             complaintItems={complaintItems}
@@ -592,7 +592,7 @@ export function NewPrescription({
           />
         </div>
 
-        <div className="min-w-0 flex-1 overflow-y-auto print:w-full">
+        <div className="min-w-0 flex-1 print:w-full xl:overflow-y-auto">
           <div
             id="prescription-sheet"
             className="bg-card rounded-xl border shadow-md print:min-h-screen print:rounded-none print:shadow-none"
