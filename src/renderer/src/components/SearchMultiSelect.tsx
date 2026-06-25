@@ -27,6 +27,7 @@ export function SearchMultiSelect({
     width: number
   } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const filtered = useMemo(
@@ -67,7 +68,12 @@ export function SearchMultiSelect({
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent): void => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(target) &&
+        !dropdownRef.current?.contains(target)
+      ) {
         setIsOpen(false)
       }
     }
@@ -166,6 +172,7 @@ export function SearchMultiSelect({
         dropdownPos &&
         createPortal(
           <div
+            ref={dropdownRef}
             role="listbox"
             tabIndex={0}
             aria-activedescendant={`sms-option-${highlightedIndex}`}
@@ -184,9 +191,11 @@ export function SearchMultiSelect({
                 role="option"
                 aria-selected={i === highlightedIndex}
                 type="button"
+                onMouseEnter={() => setHighlightedIndex(i)}
                 onClick={() => (opt.kind === 'item' ? toggle(opt.label) : addCustom())}
                 className={cn(
-                  'hover:bg-accent flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors',
+                  'flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-accent',
+                  i === highlightedIndex && 'bg-accent',
                   opt.kind === 'add' && 'text-primary border-t'
                 )}
               >
