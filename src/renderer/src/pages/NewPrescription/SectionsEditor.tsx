@@ -157,6 +157,7 @@ export function SectionsEditor({
                 variant="ghost"
                 size="icon"
                 className="size-9 shrink-0"
+                aria-label={`Remove custom O/E row ${index + 1}`}
                 onClick={() => {
                   const custom = ui.oe.custom.filter((item) => item.id !== row.id)
                   onPatchUi({ oe: { ...ui.oe, custom } })

@@ -205,6 +205,7 @@ function BundleEditor({
                         size="icon"
                         variant="ghost"
                         className="text-destructive ml-auto size-8"
+                        aria-label="Remove linked item"
                         onClick={() => removeLink(index)}
                       >
                         <Trash2 />
@@ -334,9 +335,15 @@ export function PresetsManager(): React.JSX.Element {
   }
 
   async function saveBundle(input: PresetFormValues, id?: number): Promise<void> {
-    if (id) await api.presets.update(id, input)
-    else await api.presets.create(input)
-    await load()
+    setError(null)
+    try {
+      if (id) await api.presets.update(id, input)
+      else await api.presets.create(input)
+      await load()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not save preset bundle.')
+      throw err
+    }
   }
 
   async function addPreset(): Promise<void> {
@@ -346,24 +353,39 @@ export function PresetsManager(): React.JSX.Element {
     }
     const title = addVal.trim()
     if (!title) return
-    const input: PresetFormValues = { category: tab, title, content: title }
-    await api.presets.create(input)
-    setAddVal('')
-    await load()
+    setError(null)
+    try {
+      const input: PresetFormValues = { category: tab, title, content: title }
+      await api.presets.create(input)
+      setAddVal('')
+      await load()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not add preset.')
+    }
   }
 
   async function saveEdit(id: number): Promise<void> {
     const title = editTitle.trim()
     if (!title) return
-    await api.presets.update(id, { category: tab, title, content: title })
-    setEditingId(null)
-    await load()
+    setError(null)
+    try {
+      await api.presets.update(id, { category: tab, title, content: title })
+      setEditingId(null)
+      await load()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not update preset.')
+    }
   }
 
   async function remove(id: number): Promise<void> {
-    await api.presets.delete(id)
-    if (editingId === id) setEditingId(null)
-    await load()
+    setError(null)
+    try {
+      await api.presets.delete(id)
+      if (editingId === id) setEditingId(null)
+      await load()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not delete preset.')
+    }
   }
 
   return (
@@ -389,7 +411,7 @@ export function PresetsManager(): React.JSX.Element {
               role="tab"
               aria-selected={tab === cat}
               id={`preset-tab-${cat.replace(/\s+/g, '-')}`}
-              aria-controls={`preset-panel-${tab.replace(/\s+/g, '-')}`}
+              aria-controls={`preset-panel-${cat.replace(/\s+/g, '-')}`}
               onClick={() => {
                 setTab(cat)
                 setSearch('')
@@ -430,7 +452,7 @@ export function PresetsManager(): React.JSX.Element {
 
           {error && <p className="text-destructive mb-2 text-sm">{error}</p>}
 
-          <ul className="mb-4 max-h-80 overflow-y-auto">
+          <ul className="mb-4">
             {filtered.length === 0 ? (
               <li className="text-muted-foreground py-6 text-center text-sm">
                 No presets in this category
@@ -495,7 +517,7 @@ export function PresetsManager(): React.JSX.Element {
                         type="button"
                         size="icon"
                         variant="ghost"
-                        className="size-8 opacity-0 group-hover:opacity-100"
+                        className="size-8 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
                         onClick={() => {
                           if (BUNDLE_CATEGORIES.has(row.category)) openBundle(row)
                           else {
@@ -511,7 +533,7 @@ export function PresetsManager(): React.JSX.Element {
                         type="button"
                         size="icon"
                         variant="ghost"
-                        className="text-destructive size-8 opacity-0 group-hover:opacity-100"
+                        className="text-destructive size-8 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
                         onClick={() => remove(row.id)}
                         aria-label="Delete preset"
                       >

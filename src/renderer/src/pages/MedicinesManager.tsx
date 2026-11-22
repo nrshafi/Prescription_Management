@@ -37,10 +37,15 @@ export function MedicinesManager(): React.JSX.Element {
   async function addMedicine(): Promise<void> {
     const title = newTitle.trim()
     if (!title) return
-    const input: PresetFormValues = { category: 'Medicine', title, content: title }
-    await api.presets.create(input)
-    setNewTitle('')
-    await load()
+    setError(null)
+    try {
+      const input: PresetFormValues = { category: 'Medicine', title, content: title }
+      await api.presets.create(input)
+      setNewTitle('')
+      await load()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not add medicine.')
+    }
   }
 
   async function saveEdit(id: number): Promise<void> {
@@ -48,15 +53,25 @@ export function MedicinesManager(): React.JSX.Element {
     if (!title) return
     const row = rows.find((r) => r.id === id)
     if (!row) return
-    await api.presets.update(id, { category: 'Medicine', title, content: title })
-    setEditingId(null)
-    await load()
+    setError(null)
+    try {
+      await api.presets.update(id, { category: 'Medicine', title, content: title })
+      setEditingId(null)
+      await load()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not update medicine.')
+    }
   }
 
   async function remove(id: number): Promise<void> {
-    await api.presets.delete(id)
-    if (editingId === id) setEditingId(null)
-    await load()
+    setError(null)
+    try {
+      await api.presets.delete(id)
+      if (editingId === id) setEditingId(null)
+      await load()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not delete medicine.')
+    }
   }
 
   return (
@@ -79,7 +94,7 @@ export function MedicinesManager(): React.JSX.Element {
           className="mb-4"
         />
         {error && <p className="text-destructive mb-2 text-sm">{error}</p>}
-        <ul className="max-h-[min(28rem,60vh)] space-y-1 overflow-y-auto">
+        <ul className="space-y-1">
           {filtered.map((row) => (
             <li
               key={row.id}
@@ -125,7 +140,7 @@ export function MedicinesManager(): React.JSX.Element {
                     type="button"
                     size="icon"
                     variant="ghost"
-                    className="size-8 opacity-0 group-hover:opacity-100"
+                    className="size-8 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
                     onClick={() => {
                       setEditingId(row.id)
                       setEditTitle(row.title)
@@ -138,7 +153,7 @@ export function MedicinesManager(): React.JSX.Element {
                     type="button"
                     size="icon"
                     variant="ghost"
-                    className="text-destructive size-8 opacity-0 group-hover:opacity-100"
+                    className="text-destructive size-8 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
                     onClick={() => remove(row.id)}
                     aria-label="Delete medicine"
                   >

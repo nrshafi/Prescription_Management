@@ -95,7 +95,7 @@ export function Dashboard({ onNavigate }: DashboardProps): React.JSX.Element {
       {error && <p className="text-destructive mt-4 text-sm">{error}</p>}
 
       <dl
-        className="mt-px grid grid-cols-2 divide-x divide-y border-b xl:grid-cols-4 xl:divide-y-0"
+        className="mt-px grid grid-cols-2 divide-x divide-y border-b lg:grid-cols-4 lg:divide-y-0"
         aria-busy={loading}
       >
         {loading

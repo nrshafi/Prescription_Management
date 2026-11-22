@@ -71,6 +71,7 @@ export function Sidebar({
                   : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
                 collapsed && 'justify-center'
               )}
+              aria-label={collapsed ? item.label : undefined}
               title={collapsed ? item.label : undefined}
             >
               <Icon className={cn('size-5 shrink-0', isActive && 'text-foreground')} />
@@ -85,6 +86,7 @@ export function Sidebar({
           type="button"
           onClick={onToggle}
           className="text-muted-foreground hover:bg-accent flex w-full items-center justify-center rounded-lg p-2 transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? <ChevronRight className="size-4" /> : <ChevronLeft className="size-4" />}

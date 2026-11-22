@@ -35,9 +35,16 @@ export function DeletePatientDialog({
       return
     }
     let cancelled = false
-    api.patients.prescriptionCount(patient.id).then((count) => {
-      if (!cancelled) setPrescriptionCount(count)
-    })
+    api.patients
+      .prescriptionCount(patient.id)
+      .then((count) => {
+        if (!cancelled) setPrescriptionCount(count)
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Could not check prescription count.')
+        }
+      })
     return () => {
       cancelled = true
     }

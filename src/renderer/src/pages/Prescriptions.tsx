@@ -89,12 +89,6 @@ function SortableHeader({
   )
 }
 
-function patientSummary(patient: PatientListItem): string {
-  return [patient.gender, patient.age && `Age ${patient.age}`, patient.phone]
-    .filter(Boolean)
-    .join(' · ')
-}
-
 export function Prescriptions({
   onEdit,
   onNew,
@@ -427,7 +421,9 @@ export function Prescriptions({
             ) : patients.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-muted-foreground py-10 text-center">
-                  No prescriptions yet.
+                  {search || gender !== ALL_GENDERS || dateFrom || dateTo
+                    ? 'No matching patients.'
+                    : 'No prescriptions yet.'}
                 </TableCell>
               </TableRow>
             ) : (
@@ -540,16 +536,7 @@ export function Prescriptions({
                     {expanded ? (
                       <TableRow key={`${patient.id}-visits`}>
                         <TableCell colSpan={8} className="bg-muted/30 p-4">
-                          <div className="flex flex-col gap-3">
-                            {patient.address || patientSummary(patient) ? (
-                              <div className="text-muted-foreground text-sm">
-                                {[patientSummary(patient), patient.address]
-                                  .filter(Boolean)
-                                  .join(' · ')}
-                              </div>
-                            ) : null}
-                            {renderVisits(patient)}
-                          </div>
+                          {renderVisits(patient)}
                         </TableCell>
                       </TableRow>
                     ) : null}

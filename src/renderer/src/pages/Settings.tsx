@@ -226,7 +226,7 @@ export function Settings(): React.JSX.Element {
       {error && <p className="text-destructive text-sm">{error}</p>}
       {status && <p className="text-muted-foreground text-sm">{status}</p>}
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-4">
           <Card>
             <CardHeader>
@@ -267,8 +267,9 @@ export function Settings(): React.JSX.Element {
                 />
               </div>
               <div className="grid gap-2">
-                <Label>Address</Label>
+                <Label htmlFor="doctor-address">Address</Label>
                 <Textarea
+                  id="doctor-address"
                   value={doctor.address ?? ''}
                   onChange={(event) =>
                     setDoctor((current) => ({ ...current, address: event.target.value }))
@@ -277,8 +278,9 @@ export function Settings(): React.JSX.Element {
                 />
               </div>
               <div className="grid gap-2">
-                <Label>Chamber</Label>
+                <Label htmlFor="doctor-chamber">Chamber</Label>
                 <Textarea
+                  id="doctor-chamber"
                   value={doctor.chamber ?? ''}
                   onChange={(event) =>
                     setDoctor((current) => ({ ...current, chamber: event.target.value }))
@@ -291,7 +293,7 @@ export function Settings(): React.JSX.Element {
                 value={doctor.signaturePath ?? ''}
                 onChange={(value) => setDoctor((current) => ({ ...current, signaturePath: value }))}
               />
-              <Button onClick={saveDoctor}>
+              <Button type="button" onClick={saveDoctor}>
                 <Save className="size-4" /> Save Doctor Profile
               </Button>
             </CardContent>
@@ -331,8 +333,9 @@ export function Settings(): React.JSX.Element {
               <div className="grid gap-3 sm:grid-cols-2">
                 {(Object.keys(paper) as (keyof PaperSettingsFormValues)[]).map((field) => (
                   <div key={field} className="grid gap-2">
-                    <Label>{PAPER_FIELD_LABELS[field]}</Label>
+                    <Label htmlFor={`paper-${field}`}>{PAPER_FIELD_LABELS[field]}</Label>
                     <Input
+                      id={`paper-${field}`}
                       type="number"
                       value={paper[field]}
                       onChange={(event) => updatePaper(field, event.target.value)}
@@ -341,10 +344,15 @@ export function Settings(): React.JSX.Element {
                 ))}
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={() => setPaper(defaultPaper)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setPaper(defaultPaper)}
+                >
                   <RotateCcw className="size-4" /> A4 Defaults
                 </Button>
-                <Button className="flex-1" onClick={savePaper}>
+                <Button type="button" className="flex-1" onClick={savePaper}>
                   <Save className="size-4" /> Save Paper Settings
                 </Button>
               </div>
@@ -477,10 +485,11 @@ function Field({
   value: string
   onChange: (value: string) => void
 }): React.JSX.Element {
+  const id = `doctor-${label.toLowerCase().replace(/\s+/g, '-')}`
   return (
     <div className="grid gap-2">
-      <Label>{label}</Label>
-      <Input value={value} onChange={(event) => onChange(event.target.value)} />
+      <Label htmlFor={id}>{label}</Label>
+      <Input id={id} value={value} onChange={(event) => onChange(event.target.value)} />
     </div>
   )
 }
