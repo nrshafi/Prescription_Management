@@ -4,6 +4,7 @@ import { type AppPage, PAGE_TITLES } from '@/lib/navigation'
 
 interface HeaderProps {
   currentPage: AppPage
+  titleOverride?: string
   onSavePrescription?: () => void
   onExportPdf?: () => void
   onPrint?: () => void
@@ -12,6 +13,7 @@ interface HeaderProps {
 
 export function Header({
   currentPage,
+  titleOverride,
   onSavePrescription,
   onExportPdf,
   onPrint,
@@ -19,7 +21,7 @@ export function Header({
 }: HeaderProps): React.JSX.Element {
   return (
     <header className="bg-card print:hidden flex h-16 shrink-0 items-center justify-between border-b px-6">
-      <h1 className="text-xl font-semibold">{PAGE_TITLES[currentPage]}</h1>
+      <h1 className="text-xl font-semibold">{titleOverride ?? PAGE_TITLES[currentPage]}</h1>
       {showPrescriptionActions && (
         <div className="flex items-center gap-2">
           <Button type="button" variant="outline" size="sm" onClick={onSavePrescription}>

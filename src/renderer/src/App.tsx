@@ -39,28 +39,35 @@ function App(): React.JSX.Element {
   const printPrescriptionId = new URLSearchParams(window.location.search).get('printPrescriptionId')
 
   useEffect(() => {
-    const theme = localStorage.getItem('theme') ?? 'system'
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    document.documentElement.classList.toggle(
-      'dark',
-      theme === 'dark' || (theme === 'system' && prefersDark)
-    )
+    const mql = window.matchMedia('(prefers-color-scheme: dark)')
+    const applyTheme = (): void => {
+      const theme = localStorage.getItem('theme') ?? 'system'
+      document.documentElement.classList.toggle(
+        'dark',
+        theme === 'dark' || (theme === 'system' && mql.matches)
+      )
+    }
+    applyTheme()
+    mql.addEventListener('change', applyTheme)
+    return () => mql.removeEventListener('change', applyTheme)
   }, [])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent): void => {
       const mod = e.metaKey || e.ctrlKey
-      if (!mod) return
+      const actions = rxActionsRef.current
+      if (!mod || !actions) return
 
-      if (e.key === 's') {
+      const key = e.key.toLowerCase()
+      if (key === 's') {
         e.preventDefault()
-        rxActionsRef.current?.savePrescription()
-      } else if (e.key === 'p') {
+        void actions.savePrescription()
+      } else if (key === 'p') {
         e.preventDefault()
-        rxActionsRef.current?.print()
-      } else if (e.key === 'e' && e.shiftKey) {
+        void actions.print()
+      } else if (key === 'e' && e.shiftKey) {
         e.preventDefault()
-        rxActionsRef.current?.exportPdf()
+        void actions.exportPdf()
       }
     }
 
@@ -154,6 +161,7 @@ function App(): React.JSX.Element {
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Header
           currentPage={page}
+          titleOverride={page === 'new-prescription' && rxEditId ? 'Edit Prescription' : undefined}
           showPrescriptionActions={page === 'new-prescription'}
           onSavePrescription={() => rxActionsRef.current?.savePrescription()}
           onExportPdf={() => rxActionsRef.current?.exportPdf()}

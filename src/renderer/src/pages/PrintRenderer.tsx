@@ -152,9 +152,9 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
         body { background: white; }
         .print-shell { padding: 0; background: white; }
         .print-sheet {
-          width: ${paper.widthMm}mm;
+          width: auto;
           min-height: auto;
-          padding: ${paper.marginTop}mm ${paper.marginRight}mm ${paper.marginBottom}mm ${paper.marginLeft}mm;
+          padding: 0;
           box-shadow: none;
         }
       }
@@ -177,7 +177,7 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
   if (!data) {
     return (
       <div className="print-shell min-h-screen bg-muted p-8 text-foreground">
-        <div className="mx-auto max-w-xl rounded-md bg-white p-8 shadow">
+        <div className="mx-auto max-w-xl rounded-md bg-white p-8 text-neutral-950 shadow">
           Preparing print preview...
         </div>
       </div>
@@ -196,7 +196,7 @@ export function PrintRenderer({ prescriptionId }: PrintRendererProps): React.JSX
       <style>{pageStyle}</style>
       <article
         data-print-content
-        className="print-sheet mx-auto bg-white text-foreground shadow-xl print:shadow-none"
+        className="print-sheet mx-auto bg-white text-neutral-950 shadow-xl print:shadow-none"
         style={{ fontFamily: printFontStack }}
       >
         <header className="border-b-2 border-neutral-900 pb-4">

@@ -25,13 +25,12 @@ export function buildUiForSave(
   return {
     ...ui,
     patientId,
-    medicines: medicines.map((m, position) => ({
+    medicines: medicines.map((m) => ({
       medicineName: m.medicineName,
       dosage: m.dosage,
       frequency: m.frequency,
       duration: m.duration,
-      notes: m.notes,
-      position
+      notes: m.notes
     }))
   }
 }

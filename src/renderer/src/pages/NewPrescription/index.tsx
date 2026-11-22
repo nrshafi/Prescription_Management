@@ -51,11 +51,9 @@ export function NewPrescription({
   const [foundPatient, setFoundPatient] = useState<PatientListItem | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const editingIdRef = useRef(editId)
-  // Address as loaded for the current patient, used to detect whether the user
-  // actually changed it before issuing a patient update on save. Without this,
-  // edit mode (where foundPatient is null) always sees a "change" and fires an
-  // unnecessary patients.update that can fail and abort the save.
-  const loadedAddressRef = useRef<string | null>(null)
+  // Snapshot of loaded patient fields so we only call patients.update when the
+  // user actually edited age, gender, or address on an existing patient.
+  const loadedPatientRef = useRef<{ age: string; gender: string; address: string } | null>(null)
   const adviceSectionRef = useRef<HTMLDivElement>(null)
   // Only user-driven advice additions (via the advice selector) trigger auto-scroll.
   // Programmatic growth from loadEdit/applyBundle is intentionally ignored.
@@ -120,9 +118,13 @@ export function NewPrescription({
   }, [ui.chiefComplaints, ui.diagnoses, complaintPresetByTitle, diagnosisPresetByTitle])
 
   const loadMeta = useCallback(async () => {
-    const [presetRows, settings] = await Promise.all([api.presets.list(), api.settings.get()])
-    setPresets(presetRows)
-    setDoctor(settings.doctorProfile)
+    try {
+      const [presetRows, settings] = await Promise.all([api.presets.list(), api.settings.get()])
+      setPresets(presetRows)
+      setDoctor(settings.doctorProfile)
+    } catch (err) {
+      setSaveError(toErrorMessage(err, 'Could not load presets or doctor profile.'))
+    }
   }, [])
 
   const loadEdit = useCallback(
@@ -133,7 +135,11 @@ export function NewPrescription({
         return
       }
       const parsed = detailToUi(detail)
-      loadedAddressRef.current = parsed.patientAddress
+      loadedPatientRef.current = {
+        age: parsed.patientAge,
+        gender: parsed.patientGender,
+        address: parsed.patientAddress
+      }
       setUi(parsed)
       setMedicines(
         parsed.medicines
@@ -141,9 +147,9 @@ export function NewPrescription({
           .map((m) => ({
             key: nextMedKey(),
             medicineName: m.medicineName ?? '',
-            dosage: m.dosage ?? '1+1+1',
-            frequency: m.frequency ?? 'After Meal',
-            duration: m.duration ?? '5 Days',
+            dosage: m.dosage ?? MEDICINE_DEFAULTS.dosage,
+            frequency: m.frequency ?? MEDICINE_DEFAULTS.frequency,
+            duration: m.duration ?? MEDICINE_DEFAULTS.duration,
             notes: m.notes ?? ''
           }))
       )
@@ -157,13 +163,17 @@ export function NewPrescription({
   }, [loadMeta])
 
   useEffect(() => {
-    if (editId) loadEdit(editId)
+    if (editId) void loadEdit(editId)
     else if (seedPatient) {
-      loadedAddressRef.current = seedPatient.address ?? ''
+      loadedPatientRef.current = {
+        age: seedPatient.age ?? '',
+        gender: seedPatient.gender ?? 'Male',
+        address: seedPatient.address ?? ''
+      }
       setUi(uiStateFromPatient(seedPatient))
       setMedicines([])
     } else {
-      loadedAddressRef.current = null
+      loadedPatientRef.current = null
       setUi(emptyUiState())
       setMedicines([])
     }
@@ -175,13 +185,23 @@ export function NewPrescription({
       setFoundPatient(null)
       return
     }
+    let cancelled = false
     const t = setTimeout(() => {
-      api.patients.list({ search: phone }).then((rows) => {
-        const match = rows.find((p) => p.phone === phone)
-        setFoundPatient(match ?? null)
-      })
+      api.patients
+        .list({ search: phone })
+        .then((rows) => {
+          if (cancelled) return
+          const match = rows.find((p) => p.phone === phone)
+          setFoundPatient(match ?? null)
+        })
+        .catch(() => {
+          if (!cancelled) setFoundPatient(null)
+        })
     }, 300)
-    return () => clearTimeout(t)
+    return () => {
+      cancelled = true
+      clearTimeout(t)
+    }
   }, [ui.patientPhone])
 
   const patchUi = useCallback((patch: Partial<PrescriptionUiState>): void => {
@@ -190,7 +210,11 @@ export function NewPrescription({
 
   const loadPatientData = (): void => {
     if (!foundPatient) return
-    loadedAddressRef.current = foundPatient.address ?? ''
+    loadedPatientRef.current = {
+      age: foundPatient.age ?? '',
+      gender: foundPatient.gender ?? 'Male',
+      address: foundPatient.address ?? ''
+    }
     patchUi({
       patientId: foundPatient.id,
       patientName: foundPatient.name,
@@ -306,7 +330,7 @@ export function NewPrescription({
   )
 
   const handleClear = (): void => {
-    loadedAddressRef.current = null
+    loadedPatientRef.current = null
     setUi(emptyUiState())
     setMedicines([])
     setFoundPatient(null)
@@ -317,11 +341,12 @@ export function NewPrescription({
 
   const resolvePatientId = async (): Promise<number> => {
     if (ui.patientId > 0) {
-      // Only persist a patient update when the address actually changed from
-      // what was loaded. loadedAddressRef is null only when we have no known
-      // baseline; in that case fall back to comparing against an empty string.
-      const baseline = (loadedAddressRef.current ?? '').trim()
-      if (ui.patientAddress.trim() !== baseline) {
+      const baseline = loadedPatientRef.current ?? { age: '', gender: '', address: '' }
+      const changed =
+        ui.patientAge.trim() !== baseline.age.trim() ||
+        ui.patientGender !== baseline.gender ||
+        ui.patientAddress.trim() !== baseline.address.trim()
+      if (changed) {
         const values: PatientFormValues = {
           name: ui.patientName.trim(),
           age: ui.patientAge,
@@ -330,7 +355,11 @@ export function NewPrescription({
           address: ui.patientAddress
         }
         await api.patients.update(ui.patientId, values)
-        loadedAddressRef.current = ui.patientAddress
+        loadedPatientRef.current = {
+          age: ui.patientAge,
+          gender: ui.patientGender,
+          address: ui.patientAddress
+        }
       }
       return ui.patientId
     }
@@ -350,7 +379,11 @@ export function NewPrescription({
       address: ui.patientAddress
     }
     const created = await api.patients.create(values)
-    loadedAddressRef.current = ui.patientAddress
+    loadedPatientRef.current = {
+      age: ui.patientAge,
+      gender: ui.patientGender,
+      address: ui.patientAddress
+    }
     patchUi({ patientId: created.id })
     return created.id
   }
@@ -378,31 +411,30 @@ export function NewPrescription({
   }
 
   const savePrescription = async (): Promise<void> => {
-    try {
-      const saved = await persist()
-      onEditIdChange(saved.id)
-      editingIdRef.current = saved.id
-      onStatus?.(`Saved as Pres_ID ${saved.id}.`)
-    } catch (err) {
-      setSaveError(toErrorMessage(err, 'Could not save prescription.'))
-    }
+    await saveAndGetId()
   }
 
   const exportPdf = async (): Promise<void> => {
-    let id = editingIdRef.current
-    if (!id) id = await saveAndGetId()
+    const id = await saveAndGetId()
     if (!id) return
     try {
       const result = await api.printing.pdf(id)
-      onStatus?.(result.path ? `Exported PDF: ${result.path}` : 'PDF export cancelled.')
+      if (!result.ok) {
+        setSaveError(result.message ?? 'PDF export failed.')
+        return
+      }
+      onStatus?.(
+        result.path
+          ? `Exported PDF: ${result.path}`
+          : (result.message ?? `Opened print dialog for Pres_ID ${id}.`)
+      )
     } catch (err) {
       setSaveError(toErrorMessage(err, 'Could not export PDF.'))
     }
   }
 
   const printRx = async (): Promise<void> => {
-    let id = editingIdRef.current
-    if (!id) id = await saveAndGetId()
+    const id = await saveAndGetId()
     if (!id) return
     try {
       const result = await api.printing.print(id)

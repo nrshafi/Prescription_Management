@@ -25,7 +25,7 @@ pub fn dashboard_stats(state: State<'_, Db>) -> Result<DashboardStats, String> {
         .map_err(|e| e.to_string())?;
     let todays_prescriptions: i64 = conn
         .query_row(
-            "SELECT COUNT(*) FROM prescriptions WHERE date(created_at) = date('now', 'localtime')",
+            "SELECT COUNT(*) FROM prescriptions WHERE date(created_at, 'localtime') = date('now', 'localtime')",
             [],
             |row| row.get(0),
         )

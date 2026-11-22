@@ -199,7 +199,15 @@ export function Prescriptions({
         return
       }
       const result = await api.printing.pdf(id)
-      setStatus(result.path ? `Exported PDF: ${result.path}` : 'PDF export cancelled.')
+      if (!result.ok) {
+        setError(result.message ?? 'PDF export failed.')
+        return
+      }
+      setStatus(
+        result.path
+          ? `Exported PDF: ${result.path}`
+          : (result.message ?? `Opened print dialog for Pres_ID ${id}.`)
+      )
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Print action failed.')
     }

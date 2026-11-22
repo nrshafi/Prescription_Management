@@ -252,7 +252,7 @@ pub fn patients_list(
     match (&date_from, &date_to) {
         (Some(from), Some(to)) => {
             filters.push(
-                "EXISTS (SELECT 1 FROM prescriptions p WHERE p.patient_id = patients.patient_id AND p.created_at >= ? AND p.created_at <= ? || ' 23:59:59')"
+                "EXISTS (SELECT 1 FROM prescriptions p WHERE p.patient_id = patients.patient_id AND date(p.created_at, 'localtime') >= ? AND date(p.created_at, 'localtime') <= ?)"
                     .to_string(),
             );
             bind_values.push(Value::Text(from.clone()));
@@ -260,14 +260,14 @@ pub fn patients_list(
         }
         (Some(from), None) => {
             filters.push(
-                "EXISTS (SELECT 1 FROM prescriptions p WHERE p.patient_id = patients.patient_id AND p.created_at >= ?)"
+                "EXISTS (SELECT 1 FROM prescriptions p WHERE p.patient_id = patients.patient_id AND date(p.created_at, 'localtime') >= ?)"
                     .to_string(),
             );
             bind_values.push(Value::Text(from.clone()));
         }
         (None, Some(to)) => {
             filters.push(
-                "EXISTS (SELECT 1 FROM prescriptions p WHERE p.patient_id = patients.patient_id AND p.created_at <= ? || ' 23:59:59')"
+                "EXISTS (SELECT 1 FROM prescriptions p WHERE p.patient_id = patients.patient_id AND date(p.created_at, 'localtime') <= ?)"
                     .to_string(),
             );
             bind_values.push(Value::Text(to.clone()));
@@ -285,7 +285,7 @@ pub fn patients_list(
 
     let order_col = match q.sort_by.as_deref() {
         Some("name") => "patients.name",
-        Some("age") => "patients.age",
+        Some("age") => "CAST(patients.age AS INTEGER)",
         Some("gender") => "patients.gender",
         Some("complaint") => LAST_COMPLAINT_SQL,
         Some("diagnosis") => LAST_DIAGNOSIS_SQL,

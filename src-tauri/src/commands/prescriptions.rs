@@ -426,11 +426,11 @@ pub fn prescriptions_list(
         bind_values.push(Value::Text(value));
     }
     if let Some(value) = super::opt_trim(q.date_from.as_ref()) {
-        filters.push("prescriptions.created_at >= ?".to_string());
+        filters.push("date(prescriptions.created_at, 'localtime') >= ?".to_string());
         bind_values.push(Value::Text(value));
     }
     if let Some(value) = super::opt_trim(q.date_to.as_ref()) {
-        filters.push("prescriptions.created_at <= ? || ' 23:59:59'".to_string());
+        filters.push("date(prescriptions.created_at, 'localtime') <= ?".to_string());
         bind_values.push(Value::Text(value));
     }
 
