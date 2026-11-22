@@ -1,4 +1,4 @@
-import { Check, Plus, Search, X } from 'lucide-react'
+import { Plus, Search, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
@@ -204,11 +204,7 @@ export function SearchMultiSelect({
                   opt.kind === 'add' && 'text-primary border-t'
                 )}
               >
-                {opt.kind === 'item' ? (
-                  <Check className="size-4 text-transparent" />
-                ) : (
-                  <Plus className="size-4" />
-                )}
+                {opt.kind === 'add' && <Plus className="size-4" />}
                 {opt.kind === 'item' ? opt.label : `Add "${query.trim()}"`}
               </button>
             ))}

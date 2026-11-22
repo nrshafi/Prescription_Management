@@ -17,7 +17,7 @@
       "name": "Debug Renderer (Chrome)",
       "type": "chrome",
       "request": "launch",
-      "url": "http://localhost:1420",
+      "url": "http://localhost:5173",
       "webRoot": "${workspaceFolder}/src/renderer",
       "timeout": 60000,
       "presentation": {

@@ -12,14 +12,7 @@ export const patientFormSchema = z.object({
 
 export type PatientFormValues = z.infer<typeof patientFormSchema>
 
-export const PATIENT_SORT_FIELDS = [
-  'id',
-  'name',
-  'age',
-  'gender',
-  'complaint',
-  'diagnosis'
-] as const
+export const PATIENT_SORT_FIELDS = ['id', 'name', 'age', 'gender'] as const
 export type PatientSortField = (typeof PATIENT_SORT_FIELDS)[number]
 
 export const SORT_DIRECTIONS = ['asc', 'desc'] as const
@@ -28,11 +21,8 @@ export type SortDirection = (typeof SORT_DIRECTIONS)[number]
 export type PatientQuery = {
   search?: string
   gender?: (typeof GENDERS)[number]
-  ageMin?: number
-  ageMax?: number
   dateFrom?: string
   dateTo?: string
-  minVisits?: number
   sortBy?: (typeof PATIENT_SORT_FIELDS)[number]
   sortDir?: (typeof SORT_DIRECTIONS)[number]
 }
@@ -51,8 +41,6 @@ export interface PatientRecord {
 }
 
 export interface PatientListItem extends PatientRecord {
-  lastDiagnosis: string | null
-  lastComplaint: string | null
   visitCount: number
 }
 

@@ -7,30 +7,6 @@ use crate::db::Db;
 
 pub const GENDERS: [&str; 3] = ["Male", "Female", "Other"];
 
-pub(crate) const LAST_COMPLAINT_SQL: &str = "(
-  SELECT ps.content
-  FROM prescription_sections ps
-  JOIN prescriptions p ON p.prescription_id = ps.prescription_id
-  WHERE p.patient_id = patients.patient_id
-    AND ps.section_type = 'Chief Complaint'
-    AND ps.content IS NOT NULL
-    AND ps.content <> ''
-  ORDER BY p.visit_no DESC, p.prescription_id DESC
-  LIMIT 1
-)";
-
-pub(crate) const LAST_DIAGNOSIS_SQL: &str = "(
-  SELECT ps.content
-  FROM prescription_sections ps
-  JOIN prescriptions p ON p.prescription_id = ps.prescription_id
-  WHERE p.patient_id = patients.patient_id
-    AND ps.section_type = 'Provisional Diagnosis'
-    AND ps.content IS NOT NULL
-    AND ps.content <> ''
-  ORDER BY p.visit_no DESC, p.prescription_id DESC
-  LIMIT 1
-)";
-
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PatientRecord {
@@ -50,8 +26,6 @@ pub struct PatientRecord {
 pub struct PatientListItem {
     #[serde(flatten)]
     pub record: PatientRecord,
-    pub last_diagnosis: Option<String>,
-    pub last_complaint: Option<String>,
     pub visit_count: i64,
 }
 
@@ -84,11 +58,8 @@ pub struct PatientFormValues {
 pub struct PatientQuery {
     pub search: Option<String>,
     pub gender: Option<String>,
-    pub age_min: Option<i64>,
-    pub age_max: Option<i64>,
     pub date_from: Option<String>,
     pub date_to: Option<String>,
-    pub min_visits: Option<i64>,
     pub sort_by: Option<String>,
     pub sort_dir: Option<String>,
 }
@@ -153,7 +124,7 @@ fn normalize_patient(input: &PatientFormValues) -> Result<NormalizedPatient, Str
     })
 }
 
-pub(crate) fn patient_list_item_from_row(row: &Row<'_>) -> rusqlite::Result<PatientListItem> {
+fn patient_list_item_from_row(row: &Row<'_>) -> rusqlite::Result<PatientListItem> {
     Ok(PatientListItem {
         record: PatientRecord {
             id: row.get(0)?,
@@ -166,9 +137,7 @@ pub(crate) fn patient_list_item_from_row(row: &Row<'_>) -> rusqlite::Result<Pati
             created_at: row.get(7)?,
             updated_at: row.get(8)?,
         },
-        last_diagnosis: row.get(9)?,
-        last_complaint: row.get(10)?,
-        visit_count: row.get(11)?,
+        visit_count: row.get(9)?,
     })
 }
 
@@ -218,12 +187,6 @@ pub fn patients_list(
             return Err("Invalid gender".to_string());
         }
     }
-    for bound in [q.age_min, q.age_max, q.min_visits].iter().flatten() {
-        if *bound < 0 {
-            return Err("Invalid filter value".to_string());
-        }
-    }
-
     let mut filters: Vec<String> = Vec::new();
     let mut bind_values: Vec<Value> = Vec::new();
 
@@ -237,14 +200,6 @@ pub fn patients_list(
     if let Some(value) = gender {
         filters.push("patients.gender = ?".to_string());
         bind_values.push(Value::Text(value));
-    }
-    if let Some(value) = q.age_min {
-        filters.push("CAST(patients.age AS INTEGER) >= ?".to_string());
-        bind_values.push(Value::Integer(value));
-    }
-    if let Some(value) = q.age_max {
-        filters.push("CAST(patients.age AS INTEGER) <= ?".to_string());
-        bind_values.push(Value::Integer(value));
     }
 
     let date_from = super::opt_trim(q.date_from.as_ref());
@@ -275,20 +230,10 @@ pub fn patients_list(
         (None, None) => {}
     }
 
-    if let Some(value) = q.min_visits {
-        filters.push(
-            "(SELECT COUNT(*) FROM prescriptions p WHERE p.patient_id = patients.patient_id) >= ?"
-                .to_string(),
-        );
-        bind_values.push(Value::Integer(value));
-    }
-
     let order_col = match q.sort_by.as_deref() {
         Some("name") => "patients.name",
         Some("age") => "CAST(patients.age AS INTEGER)",
         Some("gender") => "patients.gender",
-        Some("complaint") => LAST_COMPLAINT_SQL,
-        Some("diagnosis") => LAST_DIAGNOSIS_SQL,
         _ => "patients.patient_id",
     };
     let order_dir = if q.sort_dir.as_deref() == Some("asc") {
@@ -303,7 +248,7 @@ pub fn patients_list(
     };
 
     let sql = format!(
-        "SELECT patients.patient_id, patients.patient_code, patients.name, patients.age, patients.gender, patients.phone, patients.address, patients.created_at, patients.updated_at, {LAST_DIAGNOSIS_SQL}, {LAST_COMPLAINT_SQL}, (SELECT COUNT(*) FROM prescriptions p WHERE p.patient_id = patients.patient_id) FROM patients {where_clause} ORDER BY {order_col} {order_dir}"
+        "SELECT patients.patient_id, patients.patient_code, patients.name, patients.age, patients.gender, patients.phone, patients.address, patients.created_at, patients.updated_at, (SELECT COUNT(*) FROM prescriptions p WHERE p.patient_id = patients.patient_id) FROM patients {where_clause} ORDER BY {order_col} {order_dir}"
     );
 
     let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;

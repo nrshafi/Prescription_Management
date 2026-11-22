@@ -36,7 +36,6 @@ export const api = {
       totalPatients: number
       totalPrescriptions: number
       todaysPrescriptions: number
-      recentPatients: PatientListItem[]
     }> => invokeLogged('dashboard_stats')
   },
   patients: {

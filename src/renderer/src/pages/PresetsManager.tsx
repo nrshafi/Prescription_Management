@@ -22,7 +22,6 @@ import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import {
   PRESET_BUNDLE_CATEGORIES,
-  PRESET_CATEGORIES,
   type PresetCategory,
   type PresetFormValues,
   type PresetLinkFormValues,
@@ -549,7 +548,7 @@ export function PresetsManager(): React.JSX.Element {
 
       <p className="text-muted-foreground text-xs">
         Medicine presets are managed on the Medicines page. C/C and Dx presets can link Rx,
-        investigations, and advice. Categories: {PRESET_CATEGORIES.join(', ')}.
+        investigations, and advice.
       </p>
 
       <BundleEditor

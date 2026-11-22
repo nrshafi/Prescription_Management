@@ -28,17 +28,10 @@ export function Dashboard({ onNavigate }: DashboardProps): React.JSX.Element {
   const [medicinePresetCount, setMedicinePresetCount] = useState(0)
   const [recent, setRecent] = useState<PrescriptionListItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const mql = window.matchMedia('(prefers-reduced-motion: reduce)')
-    setPrefersReducedMotion(mql.matches)
-    const onChange = (e: MediaQueryListEvent): void => setPrefersReducedMotion(e.matches)
-    mql.addEventListener('change', onChange)
-    return () => mql.removeEventListener('change', onChange)
-  }, [])
-
-  useEffect(() => {
+    let cancelled = false
     Promise.all([
       api.dashboard.stats(),
       api.prescriptions.list({ limit: 8 }),
@@ -46,6 +39,7 @@ export function Dashboard({ onNavigate }: DashboardProps): React.JSX.Element {
       api.settings.get()
     ])
       .then(([stats, recentRx, medPresets, settings]) => {
+        if (cancelled) return
         setTotalPatients(stats.totalPatients)
         setTotalRx(stats.totalPrescriptions)
         setTodaysRx(stats.todaysPrescriptions)
@@ -53,7 +47,17 @@ export function Dashboard({ onNavigate }: DashboardProps): React.JSX.Element {
         setRecent(recentRx)
         setDoctor(settings.doctorProfile)
       })
-      .finally(() => setLoading(false))
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Could not load dashboard.')
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const stats = [
@@ -87,6 +91,8 @@ export function Dashboard({ onNavigate }: DashboardProps): React.JSX.Element {
           New Prescription
         </Button>
       </header>
+
+      {error && <p className="text-destructive mt-4 text-sm">{error}</p>}
 
       <dl
         className="mt-px grid grid-cols-2 divide-x divide-y border-b xl:grid-cols-4 xl:divide-y-0"
@@ -168,11 +174,7 @@ export function Dashboard({ onNavigate }: DashboardProps): React.JSX.Element {
             {recent.map((rx, index) => (
               <li
                 key={rx.id}
-                style={
-                  prefersReducedMotion
-                    ? undefined
-                    : { animationDelay: `${Math.min(index, 8) * 40}ms` }
-                }
+                style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
                 className="animate-in fade-in-0 slide-in-from-bottom-1 fill-mode-both flex items-center gap-4 px-5 py-3 duration-300 ease-out motion-reduce:animate-none"
               >
                 <div className="bg-muted text-foreground flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-medium">
